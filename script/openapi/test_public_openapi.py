@@ -147,9 +147,37 @@ class PublicSpecTests(unittest.TestCase):
         self._assert_query_names(self.spec["paths"][JOBS_SESSION_PATH]["get"], JOB_QUERY)
         page_size = _query(self.spec["paths"]["/v1/media_files/mesh/list"]["get"], "page_size")
         self.assertEqual(page_size["schema"]["default"], 100)
-        self.assertEqual(page_size["schema"]["maximum"], 1000)
+        self.assertNotIn("maximum", page_size["schema"])
+        self.assertIn("capped at 1000", page_size["description"])
         sort_ascending = _query(self.spec["paths"]["/v1/media_files/splat/list"]["get"], "sort_ascending")
         self.assertIs(sort_ascending["schema"]["default"], False)
+
+    def test_path_parameters_match_the_url_template(self):
+        """Every path parameter is a required template name, and bodies are not path params."""
+        for path, operations in self.spec["paths"].items():
+            template = [part[1:-1] for part in path.split("/") if part.startswith("{") and part.endswith("}")]
+            for method, operation in operations.items():
+                if not isinstance(operation, dict) or method == "parameters":
+                    continue
+                names = [
+                    parameter["name"]
+                    for parameter in operation.get("parameters") or []
+                    if parameter.get("in") == "path"
+                ]
+                self.assertEqual(names, template, f"{method} {path}")
+                for parameter in operation.get("parameters") or []:
+                    if parameter.get("in") == "path":
+                        self.assertTrue(parameter["required"], path)
+        google = self.spec["paths"]["/v1/accounts/google_sso"]["post"]
+        self.assertNotIn("parameters", google)
+        self.assertIn("requestBody", google)
+        cover = self.spec["paths"]["/v1/media_files/cover_image/{token}"]["post"]
+        token = [parameter for parameter in cover["parameters"] if parameter["in"] == "path"][0]
+        self.assertEqual(token["name"], "token")
+        self.assertIn("$ref", token["schema"])
+        comments = self.spec["paths"]["/v1/comments/list/{entity_type}/{entity_token}"]["get"]
+        comment_names = [parameter["name"] for parameter in comments["parameters"] if parameter["in"] == "path"]
+        self.assertEqual(comment_names, ["entity_type", "entity_token"])
 
     def test_dangling_utoipa_path_refs_become_string_parameters(self):
         """Path structs utoipa did not emit are the URL template name, as a string."""

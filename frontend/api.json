@@ -31,17 +31,6 @@
         ],
         "summary": "Sign in or sign up with \"Sign in with Google\" credentials.\nThis supports both sign up for new users and sign in for existing users.",
         "operationId": "google_sso_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GoogleCreateAccountRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -106,17 +95,6 @@
         ],
         "summary": "Log an active app user - user must be logged in.",
         "operationId": "log_app_active_user_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/LogAppActiveUserRequest"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -175,17 +153,6 @@
         ],
         "summary": "Log a browser session (so we can calculate duration, etc.)",
         "operationId": "log_browser_session_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/LogBrowserSessionRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -634,17 +601,6 @@
         ],
         "summary": "Create beta keys in bulk, and possibly assign them to a referrer user.",
         "operationId": "create_beta_keys_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CreateBetaKeysRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -831,17 +787,6 @@
         ],
         "summary": "Redeem a beta key to gain access to a feature",
         "operationId": "redeem_beta_key_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/RedeemBetaKeyRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -928,22 +873,13 @@
         "operationId": "edit_beta_key_distributed_flag_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EditBetaKeyDistributedFlagRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EditBetaKeyDistributedFlagPathInfo"
-            }
+              "$ref": "#/components/schemas/BetaKeyToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "requestBody": {
@@ -1012,22 +948,13 @@
         "operationId": "edit_beta_key_note_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EditBetaKeyNoteRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EditBetaKeyNotePathInfo"
-            }
+              "$ref": "#/components/schemas/BetaKeyToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "requestBody": {
@@ -1123,17 +1050,6 @@
         ],
         "summary": "Create a Stripe Checkout session and return the redirect URL in Json.",
         "operationId": "stripe_create_checkout_session_json_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CreateCheckoutSessionRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1418,22 +1334,13 @@
         "operationId": "delete_comment_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "comment_token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/DeleteCommentRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/DeleteCommentPathInfo"
-            }
+              "$ref": "#/components/schemas/CommentToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "requestBody": {
@@ -1503,13 +1410,22 @@
         "operationId": "list_comments_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "entity_type",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ListCommentsPathInfo"
-            }
+              "$ref": "#/components/schemas/CommentEntityType"
+            },
+            "description": "For the URL PathInfo"
+          },
+          {
+            "name": "entity_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -1546,17 +1462,6 @@
         ],
         "summary": "Add a comment to an entity (file, model, user, etc.)",
         "operationId": "create_comment_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CreateCommentRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1620,17 +1525,6 @@
           "Engine"
         ],
         "operationId": "enqueue_fbx_to_gltf_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for FBX to GLTF Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EnqueueFbxToGltfRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1705,17 +1599,6 @@
         ],
         "summary": "Create a new account with username and password",
         "operationId": "create_account_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CreateAccountRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1781,13 +1664,13 @@
         "operationId": "get_session_credits_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "namespace",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetSessionCreditsPathInfo"
-            }
+              "$ref": "#/components/schemas/PaymentsNamespace"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -1966,7 +1849,27 @@
           "403": {
             "$ref": "#/components/responses/CloudflareError1010"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter `entity_type`."
+          },
+          {
+            "name": "entity_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter `entity_token`."
+          }
+        ]
       }
     },
     "/v1/folders/create": {
@@ -2577,15 +2480,6 @@
         "operationId": "list_folder_media_files_handler",
         "parameters": [
           {
-            "name": "folder_token",
-            "in": "path",
-            "description": "Folder token",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FolderToken"
-            }
-          },
-          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -2607,6 +2501,15 @@
               ],
               "format": "int32",
               "minimum": 0
+            }
+          },
+          {
+            "name": "folder_token",
+            "in": "path",
+            "description": "Folder token",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/FolderToken"
             }
           }
         ],
@@ -3028,15 +2931,6 @@
         "operationId": "list_subfolders_handler",
         "parameters": [
           {
-            "name": "folder_token",
-            "in": "path",
-            "description": "Parent folder token",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FolderToken"
-            }
-          },
-          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -3058,6 +2952,15 @@
               ],
               "format": "int32",
               "minimum": 0
+            }
+          },
+          {
+            "name": "folder_token",
+            "in": "path",
+            "description": "Parent folder token",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/FolderToken"
             }
           }
         ],
@@ -3373,17 +3276,6 @@
         ],
         "summary": "Flux 2 LoRA - Edit Image Angle",
         "operationId": "flux_2_lora_edit_image_angle_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Flux2LoraEditImageAngleRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3418,17 +3310,6 @@
         ],
         "summary": "Qwen Edit 2511 - Edit Image Angle",
         "operationId": "qwen_edit_2511_edit_image_angle_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/QwenEdit2511EditImageAngleRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3463,17 +3344,6 @@
         ],
         "summary": "SeedEdit v3 Image Editing",
         "operationId": "seededit_3_edit_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/SeedEdit3EditImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3508,17 +3378,6 @@
         ],
         "summary": "Gpt Image 1 Image Editing",
         "operationId": "flux_pro_kontext_max_edit_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FluxProKontextMaxEditImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3553,17 +3412,6 @@
         ],
         "summary": "Gemini 2.5 Flash Image Editing",
         "operationId": "gemini_25_flash_edit_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Gemini25FlashEditImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3599,17 +3447,6 @@
         ],
         "summary": "Gpt Image 1 Image Editing",
         "operationId": "gpt_image_1_edit_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GptImage1EditImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3644,17 +3481,6 @@
         ],
         "summary": "Qwen Image Editing",
         "operationId": "qwen_edit_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/QwenEditImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3689,17 +3515,6 @@
         ],
         "summary": "Flux 1 Dev text to image",
         "operationId": "generate_flux_1_dev_text_to_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateFlux1DevTextToImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3734,17 +3549,6 @@
         ],
         "summary": "Flux 1 Schnell text to image",
         "operationId": "generate_flux_1_schnell_text_to_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateFlux1SchnellTextToImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3779,17 +3583,6 @@
         ],
         "summary": "Flux Pro 1.1",
         "operationId": "generate_flux_pro_11_text_to_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateFluxPro11TextToImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3824,17 +3617,6 @@
         ],
         "summary": "Flux Pro 1.1 Ultra",
         "operationId": "generate_flux_pro_11_ultra_text_to_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateFluxPro11UltraTextToImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3869,17 +3651,6 @@
         ],
         "summary": "Gpt Image 1",
         "operationId": "generate_gpt_image_1_text_to_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateGptImage1TextToImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3914,17 +3685,6 @@
         ],
         "summary": "Flux Dev juggernaut inpainting",
         "operationId": "flux_dev_juggernaut_inpaint_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FluxDevJuggernautInpaintImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3959,17 +3719,6 @@
         ],
         "summary": "Flux Pro-1 Inpainting",
         "operationId": "flux_pro_1_inpaint_image_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FluxPro1InpaintImageRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4004,17 +3753,6 @@
         ],
         "summary": "Bytedance Seedream 5 Lite Multi-Function (generate + edit)",
         "operationId": "bytedance_seedream_5_lite_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/BytedanceSeedream5LiteMultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4049,17 +3787,6 @@
         ],
         "summary": "Bytedance Seedream 4 Multi-Function (generate + edit)",
         "operationId": "bytedance_seedream_v4_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/BytedanceSeedreamV4MultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4094,17 +3821,6 @@
         ],
         "summary": "Bytedance Seedream 4.5 Multi-Function (generate + edit)",
         "operationId": "bytedance_seedream_v4p5_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/BytedanceSeedreamV4p5MultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4139,17 +3855,6 @@
         ],
         "summary": "Gpt Image 1.5 Multi-Function (generate + edit + inpaint)",
         "operationId": "gpt_image_1p5_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GptImage1p5MultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4184,17 +3889,6 @@
         ],
         "summary": "Nano Banana Multi-Function (generate + edit)",
         "operationId": "nano_banana_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NanoBananaMultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4229,17 +3923,6 @@
         ],
         "summary": "Nano Banana 2 Multi-Function (generate + edit)",
         "operationId": "nano_banana_2_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NanaBanana2MultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4274,17 +3957,6 @@
         ],
         "summary": "Nano Banana Pro Multi-Function (generate + edit)",
         "operationId": "nano_banana_pro_multi_function_image_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NanoBananaProMultiFunctionImageGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4319,17 +3991,6 @@
         ],
         "summary": "Background removal",
         "operationId": "remove_image_background_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/RemoveImageBackgroundRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4364,17 +4025,6 @@
         ],
         "summary": "Hunyuan 2.0 Image to 3D",
         "operationId": "generate_hunyuan_2_0_image_to_3d_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateHunyuan20ImageTo3dRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4409,17 +4059,6 @@
         ],
         "summary": "Hunyuan 2.1 Image to 3D",
         "operationId": "generate_hunyuan_2_1_image_to_3d_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateHunyuan21ImageTo3dRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4454,17 +4093,6 @@
         ],
         "summary": "Hunyuan 3D v3 Multi-Function (text-to-3d, image-to-3d, sketch-to-3d)",
         "operationId": "generate_hunyuan3d_v3_multi_function_object_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Hunyuan3dV3MultiFunctionObjectGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4499,17 +4127,6 @@
         ],
         "summary": "World Labs Marble 0.1-mini Splat Generation",
         "operationId": "generate_worldlabs_marble_0p1_mini_splat_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateWorldlabsMarble0p1MiniSplatRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4544,17 +4161,6 @@
         ],
         "summary": "World Labs Marble 0.1-plus Splat Generation",
         "operationId": "generate_worldlabs_marble_0p1_plus_splat_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateWorldlabsMarble0p1PlusSplatRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4635,17 +4241,6 @@
         ],
         "summary": "Kling 1.6 Pro Image to Video",
         "operationId": "generate_kling_1_6_pro_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateKling16ProImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4680,17 +4275,6 @@
         ],
         "summary": "Kling 2.1 Master Image to Video",
         "operationId": "generate_kling_2_1_master_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateKling21MasterImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4725,17 +4309,6 @@
         ],
         "summary": "Kling 2.1 Pro Image to Video",
         "operationId": "generate_kling_2_1_pro_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateKling21ProImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4770,17 +4343,6 @@
         ],
         "summary": "Kling 2.5 Turbo Pro Multi-Function (text and image to video)",
         "operationId": "kling_2p5_turbo_pro_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Kling2p5TurboProMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4815,17 +4377,6 @@
         ],
         "summary": "Kling 2.6 Pro Multi-Function (text and image to video)",
         "operationId": "kling_2p6_pro_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Kling2p6ProMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4860,17 +4411,6 @@
         ],
         "summary": "Kling 3.0 Pro Multi-Function (text and image to video)",
         "operationId": "kling_3p0_pro_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Kling3p0ProMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4905,17 +4445,6 @@
         ],
         "summary": "Kling 3.0 Standard Multi-Function (text and image to video)",
         "operationId": "kling_3p0_standard_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Kling3p0StandardMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4950,17 +4479,6 @@
         ],
         "summary": "Seedance 1.5 Pro Multi-Function (text and image to video)",
         "operationId": "seedance_1p5_pro_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Seedance1p5ProMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4995,17 +4513,6 @@
         ],
         "summary": "Seedance 2.0 Multi-Function video generation (text-to-video, keyframe, and reference).",
         "operationId": "seedance_2p0_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Seedance2p0MultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5040,17 +4547,6 @@
         ],
         "summary": "Sora 2 Multi-Function (text and image to video)",
         "operationId": "sora_2_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Sora2MultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5085,17 +4581,6 @@
         ],
         "summary": "Sora 2 Pro Multi-Function (text and image to video)",
         "operationId": "sora_2_pro_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Sora2ProMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5130,17 +4615,6 @@
         ],
         "summary": "Veo 3.1 Multi-Function (text and image to video)",
         "operationId": "veo_3p1_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Veo3p1MultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5175,17 +4649,6 @@
         ],
         "summary": "Veo 3.1 Fast Multi-Function (text and image to video)",
         "operationId": "veo_3p1_fast_multi_function_video_gen_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/Veo3p1FastMultiFunctionVideoGenRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5220,17 +4683,6 @@
         ],
         "summary": "Seedance 1.0 Lite Image to Video",
         "operationId": "generate_seedance_1_0_lite_image_to_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateSeedance10LiteImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5265,17 +4717,6 @@
         ],
         "summary": "Seedance 1.0 Pro Image to Video",
         "operationId": "generate_seedance_1_0_pro_image_to_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateSeedance10ProImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5310,17 +4751,6 @@
         ],
         "summary": "Veo 2 Image to Video",
         "operationId": "generate_veo_2_image_to_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateVeo2ImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5355,17 +4785,6 @@
         ],
         "summary": "Veo 3 Fast Image to Video",
         "operationId": "generate_veo_3_fast_image_to_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateVeo3FastImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5400,17 +4819,6 @@
         ],
         "summary": "Veo 3 Image to Video",
         "operationId": "generate_veo_3_image_to_video_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/GenerateVeo3ImageToVideoRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -5445,17 +4853,6 @@
         ],
         "summary": "Upload snapshots of the scenes created in the 3D image studio.",
         "operationId": "upload_snapshot_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSnapshotMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadSnapshotMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -5564,13 +4961,13 @@
         "operationId": "get_inference_job_status_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path params for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetInferenceJobStatusPathInfo"
-            }
+              "$ref": "#/components/schemas/InferenceJobToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -5604,13 +5001,13 @@
         "operationId": "terminate_inference_job_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path params for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/TerminateInferenceJobPathInfo"
-            }
+              "$ref": "#/components/schemas/InferenceJobToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -5762,17 +5159,6 @@
           "Users"
         ],
         "operationId": "login_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/LoginRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -6165,22 +5551,13 @@
         "operationId": "change_media_file_animation_type_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ChangeMediaFileAnimationTypeRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/MediaFileTokenPathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Media File Token in URL PathInfo"
           }
         ],
         "requestBody": {
@@ -6344,6 +5721,15 @@
                 }
               ]
             }
+          },
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter `token`."
           }
         ],
         "responses": {
@@ -6375,13 +5761,13 @@
         "operationId": "list_batch_generated_redux_media_files_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ListBatchGeneratedReduxMediaFilesPathInfo"
-            }
+              "$ref": "#/components/schemas/BatchGenerationToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -6412,11 +5798,11 @@
           {
             "name": "job_token",
             "in": "path",
-            "description": "Path parameter `job_token`.",
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Path parameter `job_token`."
           }
         ],
         "responses": {
@@ -6452,22 +5838,13 @@
         "operationId": "set_media_file_cover_image_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/SetMediaFileCoverImageRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/MediaFileTokenPathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Media File Token in URL PathInfo"
           }
         ],
         "requestBody": {
@@ -6537,22 +5914,13 @@
         "operationId": "change_media_file_engine_category_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ChangeMediaFileEngineCategoryRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/MediaFileTokenPathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Media File Token in URL PathInfo"
           }
         ],
         "requestBody": {
@@ -6621,13 +5989,13 @@
         "operationId": "get_media_file_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetMediaFilePathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -6660,22 +6028,13 @@
         "operationId": "delete_media_file_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/DeleteMediaFileRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/DeleteMediaFilePathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "requestBody": {
@@ -6952,6 +6311,15 @@
                 "null"
               ]
             }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter `username`."
           }
         ],
         "responses": {
@@ -7160,8 +6528,7 @@
                 "null"
               ],
               "minimum": 0,
-              "default": 100,
-              "maximum": 1000
+              "default": 100
             },
             "description": "How many rows to return. Defaults to 100. Values above 1000 are capped at 1000."
           },
@@ -7258,8 +6625,7 @@
                 "null"
               ],
               "minimum": 0,
-              "default": 100,
-              "maximum": 1000
+              "default": 100
             },
             "description": "How many rows to return. Defaults to 100. Values above 1000 are capped at 1000."
           },
@@ -7348,22 +6714,13 @@
         "operationId": "rename_media_file_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/RenameMediaFileRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/MediaFileTokenPathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Media File Token in URL PathInfo"
           }
         ],
         "requestBody": {
@@ -7627,8 +6984,7 @@
                 "null"
               ],
               "minimum": 0,
-              "default": 100,
-              "maximum": 1000
+              "default": 100
             },
             "description": "How many rows to return. Defaults to 100. Values above 1000 are capped at 1000."
           },
@@ -7700,17 +7056,6 @@
         ],
         "summary": "DEPRECATED: Use one of the various specialized upload endpoints instead.\nTODO: Does not support `maybe_generation_provider`. Use the specialized upload endpoints instead.",
         "operationId": "upload_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Ask Brandon. This is form-multipart.",
-            "required": true,
-            "schema": {
-              "default": null
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -7776,17 +7121,6 @@
         ],
         "summary": "This endpoint is for uploading audio files.",
         "operationId": "upload_audio_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadAudioMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadAudioMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -7851,17 +7185,6 @@
         ],
         "summary": "This endpoint is for uploading image files.",
         "operationId": "upload_image_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadImageMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadImageMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -7927,17 +7250,6 @@
         "summary": "Upload an engine asset: character, animation, etc. Just don't use this for scenes.",
         "description": "This is for new assets. You can't update existing assets with this endpoint.\n\nBe careful to set the correct `engine_category` and `maybe_animation_type` (if needed) fields!",
         "operationId": "upload_new_engine_asset_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewEngineAssetFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadNewEngineAssetFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8003,17 +7315,6 @@
         "summary": "This endpoint is for saving a new scene for the first time.",
         "description": "You'll get back a media token for accessing and querying the scene in the future.\n\nFor future saving on the same scene, call the \"saved scene\" endpoint, i.e. do not\ncall this endpoint a second time unless the user wants to save a new copy of the\nsame scene.",
         "operationId": "upload_new_scene_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewSceneMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadNewSceneMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8078,17 +7379,6 @@
         ],
         "summary": "This endpoint is for uploading video files.",
         "operationId": "upload_new_video_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewVideoMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadNewVideoMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8154,17 +7444,6 @@
         "summary": "Upload a pmx zip file.",
         "description": "Be careful to set the correct `engine_category` and `maybe_animation_type` (if needed) fields!",
         "operationId": "upload_pmx_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadPmxFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadPmxFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8230,17 +7509,6 @@
         "summary": "Save a new 2D editor project (multipart JSON document upload).",
         "description": "You'll get back a media file token for accessing and querying the project\nin the future. To save further changes to the same project, call the\ncorresponding update endpoint — only call this endpoint again if the user\nwants to save a brand new copy.\n\nAnonymous (logged-out) users may also save projects.",
         "operationId": "upload_new_editor_2d_project_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NewProjectMultipartForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "New 2D editor project saved",
@@ -8277,22 +7545,13 @@
         "operationId": "upload_updated_editor_2d_project_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UploadUpdatedEditor2dProjectPathInfo"
-            }
-          },
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UpdateProjectMultipartForm"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -8332,17 +7591,6 @@
         "summary": "Save a new mood board project (multipart JSON document upload).",
         "description": "You'll get back a media file token for accessing and querying the project\nin the future. To save further changes to the same project, call the\ncorresponding update endpoint — only call this endpoint again if the user\nwants to save a brand new copy.\n\nAnonymous (logged-out) users may also save projects.",
         "operationId": "upload_new_mood_board_project_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NewProjectMultipartForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "New mood board project saved",
@@ -8379,22 +7627,13 @@
         "operationId": "upload_updated_mood_board_project_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UploadUpdatedMoodBoardProjectPathInfo"
-            }
-          },
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UpdateProjectMultipartForm"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -8434,17 +7673,6 @@
         "summary": "Save a new 3D scene project (multipart JSON document upload).",
         "description": "You'll get back a media file token for accessing and querying the project\nin the future. To save further changes to the same project, call the\ncorresponding update endpoint — only call this endpoint again if the user\nwants to save a brand new copy.\n\nAnonymous (logged-out) users may also save projects.",
         "operationId": "upload_new_scene_3d_project_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NewProjectMultipartForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "New 3D scene project saved",
@@ -8481,22 +7709,13 @@
         "operationId": "upload_updated_scene_3d_project_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UploadUpdatedScene3dProjectPathInfo"
-            }
-          },
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UpdateProjectMultipartForm"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -8536,17 +7755,6 @@
         "summary": "Save a new video editor timeline project (multipart JSON document upload).",
         "description": "You'll get back a media file token for accessing and querying the project\nin the future. To save further changes to the same project, call the\ncorresponding update endpoint — only call this endpoint again if the user\nwants to save a brand new copy.\n\nAnonymous (logged-out) users may also save projects.",
         "operationId": "upload_new_video_timeline_project_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/NewProjectMultipartForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "New video editor timeline project saved",
@@ -8583,22 +7791,13 @@
         "operationId": "upload_updated_video_timeline_project_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UploadUpdatedVideoTimelineProjectPathInfo"
-            }
-          },
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UpdateProjectMultipartForm"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -8640,22 +7839,13 @@
         "operationId": "upload_saved_scene_media_file_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UploadSavedSceneMediaFilePathInfo"
-            }
-          },
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSavedSceneMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadSavedSceneMediaFileForm"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -8723,17 +7913,6 @@
         "summary": "This endpoint is for saving a snapshot of a scene before we render it as a video.",
         "description": "Do not replace the user's current scene with this snapshot token!",
         "operationId": "upload_scene_snapshot_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSceneSnapshotMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadSceneSnapshotMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8799,17 +7978,6 @@
         "summary": "This endpoint is for uploading SPZ (Gaussian Splat) files.",
         "description": "SPZ files are compressed Gaussian splat files used for 3D scene representation.\nThe file must have a `.spz` extension and be gzip-compressed.",
         "operationId": "upload_spz_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSpzMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadSpzMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -8874,17 +8042,6 @@
         ],
         "summary": "Upload a studio render in a zip file.",
         "operationId": "upload_studio_shot_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadStudioShotFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UploadStudioShotFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -8949,17 +8106,6 @@
         ],
         "summary": "DEPRECATED: Use the \"new video\" endpoint instead.",
         "operationId": "upload_video_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Ask Brandon. This is form-multipart.",
-            "required": true,
-            "schema": {
-              "default": null
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -9027,22 +8173,13 @@
         "operationId": "change_media_file_visibility_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ChangeMediaFileVisibilityRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/MediaFileTokenPathInfo"
-            }
+              "$ref": "#/components/schemas/MediaFileToken"
+            },
+            "description": "Media File Token in URL PathInfo"
           }
         ],
         "requestBody": {
@@ -9313,11 +8450,11 @@
           {
             "name": "token",
             "in": "path",
-            "description": "Path parameter `token`.",
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Path parameter `token`."
           }
         ],
         "responses": {
@@ -9358,17 +8495,6 @@
         ],
         "summary": "API-key authenticated audio upload (Omni API). Identity is read from the `Authorization` header\nAPI key rather than a session cookie.",
         "operationId": "omni_upload_audio_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadAudioMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/OmniUploadAudioMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -9439,17 +8565,6 @@
         ],
         "summary": "API-key authenticated image upload (Omni API). Identity is read from the `Authorization` header\nAPI key rather than a session cookie.",
         "operationId": "omni_upload_image_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadImageMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/OmniUploadImageMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -9520,17 +8635,6 @@
         ],
         "summary": "API-key authenticated video upload (Omni API). Identity is read from the `Authorization` header\nAPI key rather than a session cookie.",
         "operationId": "omni_upload_video_media_file_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadVideoMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/OmniUploadVideoMediaFileForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Success Update",
@@ -10249,17 +9353,6 @@
         ],
         "summary": "Create a new prompt record (note: most inference endpoints do this internally for us automatically).",
         "operationId": "create_prompt_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CreatePromptRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -10296,13 +9389,13 @@
         "operationId": "get_prompt_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetPromptPathInfo"
-            }
+              "$ref": "#/components/schemas/PromptToken"
+            },
+            "description": "Path parameter `token`."
           }
         ],
         "responses": {
@@ -10423,13 +9516,13 @@
         "operationId": "get_session_subscription_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "namespace",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetSessionSubscriptionPathInfo"
-            }
+              "$ref": "#/components/schemas/PaymentsNamespace"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -11190,15 +10283,6 @@
         "operationId": "list_media_files_with_tag_handler",
         "parameters": [
           {
-            "name": "tag_token",
-            "in": "path",
-            "description": "Tag token",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/TagToken"
-            }
-          },
-          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -11220,6 +10304,15 @@
               ],
               "format": "int32",
               "minimum": 0
+            }
+          },
+          {
+            "name": "tag_token",
+            "in": "path",
+            "description": "Tag token",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TagToken"
             }
           }
         ],
@@ -11462,17 +10555,6 @@
         ],
         "summary": "Change password for the current user.",
         "operationId": "change_password_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ChangePasswordRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -11537,17 +10619,6 @@
         ],
         "summary": "Edit email address of the current user.",
         "operationId": "edit_email_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EditEmailRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -11612,17 +10683,6 @@
         ],
         "summary": "Edit username of the current user.",
         "operationId": "edit_username_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EditUsernameRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -11688,13 +10748,13 @@
         "operationId": "get_profile_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "username",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetProfilePathInfo"
-            }
+              "type": "string"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "responses": {
@@ -11934,12 +10994,6 @@
         "operationId": "list_user_bookmarks_for_user_handler",
         "parameters": [
           {
-            "name": "username",
-            "in": "path",
-            "description": "The username of the user whose bookmarks to list.",
-            "required": true
-          },
-          {
             "name": "sort_ascending",
             "in": "query",
             "required": false,
@@ -12037,6 +11091,12 @@
                 }
               ]
             }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "description": "The username of the user whose bookmarks to list.",
+            "required": true
           }
         ],
         "responses": {
@@ -12432,17 +11492,6 @@
         ],
         "summary": "DEPRECATED. Use /v1/workflows/enqueue_studio or /v1/workflows/enqueue_vst",
         "operationId": "enqueue_video_style_transfer_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EnqueueVideoStyleTransferRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -12572,17 +11621,6 @@
         ],
         "summary": "Detect the AI-generation provenance of an uploaded video.",
         "operationId": "video_info_read_info_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Multipart form with a single `file` video upload.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/VideoInfoReadOnlyForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Detected provenance (or `unrecognized`)",
@@ -12627,17 +11665,6 @@
         ],
         "summary": "Detect a video's AI-generation provenance and persist the result.",
         "operationId": "video_info_upload_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Multipart form with a single `file` video upload.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/VideoInfoUploadForm"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Detected provenance + persisted token",
@@ -12720,15 +11747,6 @@
         "operationId": "list_weights_by_user_handler",
         "parameters": [
           {
-            "name": "path",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ListWeightsByUserPathInfo"
-            }
-          },
-          {
             "name": "sort_ascending",
             "in": "query",
             "required": false,
@@ -12794,6 +11812,15 @@
                 }
               ]
             }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Path parameter `username`."
           }
         ],
         "responses": {
@@ -12839,17 +11866,6 @@
           "Model Weights"
         ],
         "operationId": "list_available_weights_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ListAvailableWeightsQuery"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "List Weights",
@@ -13054,17 +12070,6 @@
         ],
         "summary": "Search model weights (HTTP GET)",
         "operationId": "search_model_weights_http_get_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/SearchModelWeightsRequest"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful search",
@@ -13097,17 +12102,6 @@
         ],
         "summary": "DEPRECATED. Use the HTTP GET version of this endpoint instead",
         "operationId": "search_model_weights_http_post_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/SearchModelWeightsRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -13154,13 +12148,13 @@
         "operationId": "get_weight_handler",
         "parameters": [
           {
-            "name": "path",
+            "name": "weight_token",
             "in": "path",
-            "description": "Path for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/GetWeightPathInfo"
-            }
+              "$ref": "#/components/schemas/ModelWeightToken"
+            },
+            "description": "Path parameter `weight_token`."
           }
         ],
         "responses": {
@@ -13217,22 +12211,13 @@
         "operationId": "update_weight_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "weight_token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/UpdateWeightRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UpdateWeightPathInfo"
-            }
+              "type": "string"
+            },
+            "description": "For the URL PathInfo"
           }
         ],
         "requestBody": {
@@ -13298,22 +12283,13 @@
         "operationId": "delete_weight_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "weight_token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/DeleteWeightRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/DeleteWeightPathInfo"
-            }
+              "type": "string"
+            },
+            "description": "Path parameter `weight_token`."
           }
         ],
         "requestBody": {
@@ -13381,22 +12357,13 @@
         "operationId": "set_model_weight_cover_image_handler",
         "parameters": [
           {
-            "name": "request",
+            "name": "weight_token",
             "in": "path",
-            "description": "Payload for Request",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/SetModelWeightCoverImageRequest"
-            }
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "description": "Path for Request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/SetModelWeightCoverImagePathInfo"
-            }
+              "type": "string"
+            },
+            "description": "Path parameter `weight_token`."
           }
         ],
         "requestBody": {
@@ -13464,17 +12431,6 @@
         "summary": "Enqueue \"face mirror\" (Live Portrait) video workflows.",
         "description": "We've renamed this as to not give away what we're doing to users.",
         "operationId": "enqueue_live_portrait_workflow_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EnqueueLivePortraitWorkflowRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -13550,17 +12506,6 @@
         "summary": "Enqueue \"lipsync\" (Face Fusion) video workflows.",
         "description": "We've renamed this as to not give away what we're doing to users.",
         "operationId": "enqueue_face_fusion_workflow_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EnqueueFaceFusionWorkflowRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -13635,17 +12580,6 @@
         ],
         "summary": "Enqueue Storyteller Studio video workflows.",
         "operationId": "enqueue_studio_workflow_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/VstRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -13720,17 +12654,6 @@
         ],
         "summary": "Enqueue video style transfer video workflows.",
         "operationId": "enqueue_video_style_transfer_workflow_handler",
-        "parameters": [
-          {
-            "name": "request",
-            "in": "path",
-            "description": "Payload for request",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/VstRequest"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -17414,18 +16337,6 @@
           }
         ]
       },
-      "DeleteCommentPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "comment_token"
-        ],
-        "properties": {
-          "comment_token": {
-            "$ref": "#/components/schemas/CommentToken"
-          }
-        }
-      },
       "DeleteCommentRequest": {
         "type": "object",
         "properties": {
@@ -17472,18 +16383,6 @@
         "properties": {
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "DeleteMediaFilePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
           }
         }
       },
@@ -17579,17 +16478,6 @@
           }
         }
       },
-      "DeleteWeightPathInfo": {
-        "type": "object",
-        "required": [
-          "weight_token"
-        ],
-        "properties": {
-          "weight_token": {
-            "type": "string"
-          }
-        }
-      },
       "DeleteWeightRequest": {
         "type": "object",
         "required": [
@@ -17682,18 +16570,6 @@
           }
         }
       },
-      "EditBetaKeyDistributedFlagPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/BetaKeyToken"
-          }
-        }
-      },
       "EditBetaKeyDistributedFlagRequest": {
         "type": "object",
         "required": [
@@ -17714,18 +16590,6 @@
         "properties": {
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "EditBetaKeyNotePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/BetaKeyToken"
           }
         }
       },
@@ -21270,18 +20134,6 @@
           }
         }
       },
-      "GetInferenceJobStatusPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/InferenceJobToken"
-          }
-        }
-      },
       "GetInferenceJobStatusSuccessResponse": {
         "type": "object",
         "required": [
@@ -21384,18 +20236,6 @@
           }
         }
       },
-      "GetMediaFilePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
-          }
-        }
-      },
       "GetMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -21408,18 +20248,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "GetProfilePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "username"
-        ],
-        "properties": {
-          "username": {
-            "type": "string"
           }
         }
       },
@@ -21442,17 +20270,6 @@
           }
         }
       },
-      "GetPromptPathInfo": {
-        "type": "object",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/PromptToken"
-          }
-        }
-      },
       "GetPromptSuccessResponse": {
         "type": "object",
         "required": [
@@ -21465,18 +20282,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "GetSessionCreditsPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "namespace"
-        ],
-        "properties": {
-          "namespace": {
-            "$ref": "#/components/schemas/PaymentsNamespace"
           }
         }
       },
@@ -21516,18 +20321,6 @@
             "format": "int64",
             "description": "All the credit amounts added together.",
             "minimum": 0
-          }
-        }
-      },
-      "GetSessionSubscriptionPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "namespace"
-        ],
-        "properties": {
-          "namespace": {
-            "$ref": "#/components/schemas/PaymentsNamespace"
           }
         }
       },
@@ -21603,17 +20396,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "GetWeightPathInfo": {
-        "type": "object",
-        "required": [
-          "weight_token"
-        ],
-        "properties": {
-          "weight_token": {
-            "$ref": "#/components/schemas/ModelWeightToken"
           }
         }
       },
@@ -22991,63 +21773,6 @@
           }
         }
       },
-      "ListAvailableWeightsQuery": {
-        "type": "object",
-        "properties": {
-          "cursor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "cursor_is_reversed": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          },
-          "page_size": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32",
-            "minimum": 0
-          },
-          "sort_ascending": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          },
-          "username": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "weight_category": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/WeightsCategory"
-              }
-            ]
-          },
-          "weight_type": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/WeightsType"
-              }
-            ]
-          }
-        }
-      },
       "ListAvailableWeightsSuccessResponse": {
         "type": "object",
         "required": [
@@ -23067,18 +21792,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "ListBatchGeneratedReduxMediaFilesPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/BatchGenerationToken"
           }
         }
       },
@@ -23212,22 +21925,6 @@
         "enum": [
           "ServerError"
         ]
-      },
-      "ListCommentsPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "entity_type",
-          "entity_token"
-        ],
-        "properties": {
-          "entity_token": {
-            "type": "string"
-          },
-          "entity_type": {
-            "$ref": "#/components/schemas/CommentEntityType"
-          }
-        }
       },
       "ListCommentsSuccessResponse": {
         "type": "object",
@@ -24079,17 +22776,6 @@
           "NotAuthorized",
           "ServerError"
         ]
-      },
-      "ListWeightsByUserPathInfo": {
-        "type": "object",
-        "required": [
-          "username"
-        ],
-        "properties": {
-          "username": {
-            "type": "string"
-          }
-        }
       },
       "ListWeightsByUserSuccessResponse": {
         "type": "object",
@@ -25470,18 +24156,6 @@
         "type": "string",
         "description": "The primary key for Media Files"
       },
-      "MediaFileTokenPathInfo": {
-        "type": "object",
-        "description": "Media File Token in URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
-          }
-        }
-      },
       "MediaFileType": {
         "type": "string",
         "description": "Used in the `media_files` table in a `VARCHAR(16)` field.\n\nDO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.",
@@ -26353,46 +25027,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "NewProjectMultipartForm": {
-        "type": "object",
-        "description": "Form-multipart request fields for saving a new project.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The project JSON document"
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the project"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the project"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -29194,57 +27828,6 @@
           }
         }
       },
-      "OmniUploadAudioMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadAudioMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "OmniUploadAudioMediaFileSuccessResponse": {
         "type": "object",
         "description": "Success response for the API-key authenticated audio upload endpoint\n(`POST /v1/omni_api/upload/audio`).\n\nNB: The request is a `multipart/form-data` body. Because the multipart form type is bound to the\nweb framework, it is declared alongside the handler in `storyteller_web` rather than here.",
@@ -29261,81 +27844,6 @@
           }
         }
       },
-      "OmniUploadImageMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadImageMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "is_intermediate_system_file": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Whether this is a system file (e.g. cover files we should hide)"
-          },
-          "maybe_batch_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Batch associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_prompt_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "OmniUploadImageMediaFileSuccessResponse": {
         "type": "object",
         "description": "Success response for the API-key authenticated image upload endpoint\n(`POST /v1/omni_api/upload/image`).\n\nNB: The request is a `multipart/form-data` body. Because the multipart form type is bound to the\nweb framework, it is declared alongside the handler in `storyteller_web` rather than here.",
@@ -29349,111 +27857,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "OmniUploadVideoMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadVideoMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "is_intermediate_system_file": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Whether this is a system file (eg. cover files we should hide)"
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_prompt_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_resample_fps": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Resample the video to this FPS.\nOnly certain values equal or under 24fps are allowed.",
-            "minimum": 0
-          },
-          "maybe_scene_source_media_file_token": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/MediaFileToken",
-                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
-              }
-            ]
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_trim_end_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Trim end offset in milliseconds.",
-            "minimum": 0
-          },
-          "maybe_trim_start_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Trim start offset in milliseconds.",
-            "minimum": 0
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31903,18 +30306,6 @@
           }
         }
       },
-      "SetModelWeightCoverImagePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/ModelWeightToken"
-          }
-        }
-      },
       "SetModelWeightCoverImageRequest": {
         "type": "object",
         "properties": {
@@ -32653,18 +31044,6 @@
         "type": "string",
         "description": "The primary key for Prompts"
       },
-      "TerminateInferenceJobPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/InferenceJobToken"
-          }
-        }
-      },
       "TerminateInferenceJobSuccessResponse": {
         "type": "object",
         "required": [
@@ -32807,42 +31186,6 @@
           }
         }
       },
-      "UpdateProjectMultipartForm": {
-        "type": "object",
-        "description": "Form-multipart request fields for overwriting an existing project.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The project JSON document"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
-      "UpdateWeightPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "weight_token"
-        ],
-        "properties": {
-          "weight_token": {
-            "type": "string"
-          }
-        }
-      },
       "UpdateWeightRequest": {
         "type": "object",
         "description": "**IMPORTANT**: This endpoint handles sparse (by-field) updates rather than wholesale updates.\nThat is, if a field is absent, we do not update it (as opposed to clearing it).",
@@ -32889,57 +31232,6 @@
           }
         }
       },
-      "UploadAudioMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadAudioMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "UploadAudioMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -32952,81 +31244,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadImageMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadImageMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "is_intermediate_system_file": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Whether this is a system file (e.g. cover files we should hide)"
-          },
-          "maybe_batch_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Batch associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_prompt_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -33074,77 +31291,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadNewEngineAssetFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewEngineAssetFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file",
-          "engine_category"
-        ],
-        "properties": {
-          "engine_category": {
-            "type": "string",
-            "format": "binary",
-            "description": "The category of engine asset: character, animation, etc.\nSee the documentation on `MediaFileEngineCategory`."
-          },
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_animation_type": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: the type of animation (if this is a character or animation)\nSee the documentation on `MediaFileAnimationType`."
-          },
-          "maybe_duration_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The duration, for files that are animations.",
-            "minimum": 0
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -33197,46 +31343,6 @@
           }
         }
       },
-      "UploadNewSceneMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewSceneMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "UploadNewSceneMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -33249,111 +31355,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadNewVideoMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewVideoMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "is_intermediate_system_file": {
-            "type": [
-              "boolean",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Whether this is a system file (eg. cover files we should hide)"
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
-          },
-          "maybe_prompt_token": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
-          },
-          "maybe_resample_fps": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Resample the video to this FPS.\nOnly certain values equal or under 24fps are allowed.",
-            "minimum": 0
-          },
-          "maybe_scene_source_media_file_token": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/MediaFileToken",
-                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
-              }
-            ]
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_trim_end_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Trim end offset in milliseconds.",
-            "minimum": 0
-          },
-          "maybe_trim_start_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Trim start offset in milliseconds.",
-            "minimum": 0
-          },
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -33389,69 +31390,6 @@
           }
         }
       },
-      "UploadPmxFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadPmxFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file",
-          "engine_category"
-        ],
-        "properties": {
-          "engine_category": {
-            "type": "string",
-            "format": "binary",
-            "description": "The category of engine asset: character, animation, etc.\nSee the documentation on `MediaFileEngineCategory`."
-          },
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_animation_type": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: the type of animation (if this is a character or animation)\nSee the documentation on `MediaFileAnimationType`."
-          },
-          "maybe_duration_millis": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The duration, for files that are animations.",
-            "minimum": 0
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "UploadPmxSuccessResponse": {
         "type": "object",
         "required": [
@@ -33467,42 +31405,6 @@
           }
         }
       },
-      "UploadSavedSceneMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSavedSceneMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
-      "UploadSavedSceneMediaFilePathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
-          }
-        }
-      },
       "UploadSavedSceneMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -33515,49 +31417,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadSceneSnapshotMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSceneSnapshotMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_scene_source_media_file_token": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/MediaFileToken",
-                "description": "Optional: If the scene was snapshotted from a saved scene, this is a link to\nthe scene that generated the snapshot."
-              }
-            ]
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -33577,52 +31436,6 @@
           }
         }
       },
-      "UploadSnapshotMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSnapshotMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "snapshot"
-        ],
-        "properties": {
-          "maybe_visibility": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/Visibility",
-                "description": "Optional: Visibility of the scene"
-              }
-            ]
-          },
-          "scene_media_token": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/MediaFileToken",
-                "description": "Optional: If an engine scene was used to create this snapshot, provide it here to create a link"
-              }
-            ]
-          },
-          "snapshot": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded \"screenshot\" / \"snapshot\" of the engine scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "UploadSnapshotMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -33636,54 +31449,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadSpzMediaFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields for SPZ (Gaussian Splat) upload.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSpzMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded SPZ file"
-          },
-          "maybe_generation_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\")."
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the Gaussian splat"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the Gaussian splat"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
           }
         }
       },
@@ -33702,66 +31467,6 @@
           }
         }
       },
-      "UploadStudioShotFileForm": {
-        "type": "object",
-        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadStudioShotFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
-        "required": [
-          "uuid_idempotency_token",
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The uploaded file"
-          },
-          "maybe_frame_rate_fps": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: The frame rate in fps.\nIf not provided, it will default to 12 fps.",
-            "minimum": 0
-          },
-          "maybe_scene_source_media_file_token": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/MediaFileToken",
-                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
-              }
-            ]
-          },
-          "maybe_title": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Title (name) of the scene"
-          },
-          "maybe_visibility": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional: Visibility of the scene"
-          },
-          "uuid_idempotency_token": {
-            "type": "string",
-            "format": "binary",
-            "description": "UUID for request idempotency"
-          }
-        }
-      },
       "UploadStudioShotSuccessResponse": {
         "type": "object",
         "required": [
@@ -33774,18 +31479,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadUpdatedEditor2dProjectPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
           }
         }
       },
@@ -33806,18 +31499,6 @@
           }
         }
       },
-      "UploadUpdatedMoodBoardProjectPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
-          }
-        }
-      },
       "UploadUpdatedMoodBoardProjectSuccessResponse": {
         "type": "object",
         "description": "Response for overwriting an existing mood board project.",
@@ -33835,18 +31516,6 @@
           }
         }
       },
-      "UploadUpdatedScene3dProjectPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
-          }
-        }
-      },
       "UploadUpdatedScene3dProjectSuccessResponse": {
         "type": "object",
         "description": "Response for overwriting an existing 3D scene project.",
@@ -33861,18 +31530,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "UploadUpdatedVideoTimelineProjectPathInfo": {
-        "type": "object",
-        "description": "For the URL PathInfo",
-        "required": [
-          "token"
-        ],
-        "properties": {
-          "token": {
-            "$ref": "#/components/schemas/MediaFileToken"
           }
         }
       },
@@ -34892,24 +32549,6 @@
           }
         }
       },
-      "VideoInfoReadOnlyForm": {
-        "type": "object",
-        "description": "Form-multipart request: a single video file under the `file` field.",
-        "required": [
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The video file to inspect."
-          }
-        }
-      },
       "VideoInfoReadOnlyResponse": {
         "type": "object",
         "description": "Response for `POST /v1/video_info/read_only`.\n\n[`kind`](Self::kind) names the detected provenance family; the matching\n`maybe_*` field carries its details (all others are `null`). `unrecognized`\nmeans no supported provenance was found — [`maybe_encoder`](Self::maybe_encoder)\nstill reports the container encoder tag when present (an `Lavf…` value means\nthe file was re-encoded through ffmpeg, which strips provenance).",
@@ -34986,32 +32625,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "VideoInfoUploadForm": {
-        "type": "object",
-        "description": "Form-multipart request: a single video file under the `file` field.",
-        "required": [
-          "file"
-        ],
-        "properties": {
-          "file": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "binary",
-              "minimum": 0
-            },
-            "description": "The video file to inspect and store."
-          },
-          "maybe_filename": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "binary",
-            "description": "Optional filename to record. Falls back to the uploaded file's own name."
           }
         }
       },

@@ -132,7 +132,7 @@ def build_public_spec(upstream: dict) -> dict:
         },
     }
     annotate_operations(spec)
-    repair_dangling_parameter_refs(spec)
+    normalize_path_parameters(spec)
     prune_schemas(spec)
     return spec
 
@@ -383,8 +383,8 @@ def _set_known_default(parameter: dict, name: str) -> None:
     """Record handler defaults. Parameters without a default are left unset."""
     schema = parameter.setdefault("schema", {})
     if name == "page_size":
+        # The handler caps the query at 1000. It does not reject a larger value.
         schema["default"] = 100
-        schema["maximum"] = 1000
     elif name == "sort_ascending":
         schema["default"] = False
     elif name == "cursor_is_reversed":
@@ -415,31 +415,113 @@ def annotate_omni_api(operation: dict) -> None:
     operation["responses"] = ordered_responses(operation["responses"])
 
 
-def repair_dangling_parameter_refs(spec: dict) -> None:
-    """Point unresolved path-parameter refs at a string schema.
+def normalize_path_parameters(spec: dict) -> None:
+    """Match every path parameter to a ``{name}`` in its URL template.
 
-    utoipa names some path structs in ``parameters`` without emitting the
-    schema. The public spec keeps the URL template's name and a string
-    schema so every remaining ``$ref`` resolves.
+    utoipa publishes the request body as a path parameter named ``request``
+    and the path struct as a parameter named ``path``. OpenAPI 3.1 requires
+    each path parameter's name to be a template expression. Body parameters
+    are removed. A path struct becomes one parameter per template name, and
+    a resolved property schema is kept. A template name with no schema
+    becomes a required string.
     """
     schemas = spec["components"]["schemas"]
     for path, operations in spec["paths"].items():
         template_names = re.findall(r"\{([^{}]+)\}", path)
-        for operation in operations.values():
-            if not isinstance(operation, dict):
+        for method, operation in operations.items():
+            if method not in HTTP_METHODS or not isinstance(operation, dict):
                 continue
-            for parameter in operation.get("parameters") or []:
-                schema = parameter.get("schema")
-                ref = schema.get("$ref") if isinstance(schema, dict) else None
-                ref_name = schema_name(ref) if isinstance(ref, str) else None
-                if ref_name is None or ref_name in schemas:
-                    continue
-                if parameter.get("in") != "path":
-                    raise ValueError(f"unresolved non-path ref {schema.get('$ref')} on {path}")
-                parameter["schema"] = {"type": "string"}
-                if parameter.get("name") == "path" and len(template_names) == 1:
-                    parameter["name"] = template_names[0]
-                    parameter["description"] = f"Path parameter `{template_names[0]}`."
+            normalized = _normalized_parameters(
+                operation.get("parameters") or [],
+                template_names,
+                schemas,
+            )
+            if normalized:
+                operation["parameters"] = normalized
+            else:
+                operation.pop("parameters", None)
+
+
+def _normalized_parameters(parameters: List[dict], template_names: List[str], schemas: dict) -> List[dict]:
+    """Return query and header parameters plus one path parameter per template name."""
+    others = [parameter for parameter in parameters if parameter.get("in") != "path"]
+    exact = {}
+    structs = []
+    for parameter in parameters:
+        if parameter.get("in") != "path":
+            continue
+        if parameter.get("name") in template_names:
+            exact[parameter["name"]] = parameter
+        else:
+            structs.append(parameter)
+    for parameter in structs:
+        for expanded in _expand_path_struct(parameter, template_names, schemas):
+            exact.setdefault(expanded["name"], expanded)
+    path_parameters = []
+    for name in template_names:
+        parameter = exact.get(name) or _string_path_parameter(name)
+        parameter["in"] = "path"
+        parameter["name"] = name
+        parameter["required"] = True
+        path_parameters.append(parameter)
+    return others + path_parameters
+
+
+def _expand_path_struct(parameter: dict, template_names: List[str], schemas: dict) -> List[dict]:
+    """Turn a utoipa path struct into template parameters, or return nothing.
+
+    A parameter whose schema is not a path object is a body mislabeled as
+    a path parameter. The caller drops it.
+    """
+    obj = _path_object_schema(parameter.get("schema"), schemas)
+    if obj is None:
+        if parameter.get("name") == "path" and len(template_names) == 1:
+            return [_string_path_parameter(template_names[0])]
+        return []
+    properties = obj.get("properties") or {}
+    matched = [name for name in template_names if name in properties]
+    if not matched:
+        return []
+    expanded = []
+    for name in matched:
+        prop = properties[name]
+        schema = prop if isinstance(prop, dict) else {"type": "string"}
+        description = schema.get("description") or obj.get("description") or f"Path parameter `{name}`."
+        expanded.append({
+            "name": name,
+            "in": "path",
+            "required": True,
+            "schema": schema,
+            "description": description,
+        })
+    return expanded
+
+
+def _path_object_schema(schema, schemas: dict) -> Optional[dict]:
+    """Return the object schema a path parameter points at, when it resolves."""
+    if not isinstance(schema, dict):
+        return None
+    if "$ref" not in schema:
+        if schema.get("type") == "object":
+            return schema
+        return None
+    ref = schema.get("$ref")
+    name = schema_name(ref) if isinstance(ref, str) else None
+    target = schemas.get(name) if name else None
+    if isinstance(target, dict) and target.get("type") == "object":
+        return target
+    return None
+
+
+def _string_path_parameter(name: str) -> dict:
+    """A required string path parameter for a template name with no schema."""
+    return {
+        "name": name,
+        "in": "path",
+        "required": True,
+        "schema": {"type": "string"},
+        "description": f"Path parameter `{name}`.",
+    }
 
 
 def prune_schemas(spec: dict) -> None:
@@ -502,6 +584,21 @@ def assert_public_invariants(spec: dict) -> None:
     contact = spec["info"].get("contact") or {}
     if "email" in contact:
         raise ValueError("public spec contact still has an email")
+    for path, operations in spec["paths"].items():
+        template_names = re.findall(r"\{([^{}]+)\}", path)
+        for method, operation in operations.items():
+            if method not in HTTP_METHODS or not isinstance(operation, dict):
+                continue
+            names = [
+                parameter.get("name")
+                for parameter in operation.get("parameters") or []
+                if parameter.get("in") == "path"
+            ]
+            if names != template_names:
+                raise ValueError(f"{method.upper()} {path} path parameters {names} != {template_names}")
+            for parameter in operation.get("parameters") or []:
+                if parameter.get("in") == "path" and parameter.get("required") is not True:
+                    raise ValueError(f"{path} path parameter {parameter.get('name')} is not required")
     for path in LIBRARY_READ_PATHS:
         if path not in spec["paths"]:
             raise ValueError(f"library read disappeared: {path}")
