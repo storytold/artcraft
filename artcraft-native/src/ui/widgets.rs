@@ -16,16 +16,18 @@ pub fn caps(ui: &Ui, text: &str, size: f32, family: egui::FontFamily, spacing: f
 
 /// A `.hud-label`: 11 px Geist Mono, upper case, widely spaced.
 pub fn hud(ui: &mut Ui, text: &str, color: Color32) -> Response {
-  let galley = caps(ui, text, theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, color);
+  let text = crate::i18n::t(text);
+  let galley = caps(ui, &text, theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, color);
   let (rect, resp) = ui.allocate_exact_size(galley.size(), Sense::hover());
   ui.painter().galley(rect.min, galley, color);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, text));
+  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &text));
   resp
 }
 
 /// A sidebar section or menu heading: 11 px Geist Mono 600, upper case.
 pub fn section_label(ui: &mut Ui, text: &str, color: Color32) -> Response {
-  let galley = caps(ui, text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, color);
+  let text = crate::i18n::t(text);
+  let galley = caps(ui, &text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, color);
   let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 32.0), Sense::hover());
   let pos = pos2(rect.left() + 8.0, rect.center().y - galley.size().y / 2.0);
   ui.painter().galley(pos, galley, color);
@@ -105,6 +107,7 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
 /// (`text-base-fg/50`, `hover:bg-white/5`): the count picker and clear-all.
 pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bool) -> Response {
   let enabled = ui.is_enabled();
+  let tip = crate::i18n::t(tip);
   let galley = label.map(|l| ui.painter().layout_no_wrap(l.to_owned(), FontId::new(14.0, theme::medium()), theme::INK));
   let w = match &galley {
     Some(g) => 10.0 + 15.0 + 6.0 + g.size().x + 10.0,
@@ -129,8 +132,8 @@ pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bo
     },
     None => icons::paint(p, Rect::from_center_size(rect.center(), vec2(16.0, 16.0)), icon, ink),
   }
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, tip));
-  let resp = resp.on_hover_text(tip);
+  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, &tip));
+  let resp = resp.on_hover_text(&tip);
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
   } else {
@@ -140,6 +143,7 @@ pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bo
 
 /// A small square icon button for overlays (`h-7 w-7`, `hover:bg-white/15`).
 pub fn overlay_icon(ui: &mut Ui, icon: Icon, tip: &str) -> Response {
+  let tip = crate::i18n::t(tip);
   let (rect, resp) = ui.allocate_exact_size(vec2(28.0, 28.0), Sense::click());
   let hovered = resp.hovered();
   if hovered {
@@ -147,12 +151,13 @@ pub fn overlay_icon(ui: &mut Ui, icon: Icon, tip: &str) -> Response {
   }
   let ink = if hovered { Color32::WHITE } else { Color32::from_white_alpha(217) };
   icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(14.0, 14.0)), icon, ink);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tip));
+  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &tip));
   resp.on_hover_text(tip).on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
 /// The round blue generate button (`GenerateIconButton`): an up arrow, a spinner while `loading`.
 pub fn generate_button(ui: &mut Ui, enabled: bool, loading: bool, tip: &str) -> Response {
+  let tip = crate::i18n::t(tip);
   let (rect, resp) = ui.allocate_exact_size(vec2(36.0, 36.0), if enabled { Sense::click() } else { Sense::hover() });
   let hovered = resp.hovered() && enabled;
   let fill = match (enabled, hovered) {
@@ -168,7 +173,7 @@ pub fn generate_button(ui: &mut Ui, enabled: bool, loading: bool, tip: &str) -> 
   } else {
     icons::paint(ui.painter(), inner, Icon::ArrowUp, ink);
   }
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, "Generate"));
+  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, crate::i18n::t("Generate")));
   let resp = resp.on_hover_text(tip);
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -194,7 +199,8 @@ pub enum Kind {
 /// wide and `height` tall.
 pub fn button(ui: &mut Ui, icon: Option<Icon>, text: &str, kind: Kind, width: f32, height: f32) -> Response {
   let enabled = ui.is_enabled();
-  let galley = caps(ui, text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, theme::INK);
+  let text = crate::i18n::t(text);
+  let galley = caps(ui, &text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, theme::INK);
   let icon_w = if icon.is_some() { 13.0 + 8.0 } else { 0.0 };
   let size = vec2((galley.size().x + icon_w + 40.0).max(width), height);
   let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
@@ -332,7 +338,7 @@ pub fn progress_bar(painter: &Painter, rect: Rect, fraction: f32) {
 
 /// A heading in the display face (Archivo 620, tracked in like the site's `tracking-[-0.03em]`).
 pub fn heading(text: &str, size: f32) -> egui::RichText {
-  egui::RichText::new(text).size(size).family(theme::display()).color(theme::INK).extra_letter_spacing(-0.03 * size)
+  egui::RichText::new(crate::i18n::t(text)).size(size).family(theme::display()).color(theme::INK).extra_letter_spacing(-0.03 * size)
 }
 
 /// A square modal on the panel surface with a dimmed backdrop. Returns whether it asked to close
@@ -348,6 +354,7 @@ pub fn modal(ctx: &egui::Context, id: egui::Id, width: f32, content: impl FnOnce
 
 /// A mono link with an ↗: muted, brighter on hover. Opens `url` in the browser.
 pub fn hud_link(ui: &mut Ui, text: &str, url: &str) -> Response {
+  let text = crate::i18n::t(text);
   let galley = caps(ui, &format!("{text} \u{2197}"), theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, theme::MUTED);
   let (rect, resp) = ui.allocate_exact_size(galley.size(), Sense::click());
   let color = if resp.hovered() { theme::INK_STRONG } else { theme::MUTED };

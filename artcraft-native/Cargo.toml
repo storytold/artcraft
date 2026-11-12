@@ -26,6 +26,9 @@ chrono.workspace = true
 directories = "6.0.0"
 eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
 egui = "0.36"
+# The Arabic dictionary's translations are handed out in visual order (i18n/bidi.rs): a UAX
+# #9 reordering pass for egui's run-by-run, left-to-right text layout.
+unicode-bidi = "0.3.18"
 enums.workspace = true
 egui_extras = { version = "0.36", default-features = false, features = ["image", "svg"] }
 env_logger.workspace = true
