@@ -14,10 +14,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: storytold/craft-common-actions/actions/install-apt-packages@main
         with:
           packages: rpm jq binutils zsync
@@ -39,10 +39,10 @@ jobs:
       TAURI_APP_PATH: ${{ github.workspace }}/crates/desktop/artcraft
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: storytold/craft-common-actions/actions/install-apt-packages@main
         with:
           packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libclang-dev libasound2-dev libxdo-dev libdbus-1-dev build-essential clang file jq perl cmake nasm rpm zsync gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
@@ -71,16 +71,16 @@ jobs:
           PKG_CONFIG_LIBDIR_riscv64gc_unknown_linux_gnu=/usr/lib/riscv64-linux-gnu/pkgconfig:/usr/share/pkgconfig
           ENV
           echo "CMAKE_TOOLCHAIN_FILE_riscv64gc_unknown_linux_gnu=$GITHUB_WORKSPACE/packaging/linux/riscv64.cmake" >> "$GITHUB_ENV"
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
+      - uses: step-security/dtolnay-rust-toolchain@v1.0.0
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: step-security/rust-cache@8871c8ba063416da7c32246932ea6ae08700453e # v2.9.2
+      - uses: step-security/rust-cache@v2.9.2
         with:
           key: tauri-linux-${{ matrix.arch }}
           cache-on-failure: true
@@ -88,7 +88,7 @@ jobs:
         working-directory: frontend
       - run: ./node_modules/.bin/nx run artcraft:build
         working-directory: frontend
-      - uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
+      - uses: step-security/tauri-action@v1.0.0
         with:
           projectPath: crates/desktop/artcraft
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config ${{ github.workspace }}/packaging/linux/tauri.conf.json
@@ -97,7 +97,7 @@ jobs:
           ARCH: ${{ matrix.arch }}
           TARGET: ${{ matrix.target }}
         run: packaging/linux/package.sh "$ARCH" "$TARGET"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/release/*
@@ -111,11 +111,11 @@ jobs:
         arch: [x86_64, aarch64]
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.2
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/linux
@@ -128,7 +128,7 @@ jobs:
           files=(dist/linux/artcraft-*-linux-"$ARCH".tar.gz)
           test "${#files[@]}" -eq 1
           echo "path=${files[0]}" >> "$GITHUB_OUTPUT"
-      - uses: storytold/craft-common-actions/actions/arch-package@9d6790582b4997aa2120f4413cdb55c0b6f77fae # extra-depends support (#161)
+      - uses: storytold/craft-common-actions/actions/arch-package@main # extra-depends support (#161)
         with:
           tarball: ${{ steps.tarball.outputs.path }}
           arch: ${{ matrix.arch }}
@@ -138,7 +138,7 @@ jobs:
           for package in dist/release/*.pkg.tar.zst; do
             tar --zstd -xOf "$package" .PKGINFO | grep -Fx 'depend = webkit2gtk-4.1'
           done
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: release-arch-${{ matrix.arch }}
           path: dist/release/*.pkg.tar.zst
@@ -158,11 +158,11 @@ jobs:
           - {arch: aarch64, runner: ubuntu-24.04-arm}
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.2
         with:
           name: release-linux-${{ matrix.arch }}
           path: dist/linux
@@ -180,7 +180,7 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: packaging/linux/flatpak.sh
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: release-flatpak-${{ matrix.arch }}
           path: |
@@ -194,10 +194,10 @@ jobs:
       contents: write
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - name: Read version
         id: version
         run: echo "value=$(jq -r .version crates/desktop/artcraft/tauri.conf.json)" >> "$GITHUB_OUTPUT"
