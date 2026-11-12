@@ -1,4 +1,4 @@
-// Vite worker-import shim (used by convertFbxToGlb.ts). `?worker&inline`
+// Vite worker-import shim (used by convertModelToGlb.ts). `?worker&inline`
 // bundles the worker as SELF-CONTAINED inline code — the only worker form
 // that survives being built into this library's dist and then re-bundled by
 // a consuming app's vite build. The `new Worker(new URL(...))` pattern does

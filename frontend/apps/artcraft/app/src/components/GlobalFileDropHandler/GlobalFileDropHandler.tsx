@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { BoxIcon, ImagesIcon, Maximize2Icon } from "lucide-react";
 import {
+  OBJECT_FILE_TYPE,
   UploadModal3D,
   UploadModalImage,
   UploadModalSplat,
@@ -13,7 +14,8 @@ type ModalType = "3d" | "image" | "splat" | null;
 
 function getModalTypeForFileName(name: string): ModalType {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  if (ext === "glb") return "3d";
+  // Every format the 3D modal accepts — it converts non-GLB models itself.
+  if ((Object.values(OBJECT_FILE_TYPE) as string[]).includes(ext)) return "3d";
   if (ext === "png" || ext === "jpg" || ext === "jpeg") return "image";
   if (ext === "spz") return "splat";
   return null;
@@ -195,7 +197,7 @@ export function GlobalFileDropHandler() {
           <div className="flex flex-col items-center gap-3 border border-dashed border-white/60 bg-ui-panel px-16 py-12 text-white">
             <Maximize2Icon className="text-3xl opacity-60" />
             <div className="font-display text-2xl tracking-tight">Drop to Upload</div>
-            <div className="hud-label text-white/50">GLB, PNG, JPG, JPEG, SPZ</div>
+            <div className="hud-label text-white/50">GLB, FBX, OBJ, STL, PLY, PNG, JPG, JPEG, SPZ</div>
           </div>
         </div>
       )}
