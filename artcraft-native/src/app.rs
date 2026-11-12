@@ -118,14 +118,15 @@ pub struct ArtcraftApp {
 }
 
 impl ArtcraftApp {
-  pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+  /// Fails when the backend can't start (no data folder).
+  pub fn new(cc: &eframe::CreationContext<'_>) -> anyhow::Result<Self> {
     theme::apply(&cc.egui_ctx);
     egui_extras::install_image_loaders(&cc.egui_ctx);
     let mut saved: Saved = cc.storage.and_then(|s| eframe::get_value(s, STORAGE_KEY)).unwrap_or_default();
     if let Some(page) = std::env::var("ARTCRAFT_PAGE").ok().and_then(|p| Page::from_slug(&p)) {
       saved.page = page;
     }
-    let backend = Backend::new(cc.egui_ctx.clone());
+    let backend = Backend::new(cc.egui_ctx.clone())?;
     let cache = MediaCache::new(backend.runtime(), backend.http());
     let player = AudioPlayer::new(backend.runtime(), backend.http());
     for modality in MODALITIES {
@@ -140,7 +141,7 @@ impl ArtcraftApp {
       Ok("midjourney-login") => app.account_action(AccountAction::ConnectMidjourney),
       _ => {},
     }
-    app
+    Ok(app)
   }
 
   /// Pending cards for the Midjourney and fal jobs still running.

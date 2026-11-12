@@ -7,11 +7,9 @@ use crate::core::state::data_dir::temporary_dir::TemporaryDir;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::expanduser::expanduser;
 use crate::core::state::os_platform::OsPlatform;
-use anyhow::anyhow;
-use directories::UserDirs;
+use anyhow::{anyhow, Context};
+use artcraft_data_dir::DataDir;
 use std::path::{Path, PathBuf};
-
-const DEFAULT_DATA_DIR : &str = "Artcraft";
 
 /// Note: Tauri appends ".log" to the end of the filename.
 const LOG_FILE_NAME : &str = "artcraft_debug";
@@ -30,13 +28,22 @@ pub struct AppDataRoot {
   settings_dir: AppSettingsDir,
   state_dir: AppStateDir,
   temp_dir: TemporaryDir,
+
+  /// How `create_default` chose the directory, so it can be logged once the logger is up.
+  maybe_data_dir: Option<DataDir>,
 }
 
 impl AppDataRoot {
+  /// `~/Artcraft`, or the folder named by `ARTCRAFT_DATA_DIR`. Created if it doesn't exist.
   pub fn create_default() -> anyhow::Result<Self> {
-    let directory = get_default_data_dir()?;
-    println!("App data directory: {:?}", directory);
-    Self::create_existing(directory)
+    // NB: The logger isn't installed yet; `set_app_log_level` logs the choice once it is.
+    let data_dir = DataDir::resolve()?;
+
+    // NB: Say which folder failed (eg. an unwritable ARTCRAFT_DATA_DIR) in the startup panic.
+    let mut root = Self::create_existing(&data_dir.path).with_context(|| data_dir.unusable())?;
+
+    root.maybe_data_dir = Some(data_dir);
+    Ok(root)
   }
 
   pub fn create_existing<P: AsRef<Path>>(dir: P) -> anyhow::Result<Self> {
@@ -85,6 +92,7 @@ impl AppDataRoot {
       settings_dir,
       state_dir,
       temp_dir,
+      maybe_data_dir: None,
     })
   }
   
@@ -124,6 +132,11 @@ impl AppDataRoot {
     &self.log_file_name_string
   }
 
+  /// Set when the root came from `create_default`.
+  pub fn maybe_data_dir(&self) -> Option<&DataDir> {
+    self.maybe_data_dir.as_ref()
+  }
+
   pub fn get_sora_cookie_file_path(&self) -> PathBuf {
     self.credentials_dir().get_sora_cookie_file_path()
   }
@@ -147,12 +160,4 @@ impl AppDataRoot {
   pub fn get_window_position_config_file(&self) -> PathBuf {
     self.state_dir.get_window_position_config_file()
   }
-}
-
-// eg. /home/bob/artcraft, /Users/alice/artcraft, or C:\Users\Taylor\artcraft
-fn get_default_data_dir() -> anyhow::Result<PathBuf> {
-  Ok(UserDirs::new()
-      .ok_or_else(|| anyhow!("could not determine user home directory"))?
-      .home_dir()
-      .join(DEFAULT_DATA_DIR))
 }
