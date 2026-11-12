@@ -96,6 +96,7 @@ export const ArtCraftSignUp = ({
               placeholder="Username"
               required
               autoComplete="off"
+              autoFocus
               inputClassName={FIELD_INPUT}
             />
           </div>
@@ -121,6 +122,7 @@ export const ArtCraftSignUp = ({
             placeholder="you@example.com or username"
             required
             autoComplete="off"
+            autoFocus
             inputClassName={FIELD_INPUT}
           />
         </div>
