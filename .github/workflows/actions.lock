@@ -27,6 +27,9 @@ workflows:
         - 'step-security/tauri-action@v1.0.0'
     '.github/workflows/freebsd.yml': []
     '.github/workflows/house-rules.yml': []
+    '.github/workflows/lockfile.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'step-security/harden-runner@v2.22.4'
     '.github/workflows/packaging-lint.yml': []
     '.github/workflows/sonarcloud.yml': []
 dependencies:
