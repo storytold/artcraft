@@ -1,0 +1,25 @@
+{
+  "name": "artcraft_upload_voice_sample",
+  "description": "Upload a local audio file into a voice training dataset. Reads a local file and sends it to ArtCraft; requires confirm: true. File must be inside the user's home directory (or ARTCRAFT_MCP_ALLOWED_DIRS), an audio type, and <= 100 MB.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this local file may be read and uploaded.",
+        "type": "boolean"
+      },
+      "dataset_token": {
+        "type": "string"
+      },
+      "file_path": {
+        "description": "Local path to an audio file inside an allowed directory",
+        "type": "string"
+      }
+    },
+    "required": [
+      "dataset_token",
+      "file_path",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

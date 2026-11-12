@@ -1,0 +1,15 @@
+{
+  "name": "artcraft_get_character",
+  "description": "Get a character by token.",
+  "inputSchema": {
+    "properties": {
+      "character_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "character_token"
+    ],
+    "type": "object"
+  }
+}

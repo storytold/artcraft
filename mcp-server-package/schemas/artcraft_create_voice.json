@@ -1,0 +1,16 @@
+{
+  "name": "artcraft_create_voice",
+  "description": "Create a custom voice.",
+  "inputSchema": {
+    "properties": {
+      "name": {
+        "description": "Voice name (max 200 chars)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "type": "object"
+  }
+}

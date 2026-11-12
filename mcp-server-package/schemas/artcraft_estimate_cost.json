@@ -1,0 +1,67 @@
+{
+  "name": "artcraft_estimate_cost",
+  "description": "Estimate the cost of an image, video, or splat generation before running it. Returns credits and USD cents required.",
+  "inputSchema": {
+    "properties": {
+      "aspect_ratio": {
+        "type": "string"
+      },
+      "batch_count": {
+        "description": "Batch size (1-8)",
+        "type": "integer"
+      },
+      "duration_seconds": {
+        "description": "Video duration (1-600)",
+        "type": "integer"
+      },
+      "generate_audio": {
+        "type": "boolean"
+      },
+      "generation_mode": {
+        "description": "Generation mode (must match the media_type)",
+        "enum": [
+          "text_to_image",
+          "image_edit",
+          "text_to_video",
+          "start_frame_to_video",
+          "start_and_end_frame_to_video",
+          "reference_image_to_video"
+        ],
+        "type": "string"
+      },
+      "has_reference_image": {
+        "description": "Splat only: whether a reference image is supplied",
+        "type": "boolean"
+      },
+      "input_image_count": {
+        "description": "Number of input reference images (1-16)",
+        "type": "integer"
+      },
+      "media_type": {
+        "description": "Type of media to estimate cost for",
+        "enum": [
+          "image",
+          "video",
+          "splat"
+        ],
+        "type": "string"
+      },
+      "model": {
+        "description": "Model name (same ids accepted by the generate tools)",
+        "type": "string"
+      },
+      "quality": {
+        "description": "Image estimates only — ignored for video/splat",
+        "type": "string"
+      },
+      "resolution": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "media_type",
+      "model"
+    ],
+    "type": "object"
+  }
+}

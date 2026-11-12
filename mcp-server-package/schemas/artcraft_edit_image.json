@@ -1,0 +1,32 @@
+{
+  "name": "artcraft_edit_image",
+  "description": "Re-edit an image using Flux Pro Kontext Max, Gemini 2.5 Flash, or GPT-Image 1.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "model",
+      "prompt",
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

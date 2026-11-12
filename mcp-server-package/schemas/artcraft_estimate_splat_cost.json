@@ -1,0 +1,18 @@
+{
+  "name": "artcraft_estimate_splat_cost",
+  "description": "Estimate the credit cost of generating a Gaussian splat world before running it.",
+  "inputSchema": {
+    "properties": {
+      "has_reference_image": {
+        "description": "Whether an image reference is supplied",
+        "type": "boolean"
+      },
+      "model": {
+        "description": "Splat model: 'marble_1p1_plus', 'marble_1p0', 'marble_0p1_plus', 'triposplat', etc. (default: marble_1p1_plus)",
+        "type": "string"
+      }
+    },
+    "required": [],
+    "type": "object"
+  }
+}

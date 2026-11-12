@@ -1,0 +1,8 @@
+{
+  "name": "artcraft_list_referral_codes",
+  "description": "View your referral codes.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

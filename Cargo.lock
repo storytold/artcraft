@@ -432,6 +432,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "artcraft-mcp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "artcraft_api_defs",
+ "artcraft_client",
+ "cookie_store 0.21.1",
+ "dirs",
+ "enums",
+ "env_logger",
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tempfile",
+ "tokens",
+ "tokio",
+ "url",
+ "urlencoding",
+ "uuid 1.22.0",
+ "uuid_utils",
+]
+
+[[package]]
 name = "artcraft_api_defs"
 version = "0.0.1"
 dependencies = [

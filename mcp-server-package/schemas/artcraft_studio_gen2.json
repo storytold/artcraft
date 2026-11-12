@@ -1,0 +1,30 @@
+{
+  "name": "artcraft_studio_gen2",
+  "description": "Studio Gen2: apply an image style onto a driver video (image + video compositing). PAID action (queues a job); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "description": "Media token of the style/starting image",
+        "type": "string"
+      },
+      "video_media_token": {
+        "description": "Media token of the driver video",
+        "type": "string"
+      }
+    },
+    "required": [
+      "image_media_token",
+      "video_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

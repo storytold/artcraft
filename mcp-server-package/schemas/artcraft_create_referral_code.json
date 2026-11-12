@@ -1,0 +1,16 @@
+{
+  "name": "artcraft_create_referral_code",
+  "description": "Create a referral code.",
+  "inputSchema": {
+    "properties": {
+      "code": {
+        "description": "Referral code text (max 64 chars)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "code"
+    ],
+    "type": "object"
+  }
+}

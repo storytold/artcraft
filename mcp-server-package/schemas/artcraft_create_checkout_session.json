@@ -1,0 +1,29 @@
+{
+  "name": "artcraft_create_checkout_session",
+  "description": "Create a Stripe checkout session to purchase credit packs. This is a PAID action; it requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm creating a paid checkout session.",
+        "type": "boolean"
+      },
+      "credits_pack": {
+        "description": "Credit pack size to purchase",
+        "enum": [
+          "artcraft_1000",
+          "artcraft_2500",
+          "artcraft_5000",
+          "artcraft_10000",
+          "artcraft_25000",
+          "artcraft_50000"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "credits_pack",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

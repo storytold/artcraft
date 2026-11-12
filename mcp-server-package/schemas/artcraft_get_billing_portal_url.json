@@ -1,0 +1,8 @@
+{
+  "name": "artcraft_get_billing_portal_url",
+  "description": "Get a Stripe customer billing portal URL where the user can manage cards, subscriptions, invoices, and plans.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}
