@@ -420,10 +420,11 @@ def normalize_path_parameters(spec: dict) -> None:
 
     utoipa publishes the request body as a path parameter named ``request``
     and the path struct as a parameter named ``path``. OpenAPI 3.1 requires
-    each path parameter's name to be a template expression. Body parameters
-    are removed. A path struct becomes one parameter per template name, and
-    a resolved property schema is kept. A template name with no schema
-    becomes a required string.
+    each path parameter's name to be a template expression. A path struct
+    becomes one parameter per template name, and a resolved property schema
+    is kept. A template name with no schema becomes a required string. A
+    request or form labeled as a path parameter is published as
+    ``requestBody``, or as query parameters on a read.
     """
     schemas = spec["components"]["schemas"]
     for path, operations in spec["paths"].items():
@@ -432,6 +433,8 @@ def normalize_path_parameters(spec: dict) -> None:
             if method not in HTTP_METHODS or not isinstance(operation, dict):
                 continue
             normalized = _normalized_parameters(
+                operation,
+                method,
                 operation.get("parameters") or [],
                 template_names,
                 schemas,
@@ -442,8 +445,18 @@ def normalize_path_parameters(spec: dict) -> None:
                 operation.pop("parameters", None)
 
 
-def _normalized_parameters(parameters: List[dict], template_names: List[str], schemas: dict) -> List[dict]:
-    """Return query and header parameters plus one path parameter per template name."""
+def _normalized_parameters(
+    operation: dict,
+    method: str,
+    parameters: List[dict],
+    template_names: List[str],
+    schemas: dict,
+) -> List[dict]:
+    """Return query parameters plus one path parameter per template name.
+
+    A path parameter that is really a body or a query object is moved
+    before it is dropped, so an upload keeps its input.
+    """
     others = [parameter for parameter in parameters if parameter.get("in") != "path"]
     exact = {}
     structs = []
@@ -454,9 +467,14 @@ def _normalized_parameters(parameters: List[dict], template_names: List[str], sc
             exact[parameter["name"]] = parameter
         else:
             structs.append(parameter)
+    recovered = []
     for parameter in structs:
-        for expanded in _expand_path_struct(parameter, template_names, schemas):
-            exact.setdefault(expanded["name"], expanded)
+        expanded = _expand_path_struct(parameter, template_names, schemas)
+        if expanded:
+            for item in expanded:
+                exact.setdefault(item["name"], item)
+            continue
+        recovered.extend(_rehome_mislabeled_input(operation, method, parameter, schemas))
     path_parameters = []
     for name in template_names:
         parameter = exact.get(name) or _string_path_parameter(name)
@@ -464,14 +482,68 @@ def _normalized_parameters(parameters: List[dict], template_names: List[str], sc
         parameter["name"] = name
         parameter["required"] = True
         path_parameters.append(parameter)
-    return others + path_parameters
+    return others + recovered + path_parameters
+
+
+def _rehome_mislabeled_input(operation: dict, method: str, parameter: dict, schemas: dict) -> List[dict]:
+    """Keep an input utoipa published as a path parameter.
+
+    Reads become query parameters. Writes become ``requestBody`` when
+    the operation does not already have one. The upstream schema is kept.
+    """
+    if method in ("get", "head"):
+        return _query_parameters_from_object(parameter, schemas)
+    if operation.get("requestBody"):
+        return []
+    schema = parameter.get("schema")
+    if not isinstance(schema, dict):
+        return []
+    body = {
+        "required": bool(parameter.get("required", True)),
+        "content": {_request_content_type(parameter, schema): {"schema": schema}},
+    }
+    if parameter.get("description"):
+        body["description"] = parameter["description"]
+    operation["requestBody"] = body
+    return []
+
+
+def _query_parameters_from_object(parameter: dict, schemas: dict) -> List[dict]:
+    """Explode an object schema into query parameters."""
+    obj = _path_object_schema(parameter.get("schema"), schemas)
+    if not obj:
+        return []
+    required = set(obj.get("required") or [])
+    queries = []
+    for name, prop in (obj.get("properties") or {}).items():
+        schema = prop if isinstance(prop, dict) else {"type": "string"}
+        item = {
+            "name": name,
+            "in": "query",
+            "required": name in required,
+            "schema": schema,
+        }
+        description = schema.get("description") if isinstance(schema, dict) else None
+        if description:
+            item["description"] = description
+        queries.append(item)
+    return queries
+
+
+def _request_content_type(parameter: dict, schema: dict) -> str:
+    """Pick multipart for a form upload and JSON for every other body."""
+    ref = schema.get("$ref") if isinstance(schema.get("$ref"), str) else ""
+    text = " ".join((parameter.get("description") or "", schema.get("description") or "", ref)).lower()
+    if "multipart" in text or "form" in text:
+        return "multipart/form-data"
+    return "application/json"
 
 
 def _expand_path_struct(parameter: dict, template_names: List[str], schemas: dict) -> List[dict]:
     """Turn a utoipa path struct into template parameters, or return nothing.
 
-    A parameter whose schema is not a path object is a body mislabeled as
-    a path parameter. The caller drops it.
+    A parameter whose schema is not a path object is a body or query
+    mislabeled as a path parameter. The caller keeps that input.
     """
     obj = _path_object_schema(parameter.get("schema"), schemas)
     if obj is None:

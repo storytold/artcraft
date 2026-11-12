@@ -109,6 +109,17 @@
           "403": {
             "$ref": "#/components/responses/CloudflareError1010"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogAppActiveUserRequest"
+              }
+            }
+          },
+          "description": "Payload for Request"
         }
       }
     },
@@ -1050,6 +1061,34 @@
         ],
         "summary": "Create a Stripe Checkout session and return the redirect URL in Json.",
         "operationId": "stripe_create_checkout_session_json_handler",
+        "parameters": [
+          {
+            "name": "internal_plan_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The (non-Stripe) internal identifier for the product or subscription.\nThis will be translated into a Stripe identifier."
+            },
+            "description": "The (non-Stripe) internal identifier for the product or subscription.\nThis will be translated into a Stripe identifier."
+          },
+          {
+            "name": "maybe_tolt_referral",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional Tolt referral code\nSee: https://help.tolt.io/en/articles/6843411-how-to-set-up-stripe-with-tolt"
+            },
+            "description": "Optional Tolt referral code\nSee: https://help.tolt.io/en/articles/6843411-how-to-set-up-stripe-with-tolt"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4907,6 +4946,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSnapshotMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSnapshotMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7111,7 +7161,18 @@
             }
           }
         },
-        "deprecated": true
+        "deprecated": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "default": null
+              }
+            }
+          },
+          "description": "Ask Brandon. This is form-multipart."
+        }
       }
     },
     "/v1/media_files/upload/audio": {
@@ -7175,6 +7236,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadAudioMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadAudioMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7239,6 +7311,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadImageMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadImageMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7304,6 +7387,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadNewEngineAssetFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewEngineAssetFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7369,6 +7463,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadNewSceneMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewSceneMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7433,6 +7538,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadNewVideoMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewVideoMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7498,6 +7614,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadPmxFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadPmxFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7532,6 +7659,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7580,6 +7718,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7614,6 +7763,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7662,6 +7822,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7696,6 +7867,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7744,6 +7926,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7778,6 +7971,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7826,6 +8030,17 @@
           "500": {
             "description": "Server error"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectMultipartForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7902,6 +8117,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSavedSceneMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSavedSceneMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -7967,6 +8193,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSceneSnapshotMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSceneSnapshotMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -8032,6 +8269,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSpzMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSpzMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -8096,6 +8344,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadStudioShotFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadStudioShotFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
         }
       }
     },
@@ -8161,7 +8420,18 @@
             }
           }
         },
-        "deprecated": true
+        "deprecated": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "default": null
+              }
+            }
+          },
+          "description": "Ask Brandon. This is form-multipart."
+        }
       }
     },
     "/v1/media_files/visibility/{token}": {
@@ -8555,7 +8825,18 @@
           {
             "apiKey": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniUploadAudioMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadAudioMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
+        }
       }
     },
     "/v1/omni_api/upload/image": {
@@ -8625,7 +8906,18 @@
           {
             "apiKey": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniUploadImageMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadImageMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
+        }
       }
     },
     "/v1/omni_api/upload/video": {
@@ -8695,7 +8987,18 @@
           {
             "apiKey": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/OmniUploadVideoMediaFileForm"
+              }
+            }
+          },
+          "description": "IF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadVideoMediaFileForm` (Under 'Schema') FOR DETAILS ON FIELDS AND NULLABILITY."
+        }
       }
     },
     "/v1/omni_gen/cost/audio": {
@@ -11655,6 +11958,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoInfoReadOnlyForm"
+              }
+            }
+          },
+          "description": "Multipart form with a single `file` video upload."
         }
       }
     },
@@ -11699,6 +12013,17 @@
               }
             }
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoInfoUploadForm"
+              }
+            }
+          },
+          "description": "Multipart form with a single `file` video upload."
         }
       }
     },
@@ -11866,6 +12191,95 @@
           "Model Weights"
         ],
         "operationId": "list_available_weights_handler",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "cursor_is_reversed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sort_ascending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "weight_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/WeightsCategory"
+                }
+              ]
+            }
+          },
+          {
+            "name": "weight_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/WeightsType"
+                }
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "List Weights",
@@ -12070,6 +12484,100 @@
         ],
         "summary": "Search model weights (HTTP GET)",
         "operationId": "search_model_weights_http_get_handler",
+        "parameters": [
+          {
+            "name": "ietf_language_subtag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "minimum_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "search_term",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SearchModelWeightsSortDirection"
+                }
+              ]
+            }
+          },
+          {
+            "name": "sort_field",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/SearchModelWeightsSortField"
+                }
+              ]
+            }
+          },
+          {
+            "name": "weight_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/WeightsCategory"
+                }
+              ]
+            }
+          },
+          {
+            "name": "weight_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/components/schemas/WeightsType"
+                }
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful search",
@@ -25030,6 +25538,46 @@
           }
         }
       },
+      "NewProjectMultipartForm": {
+        "type": "object",
+        "description": "Form-multipart request fields for saving a new project.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `NewProjectMultipartForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The project JSON document"
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the project"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the project"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "OmniApiBatchGetJobStatusSuccessResponse": {
         "type": "object",
         "description": "Success body for `GET /v1/omni_api/job_status/batch`.",
@@ -27828,6 +28376,57 @@
           }
         }
       },
+      "OmniUploadAudioMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadAudioMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "OmniUploadAudioMediaFileSuccessResponse": {
         "type": "object",
         "description": "Success response for the API-key authenticated audio upload endpoint\n(`POST /v1/omni_api/upload/audio`).\n\nNB: The request is a `multipart/form-data` body. Because the multipart form type is bound to the\nweb framework, it is declared alongside the handler in `storyteller_web` rather than here.",
@@ -27844,6 +28443,81 @@
           }
         }
       },
+      "OmniUploadImageMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadImageMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "is_intermediate_system_file": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Whether this is a system file (e.g. cover files we should hide)"
+          },
+          "maybe_batch_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Batch associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_prompt_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "OmniUploadImageMediaFileSuccessResponse": {
         "type": "object",
         "description": "Success response for the API-key authenticated image upload endpoint\n(`POST /v1/omni_api/upload/image`).\n\nNB: The request is a `multipart/form-data` body. Because the multipart form type is bound to the\nweb framework, it is declared alongside the handler in `storyteller_web` rather than here.",
@@ -27857,6 +28531,111 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "OmniUploadVideoMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `OmniUploadVideoMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "is_intermediate_system_file": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Whether this is a system file (eg. cover files we should hide)"
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_prompt_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_resample_fps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Resample the video to this FPS.\nOnly certain values equal or under 24fps are allowed.",
+            "minimum": 0
+          },
+          "maybe_scene_source_media_file_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
+              }
+            ]
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_trim_end_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Trim end offset in milliseconds.",
+            "minimum": 0
+          },
+          "maybe_trim_start_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Trim start offset in milliseconds.",
+            "minimum": 0
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31186,6 +31965,30 @@
           }
         }
       },
+      "UpdateProjectMultipartForm": {
+        "type": "object",
+        "description": "Form-multipart request fields for overwriting an existing project.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UpdateProjectMultipartForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The project JSON document"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UpdateWeightRequest": {
         "type": "object",
         "description": "**IMPORTANT**: This endpoint handles sparse (by-field) updates rather than wholesale updates.\nThat is, if a field is absent, we do not update it (as opposed to clearing it).",
@@ -31232,6 +32035,57 @@
           }
         }
       },
+      "UploadAudioMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadAudioMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadAudioMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -31244,6 +32098,81 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "UploadImageMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadImageMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "is_intermediate_system_file": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Whether this is a system file (e.g. cover files we should hide)"
+          },
+          "maybe_batch_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Batch associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_prompt_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31291,6 +32220,77 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "UploadNewEngineAssetFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewEngineAssetFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file",
+          "engine_category"
+        ],
+        "properties": {
+          "engine_category": {
+            "type": "string",
+            "format": "binary",
+            "description": "The category of engine asset: character, animation, etc.\nSee the documentation on `MediaFileEngineCategory`."
+          },
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_animation_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: the type of animation (if this is a character or animation)\nSee the documentation on `MediaFileAnimationType`."
+          },
+          "maybe_duration_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The duration, for files that are animations.",
+            "minimum": 0
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31343,6 +32343,46 @@
           }
         }
       },
+      "UploadNewSceneMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewSceneMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadNewSceneMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -31355,6 +32395,111 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "UploadNewVideoMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadNewVideoMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "is_intermediate_system_file": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Whether this is a system file (eg. cover files we should hide)"
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\").\nIf set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false."
+          },
+          "maybe_prompt_token": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Prompt associated with this image\nNOTE: Cannot set `is_intermediate_system_file = true` if this is set."
+          },
+          "maybe_resample_fps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Resample the video to this FPS.\nOnly certain values equal or under 24fps are allowed.",
+            "minimum": 0
+          },
+          "maybe_scene_source_media_file_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
+              }
+            ]
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_trim_end_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Trim end offset in milliseconds.",
+            "minimum": 0
+          },
+          "maybe_trim_start_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Trim start offset in milliseconds.",
+            "minimum": 0
+          },
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31390,6 +32535,69 @@
           }
         }
       },
+      "UploadPmxFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadPmxFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file",
+          "engine_category"
+        ],
+        "properties": {
+          "engine_category": {
+            "type": "string",
+            "format": "binary",
+            "description": "The category of engine asset: character, animation, etc.\nSee the documentation on `MediaFileEngineCategory`."
+          },
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_animation_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: the type of animation (if this is a character or animation)\nSee the documentation on `MediaFileAnimationType`."
+          },
+          "maybe_duration_millis": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The duration, for files that are animations.",
+            "minimum": 0
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadPmxSuccessResponse": {
         "type": "object",
         "required": [
@@ -31405,6 +32613,30 @@
           }
         }
       },
+      "UploadSavedSceneMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSavedSceneMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadSavedSceneMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -31417,6 +32649,49 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "UploadSceneSnapshotMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSceneSnapshotMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_scene_source_media_file_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Optional: If the scene was snapshotted from a saved scene, this is a link to\nthe scene that generated the snapshot."
+              }
+            ]
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -31436,6 +32711,52 @@
           }
         }
       },
+      "UploadSnapshotMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSnapshotMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "snapshot"
+        ],
+        "properties": {
+          "maybe_visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility",
+                "description": "Optional: Visibility of the scene"
+              }
+            ]
+          },
+          "scene_media_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Optional: If an engine scene was used to create this snapshot, provide it here to create a link"
+              }
+            ]
+          },
+          "snapshot": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded \"screenshot\" / \"snapshot\" of the engine scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadSnapshotMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -31452,6 +32773,54 @@
           }
         }
       },
+      "UploadSpzMediaFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields for SPZ (Gaussian Splat) upload.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadSpzMediaFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded SPZ file"
+          },
+          "maybe_generation_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The third-party generation provider (e.g. \"fal\", \"replicate\")."
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the Gaussian splat"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the Gaussian splat"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
+          }
+        }
+      },
       "UploadSpzMediaFileSuccessResponse": {
         "type": "object",
         "required": [
@@ -31464,6 +32833,66 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "UploadStudioShotFileForm": {
+        "type": "object",
+        "description": "Form-multipart request fields.\n\nIF VIEWING DOCS, PLEASE SEE BOTTOM OF PAGE `UploadStudioShotFileForm` (Under \"Schema\") FOR DETAILS ON FIELDS AND NULLABILITY.",
+        "required": [
+          "uuid_idempotency_token",
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The uploaded file"
+          },
+          "maybe_frame_rate_fps": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: The frame rate in fps.\nIf not provided, it will default to 12 fps.",
+            "minimum": 0
+          },
+          "maybe_scene_source_media_file_token": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MediaFileToken",
+                "description": "Optional: If an engine scene was used to generate this video, provide it here to create a link."
+              }
+            ]
+          },
+          "maybe_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Title (name) of the scene"
+          },
+          "maybe_visibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional: Visibility of the scene"
+          },
+          "uuid_idempotency_token": {
+            "type": "string",
+            "format": "binary",
+            "description": "UUID for request idempotency"
           }
         }
       },
@@ -32549,6 +33978,24 @@
           }
         }
       },
+      "VideoInfoReadOnlyForm": {
+        "type": "object",
+        "description": "Form-multipart request: a single video file under the `file` field.",
+        "required": [
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The video file to inspect."
+          }
+        }
+      },
       "VideoInfoReadOnlyResponse": {
         "type": "object",
         "description": "Response for `POST /v1/video_info/read_only`.\n\n[`kind`](Self::kind) names the detected provenance family; the matching\n`maybe_*` field carries its details (all others are `null`). `unrecognized`\nmeans no supported provenance was found — [`maybe_encoder`](Self::maybe_encoder)\nstill reports the container encoder tag when present (an `Lavf…` value means\nthe file was re-encoded through ffmpeg, which strips provenance).",
@@ -32625,6 +34072,32 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "VideoInfoUploadForm": {
+        "type": "object",
+        "description": "Form-multipart request: a single video file under the `file` field.",
+        "required": [
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "binary",
+              "minimum": 0
+            },
+            "description": "The video file to inspect and store."
+          },
+          "maybe_filename": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "binary",
+            "description": "Optional filename to record. Falls back to the uploaded file's own name."
           }
         }
       },

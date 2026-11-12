@@ -178,6 +178,18 @@ class PublicSpecTests(unittest.TestCase):
         comments = self.spec["paths"]["/v1/comments/list/{entity_type}/{entity_token}"]["get"]
         comment_names = [parameter["name"] for parameter in comments["parameters"] if parameter["in"] == "path"]
         self.assertEqual(comment_names, ["entity_type", "entity_token"])
+        for path in (
+            "/v1/omni_api/upload/audio",
+            "/v1/omni_api/upload/image",
+            "/v1/omni_api/upload/video",
+            "/v1/media_files/upload/audio",
+        ):
+            body = self.spec["paths"][path]["post"]["requestBody"]
+            self.assertIn("multipart/form-data", body["content"], path)
+            self.assertIn("$ref", body["content"]["multipart/form-data"]["schema"], path)
+        weights = self.spec["paths"]["/v1/weights/search"]["get"]
+        weight_names = [parameter["name"] for parameter in weights.get("parameters") or []]
+        self.assertIn("search_term", weight_names)
 
     def test_dangling_utoipa_path_refs_become_string_parameters(self):
         """Path structs utoipa did not emit are the URL template name, as a string."""
