@@ -43,7 +43,7 @@ function tx<T>(
         t.oncomplete = () => resolve(result as T);
         t.onerror = () => reject(t.error);
         t.onabort = () => reject(t.error);
-      }),
+      }).finally(() => db.close()),
   );
 }
 
