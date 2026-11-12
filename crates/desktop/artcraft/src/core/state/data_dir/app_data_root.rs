@@ -65,6 +65,11 @@ impl AppDataRoot {
     
     let assets_dir = AppAssetsDir::get_or_create_in_root_dir(&dir)?;
     let credentials_dir = AppCredentialsDir::get_or_create_in_root_dir(&dir)?;
+    // Before anything is written to it. This runs before Tauri installs the logger (see `run`),
+    // hence `println!` like the rest of this function.
+    if let Err(err) = credentials_dir.restrict_to_owner() {
+      println!("WARNING: couldn't restrict {:?} to its owner; other accounts on this machine may be able to read the saved credentials: {}", credentials_dir.path(), err);
+    }
     let downloads_dir = AppDownloadsDir::get_or_create_in_root_dir(&dir)?;
     let settings_dir = AppSettingsDir::get_or_create_in_root_dir(&dir)?;
     let state_dir = AppStateDir::get_or_create_in_root_dir(&dir)?;
