@@ -6,6 +6,11 @@ use crate::core::commands::generate::generate_mesh_command::generate_mesh_comman
 pub mod core;
 pub mod services;
 pub mod version;
+pub mod updates;
+
+use std::sync::Arc;
+use crate::core::commands::updates::check_for_updates_command::check_for_updates_command;
+use crate::core::commands::updates::install_update_command::install_update_command;
 
 use tauri::Manager;
 
@@ -155,11 +160,20 @@ pub fn run() {
   println!("Initializing backend runtime...");
 
   let builder = tauri::Builder::default()
+    .manage(Arc::new(updates::Updates::default()))
+    .on_window_event(|window, event| {
+      if window.try_state::<Arc<updates::Updates>>().is_some_and(|updates| updates.prevents_exit()) {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+          api.prevent_close();
+        }
+      }
+    })
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_upload::init())
     .setup(move |app| {
+      updates::show_previous_outcome(app.handle());
       // TODO(bt): This is broken on windows
       // log_environment_details();
 
@@ -225,6 +239,8 @@ pub fn run() {
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
   //  My first attempt at naively doing this didn't work because the macros can't find their codegen'd targets.
   let builder = builder.invoke_handler(tauri::generate_handler![
+    check_for_updates_command,
+    install_update_command,
     check_sora_session_command,
     download_directory_reveal_command,
     download_media_file_command,
@@ -290,6 +306,14 @@ pub fn run() {
     worldlabs_receive_bearer_command,
   ]);
 
-  builder.run(tauri::generate_context!("tauri.conf.json"))
-    .expect("error while running tauri application");
+  let app = builder.build(tauri::generate_context!("tauri.conf.json"))
+    .expect("error while building tauri application");
+  app.run(|handle, event| {
+    let updates = handle.state::<Arc<updates::Updates>>();
+    match event {
+      tauri::RunEvent::ExitRequested { api, .. } if updates.prevents_exit() => api.prevent_exit(),
+      tauri::RunEvent::Exit => updates.finish(),
+      _ => {}
+    }
+  });
 }

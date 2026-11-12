@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { MediaFilesApi, MediaUploadApi } from "@storyteller/api";
 import { v4 as uuidv4 } from "uuid";
 import { captureModelThumbnail } from "./captureModelThumbnail";
+import { completeGenerationAction } from "../Stores/completeGenerationResult";
 
 export interface PendingExternalImage {
   url: string;
@@ -72,11 +73,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     meshOnly: boolean,
     subscriberId?: string,
   ) => {
-    const id = subscriberId
-      ? subscriberId
-      : crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+    const id = subscriberId || uuidv4();
     const result: ImageTo3DResult = {
       id,
       mode,
@@ -90,52 +87,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     set((s) => ({ results: [result, ...s.results] }));
     return id;
   },
-  completeGeneration: (
-    modelUrl: string,
-    mediaToken: string,
-    maybeSubscriberId?: string,
-  ) => {
-    console.log("[ImageTo3DStore] completeGeneration", {
-      modelUrl,
-      mediaToken,
-      maybeSubscriberId,
-    });
-    const pending = maybeSubscriberId
-      ? get().results.find((r) => r.subscriberId === maybeSubscriberId)
-      : get().results.find((r) => r.status === "pending");
-
-    set((s) => {
-      const results = [...s.results];
-      const targetIdx = pending
-        ? results.findIndex((r) => r.subscriberId === pending.subscriberId)
-        : -1;
-
-      if (targetIdx === -1) {
-        const generatedId =
-          crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
-        const result: ImageTo3DResult = {
-          id: generatedId,
-          subscriberId: generatedId,
-          mode: "image",
-          timestamp: Date.now(),
-          note: "Generated Model",
-          status: "completed",
-          modelUrl,
-          mediaToken,
-        };
-        return { results: [result, ...results] };
-      }
-
-      results[targetIdx] = {
-        ...results[targetIdx],
-        status: "completed",
-        modelUrl,
-        mediaToken,
-      };
-
-      return { results };
-    });
-  },
+  completeGeneration: completeGenerationAction(set, "ImageTo3DStore", "Generated Model"),
   uploadCoverImage: async (mediaToken: string, thumbnailDataUrl: string) => {
     try {
       // Check if already uploaded

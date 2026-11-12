@@ -24,7 +24,7 @@ export const useBackgroundLoadingMedia = () => {
     //CASE 1: first load
     // if myMovies undefined, poll for the first time
     if (!userMovies.value) {
-      PollUserGeneratedMovies();
+      void PollUserGeneratedMovies();
       return;
     }
 
@@ -45,7 +45,7 @@ export const useBackgroundLoadingMedia = () => {
 
     //there are videos newly completed, set and poll
     lastCompletedWorkflow.current = completedWorkflowJobs.value;
-    PollUserGeneratedMovies().then((ret: boolean) => {
+    void PollUserGeneratedMovies().then((ret: boolean) => {
       if (ret) {
         addToast(
           ToastTypes.SUCCESS,
@@ -60,7 +60,7 @@ export const useBackgroundLoadingMedia = () => {
     //CASE 1: first load
     // if audioItems undefined, poll for the first time
     if (!userAudioItems.value) {
-      PollUserAudioItems();
+      void PollUserAudioItems();
       return;
     }
 
@@ -82,7 +82,7 @@ export const useBackgroundLoadingMedia = () => {
 
     //there are audio jobs newly completed, set and poll
     lastCompletedAudioJobs.current = completedAudioJobs.value;
-    PollUserAudioItems().then((ret: boolean) => {
+    void PollUserAudioItems().then((ret: boolean) => {
       if (ret) {
         addToast(
           ToastTypes.SUCCESS,

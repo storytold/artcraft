@@ -33,7 +33,7 @@ export const collectTags = (board: Board): string[] => {
   board.itemOrder.forEach((id) => {
     board.items[id]?.tags.forEach((t) => seen.add(t));
   });
-  return Array.from(seen).sort();
+  return Array.from(seen).sort((a, b) => a.localeCompare(b));
 };
 
 const itemMatchesText = (it: BoardItem, q: string): boolean => {

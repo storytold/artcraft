@@ -19,7 +19,7 @@ import {
 } from "./common/imagePreview";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
-import { UploaderStates } from "@storyteller/common";
+import { UploaderStates, clickOnEnterOrSpace } from "@storyteller/common";
 import {
   AUDIO_FILE_ACCEPT,
   AUDIO_FILE_TYPE_ERROR,
@@ -44,6 +44,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import type { UploadMediaFn } from "@storyteller/api";
+import { v4 as uuidv4 } from "uuid";
 export type { UploadMediaFn as UploadImageFn } from "@storyteller/api";
 type UploadImageFn = UploadMediaFn;
 
@@ -102,7 +103,7 @@ const AudioRefTile = ({
         el.volume = 0.2;
         audioRef.current = el;
         el.onended = () => setIsPlaying(false);
-        el.play();
+        void el.play();
         setIsPlaying(true);
       }
     },
@@ -269,9 +270,12 @@ export const ImagePromptRow = ({
 
     return (
       <div
+        onKeyDown={clickOnEnterOrSpace}
         ref={setNodeRef}
         style={style}
         {...(allowReorder ? { ...attributes, ...listeners } : {})}
+        role="button"
+        tabIndex={0}
         className={twMerge(
           "glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 transition-opacity group",
           allowReorder
@@ -448,19 +452,17 @@ export const ImagePromptRow = ({
         break;
       }
 
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       setUploadingVideo({ id: uploadId, file });
 
       if (uploadVideo) {
         await uploadVideo({
-          title: `reference-video-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-video-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refVideo: RefVideo = {
-                id: Math.random().toString(36).substring(7),
+                id: uuidv4(),
                 url: URL.createObjectURL(file),
                 file,
                 mediaToken: newState.data,
@@ -480,7 +482,7 @@ export const ImagePromptRow = ({
         });
       } else {
         const refVideo: RefVideo = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: URL.createObjectURL(file),
           file,
           mediaToken: "",
@@ -562,19 +564,17 @@ export const ImagePromptRow = ({
         break;
       }
 
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       setUploadingAudio({ id: uploadId, file });
 
       if (uploadAudio) {
         await uploadAudio({
-          title: `reference-audio-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-audio-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const refAudio: RefAudio = {
-                id: Math.random().toString(36).substring(7),
+                id: uuidv4(),
                 url: URL.createObjectURL(file),
                 file,
                 mediaToken: newState.data,
@@ -592,7 +592,7 @@ export const ImagePromptRow = ({
         });
       } else {
         const refAudio: RefAudio = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: URL.createObjectURL(file),
           file,
           mediaToken: "",
@@ -629,7 +629,7 @@ export const ImagePromptRow = ({
         : files.slice(0, availableSlots);
 
     filesToProcess.forEach(async (file) => {
-      const uploadId = Math.random().toString(36).substring(7);
+      const uploadId = uuidv4();
       if (uploadTarget === "end") {
         setUploadingEnd({ id: uploadId, file, previewUrl: "" });
       } else {
@@ -681,9 +681,7 @@ export const ImagePromptRow = ({
 
       if (uploadImage) {
         await uploadImage({
-          title: `reference-image-${Math.random()
-            .toString(36)
-            .substring(2, 15)}`,
+          title: `reference-image-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
@@ -767,7 +765,7 @@ export const ImagePromptRow = ({
           }
           currentTotal += duration;
           newVideos.push({
-            id: Math.random().toString(36).substring(7),
+            id: uuidv4(),
             url: item.fullImage,
             file: new File([], "library-video"),
             mediaToken: item.id,
@@ -794,7 +792,7 @@ export const ImagePromptRow = ({
       const item = selectedItems[0];
       if (item && item.fullImage) {
         setEndFrameImage?.({
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: item.fullImage,
           file: new File([], "library-image"),
           mediaToken: item.id,
@@ -818,7 +816,7 @@ export const ImagePromptRow = ({
     selectedItems.slice(0, availableSlots).forEach((item) => {
       if (!item.fullImage) return;
       newRefs.push({
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: item.fullImage,
         file: new File([], "library-image"),
         mediaToken: item.id,
@@ -864,6 +862,7 @@ export const ImagePromptRow = ({
         </>
       )}
       <div
+        role="presentation"
         className={twMerge(
           "absolute left-0 glass w-full rounded-t-[3px] flex",
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
@@ -935,6 +934,9 @@ export const ImagePromptRow = ({
                     .slice(0, Math.max(0, maxImagePromptCount))
                     .map((image, index) => (
                       <div
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={clickOnEnterOrSpace}
                         key={image.id}
                         className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                         onClick={() => onImageClick?.(image)}
@@ -1064,6 +1066,9 @@ export const ImagePromptRow = ({
                 <div className="flex gap-2 items-center">
                   {endFrameImage ? (
                     <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={clickOnEnterOrSpace}
                       className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                       onClick={() => onImageClick?.(endFrameImage)}
                     >

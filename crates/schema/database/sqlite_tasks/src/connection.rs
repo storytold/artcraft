@@ -22,7 +22,7 @@ impl TaskDbConnection {
 
       info!("Deleting and recreating SQLite database at {:?}", database_file.as_ref());
 
-      if let Err(err) = std::fs::remove_file(&database_file) {
+      if let Err(err) = tokio::fs::remove_file(&database_file).await {
         error!("Error deleting SQLite database file: {:?}", err);
       }
 

@@ -273,7 +273,7 @@ class DndAsset {
       return;
     }
     const inspection = this.clipNodeNamesCache.get(item.media_id);
-    if (!inspection) {
+    if (inspection === undefined) {
       // No inspection in flight (shouldn't happen — pointer-down starts
       // one): add unvalidated, matching the ungated click-to-add path.
       this.completeAnimationDrop(editor, item, target, undefined);

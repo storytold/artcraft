@@ -1,0 +1,215 @@
+name: ArtCraft Linux release
+on:
+  push:
+    branches: [release, artcraft-release, artcraft-linux]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: linux-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  packaging-check:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
+      - uses: storytold/craft-common-actions/actions/install-apt-packages@main
+        with:
+          packages: rpm jq binutils zsync
+      - run: packaging/linux/package-test.sh
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x86_64, runner: ubuntu-22.04, target: x86_64-unknown-linux-gnu, bundles: "deb,rpm,appimage"}
+          - {arch: aarch64, runner: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, bundles: "deb,rpm,appimage"}
+          - {arch: riscv64, runner: ubuntu-24.04, target: riscv64gc-unknown-linux-gnu, bundles: "deb,rpm"}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    env:
+      SQLX_OFFLINE: 'true'
+      VITE_ENVIRONMENT_TYPE: production
+      TAURI_FRONTEND_PATH: ${{ github.workspace }}/frontend
+      TAURI_APP_PATH: ${{ github.workspace }}/crates/desktop/artcraft
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
+      - uses: storytold/craft-common-actions/actions/install-apt-packages@main
+        with:
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libclang-dev libasound2-dev libxdo-dev libdbus-1-dev build-essential clang file jq perl cmake nasm rpm zsync gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
+      - uses: storytold/craft-common-actions/actions/install-riscv64-cross@main
+        if: matrix.arch == 'riscv64'
+      - name: Remove conflicting host Pango development files
+        if: matrix.arch == 'riscv64'
+        # Ubuntu's Pango GIR differs by architecture despite being in a shared path.
+        # Only the target GTK development packages are needed for this cross build.
+        run: sudo apt-get remove -y libpango1.0-dev:amd64
+      - name: Install RISC-V WebKitGTK dependencies
+        if: matrix.arch == 'riscv64'
+        uses: storytold/craft-common-actions/actions/install-apt-packages@main
+        with:
+          packages: libwebkit2gtk-4.1-dev:riscv64 libappindicator3-dev:riscv64 libssl-dev:riscv64 libxdo-dev:riscv64 libdbus-1-dev:riscv64 g++-riscv64-linux-gnu
+      - name: Configure RISC-V cross compilation
+        if: matrix.arch == 'riscv64'
+        run: |
+          cat >> "$GITHUB_ENV" <<'ENV'
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER=riscv64-linux-gnu-gcc
+          CC_riscv64gc_unknown_linux_gnu=riscv64-linux-gnu-gcc
+          CXX_riscv64gc_unknown_linux_gnu=riscv64-linux-gnu-g++
+          AR_riscv64gc_unknown_linux_gnu=riscv64-linux-gnu-ar
+          PKG_CONFIG_ALLOW_CROSS=1
+          PKG_CONFIG_PATH_riscv64gc_unknown_linux_gnu=/usr/lib/riscv64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          PKG_CONFIG_LIBDIR_riscv64gc_unknown_linux_gnu=/usr/lib/riscv64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          ENV
+          echo "CMAKE_TOOLCHAIN_FILE_riscv64gc_unknown_linux_gnu=$GITHUB_WORKSPACE/packaging/linux/riscv64.cmake" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - uses: step-security/rust-cache@8871c8ba063416da7c32246932ea6ae08700453e # v2.9.2
+        with:
+          key: tauri-linux-${{ matrix.arch }}
+          cache-on-failure: true
+      - run: npm ci --ignore-scripts
+        working-directory: frontend
+      - run: ./node_modules/.bin/nx run artcraft:build
+        working-directory: frontend
+      - uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
+        with:
+          projectPath: crates/desktop/artcraft
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config ${{ github.workspace }}/packaging/linux/tauri.conf.json
+      - name: Package and verify Linux outputs
+        env:
+          ARCH: ${{ matrix.arch }}
+          TARGET: ${{ matrix.target }}
+        run: packaging/linux/package.sh "$ARCH" "$TARGET"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-linux-${{ matrix.arch }}
+          path: dist/release/*
+          if-no-files-found: error
+  arch:
+    if: always() && !cancelled()
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-linux-${{ matrix.arch }}
+          path: dist/linux
+      - name: Find tarball
+        id: tarball
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          shopt -s nullglob
+          files=(dist/linux/artcraft-*-linux-"$ARCH".tar.gz)
+          test "${#files[@]}" -eq 1
+          echo "path=${files[0]}" >> "$GITHUB_OUTPUT"
+      - uses: storytold/craft-common-actions/actions/arch-package@9d6790582b4997aa2120f4413cdb55c0b6f77fae # extra-depends support (#161)
+        with:
+          tarball: ${{ steps.tarball.outputs.path }}
+          arch: ${{ matrix.arch }}
+          extra-depends: webkit2gtk-4.1 gtk3 openssl
+      - name: Verify Arch runtime dependencies
+        run: |
+          for package in dist/release/*.pkg.tar.zst; do
+            tar --zstd -xOf "$package" .PKGINFO | grep -Fx 'depend = webkit2gtk-4.1'
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-arch-${{ matrix.arch }}
+          path: dist/release/*.pkg.tar.zst
+          if-no-files-found: error
+  flatpak:
+    if: always() && !cancelled()
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x86_64, runner: ubuntu-24.04}
+          - {arch: aarch64, runner: ubuntu-24.04-arm}
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-linux-${{ matrix.arch }}
+          path: dist/linux
+      - uses: storytold/craft-common-actions/actions/install-apt-packages@main
+        with:
+          packages: flatpak flatpak-builder elfutils librsvg2-common skopeo
+      - name: Allow Flatpak build sandboxes
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - uses: storytold/craft-common-actions/actions/import-signing-key@main
+        with:
+          key: ${{ secrets.LINUX_SIGNING_KEY }}
+      - name: Build Flatpak and publish OCI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: packaging/linux/flatpak.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-flatpak-${{ matrix.arch }}
+          path: |
+            dist/release/*.flatpak
+            dist/release/*.oci-manifest.json
+          if-no-files-found: error
+  release:
+    needs: [packaging-check, build, arch, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
+      - name: Read version
+        id: version
+        run: echo "value=$(jq -r .version crates/desktop/artcraft/tauri.conf.json)" >> "$GITHUB_OUTPUT"
+      - name: Require signing key
+        env:
+          SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
+        run: test -n "$SIGNING_KEY"
+      - uses: storytold/craft-common-actions/actions/draft-release@main
+        with:
+          version: ${{ steps.version.outputs.value }}
+          app-title: ArtCraft
+          tag-prefix: artcraft-v
+          retain: "true"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          signing-key: ${{ secrets.LINUX_SIGNING_KEY }}

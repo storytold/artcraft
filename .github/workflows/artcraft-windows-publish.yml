@@ -10,6 +10,13 @@ on:
 # This workflow creates Windows builds.
 # On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
 
+# One release build per branch at a time. A run in progress is never cancelled, because it may
+# already have created or uploaded to the draft release. If more pushes arrive while one runs,
+# GitHub keeps only the newest as pending, so the next build is of the latest commit.
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish-artcraft-windows:
     permissions:
@@ -23,11 +30,19 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
+    # Successful builds took 17-36 min (2026-04 to 2026-11); one hung run used the full 6-hour default.
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@v7
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
+        with:
+          toolchain: stable
 
       - name: install wreq dependencies
         run: |
@@ -39,11 +54,12 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
       - name: install frontend dependencies
+        shell: pwsh
         run: |
           # Navigate to the frontend directory to install dependencies
           cd ./frontend
@@ -51,7 +67,7 @@ jobs:
           npm cache clean --force
 
           echo "Installing all workspace dependencies..."
-          npm ci
+          npm ci --ignore-scripts
 
           echo "=== Version Information ==="
           echo "Node version:"
@@ -63,6 +79,7 @@ jobs:
           npm list --depth=0 | findstr nx
 
       - name: Pre-build frontend to avoid Tauri build issues
+        shell: pwsh
         run: |
           # Build the frontend app from the correct directory
           cd ./frontend
@@ -90,7 +107,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@v0
+        uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"

@@ -68,7 +68,7 @@ const randomId = () => Math.random().toString(36).substring(7);
 
 // A non-finite duration cap means "no limit" — leave it out of the message.
 const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
-  isFinite(maxTotalSec)
+  Number.isFinite(maxTotalSec)
     ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
     : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
 
@@ -516,8 +516,8 @@ export function useDeckMedia<
     );
 
     if (images.length > 0) processImageFiles(images, "start");
-    if (videos.length > 0 && setReferenceVideos) processVideoFiles(videos);
-    if (audios.length > 0 && setReferenceAudios) processAudioFiles(audios);
+    if (videos.length > 0 && setReferenceVideos) void processVideoFiles(videos);
+    if (audios.length > 0 && setReferenceAudios) void processAudioFiles(audios);
   };
 
   // maxImages of 0 means the page's model takes no image refs at all.

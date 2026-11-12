@@ -21,6 +21,7 @@ import {
   isActionReminderOpen,
   actionReminderProps,
 } from "@storyteller/ui-action-reminder-modal";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 interface CharactersModalProps {
   isOpen: boolean;
@@ -834,6 +835,9 @@ const NewCharacterView = ({
 
         {/* Image upload area */}
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           ref={dropZoneRef}
           className={twMerge(
             "flex h-56 max-h-56 shrink-0 cursor-pointer flex-col items-center justify-center rounded-[3px] border-2 border-dashed border-base-fg/15 bg-base-fg/[0.05] transition-colors overflow-hidden",
@@ -847,6 +851,7 @@ const NewCharacterView = ({
         >
           {images.length > 0 ? (
             <div
+              role="presentation"
               className="group relative flex h-full w-full items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
@@ -882,6 +887,7 @@ const NewCharacterView = ({
                 Click or drag an image here
               </p>
               <div
+                role="presentation"
                 className="flex items-center gap-3"
                 onClick={(e) => e.stopPropagation()}
               >

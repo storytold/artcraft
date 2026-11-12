@@ -39,7 +39,7 @@ function rateToDisplay({ rate }: { rate: number }): string {
 }
 
 function parseSpeedInput({ input }: { input: string }): number | null {
-  const parsed = parseFloat(input);
+  const parsed = Number.parseFloat(input);
   if (Number.isNaN(parsed)) return null;
   return clampRetimeRate({
     rate: snapToStep({ value: parsed, step: SPEED_STEP }),

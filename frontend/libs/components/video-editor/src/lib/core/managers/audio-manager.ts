@@ -539,7 +539,7 @@ export class AudioManager {
   }): Promise<AudioBuffer | null> {
     const cacheKey = this.buildPreparedClipCacheKey({ clip });
     const existing = this.preparedClipBuffers.get(cacheKey);
-    if (existing) {
+    if (existing !== undefined) {
       return existing;
     }
 
@@ -574,7 +574,7 @@ export class AudioManager {
     clip: AudioClipSource;
   }): Promise<AudioBuffer | null> {
     const existing = this.decodedBuffers.get(clip.sourceKey);
-    if (existing) {
+    if (existing !== undefined) {
       return existing;
     }
 

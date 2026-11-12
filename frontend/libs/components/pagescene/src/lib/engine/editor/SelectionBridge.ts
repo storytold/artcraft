@@ -137,19 +137,19 @@ export class SelectionBridge {
         version: String(this.engine.version),
         objectVectors: {
           position: {
-            x: parseFloat(pos.x.toFixed(2)),
-            y: parseFloat(pos.y.toFixed(2)),
-            z: parseFloat(pos.z.toFixed(2)),
+            x: Number.parseFloat(pos.x.toFixed(2)),
+            y: Number.parseFloat(pos.y.toFixed(2)),
+            z: Number.parseFloat(pos.z.toFixed(2)),
           },
           rotation: {
-            x: parseFloat(THREE.MathUtils.radToDeg(rot.x).toFixed(2)),
-            y: parseFloat(THREE.MathUtils.radToDeg(rot.y).toFixed(2)),
-            z: parseFloat(THREE.MathUtils.radToDeg(rot.z).toFixed(2)),
+            x: Number.parseFloat(THREE.MathUtils.radToDeg(rot.x).toFixed(2)),
+            y: Number.parseFloat(THREE.MathUtils.radToDeg(rot.y).toFixed(2)),
+            z: Number.parseFloat(THREE.MathUtils.radToDeg(rot.z).toFixed(2)),
           },
           scale: {
-            x: parseFloat(scale.x.toFixed(6)),
-            y: parseFloat(scale.y.toFixed(6)),
-            z: parseFloat(scale.z.toFixed(6)),
+            x: Number.parseFloat(scale.x.toFixed(6)),
+            y: Number.parseFloat(scale.y.toFixed(6)),
+            z: Number.parseFloat(scale.z.toFixed(6)),
           },
         },
       }),

@@ -52,6 +52,7 @@ export const FolderColorRow: React.FC<FolderColorRowProps> = ({
           "conic-gradient(red, orange, yellow, lime, cyan, blue, magenta, red)",
       }}
     >
+      <span className="sr-only">Custom color</span>
       <input
         type="color"
         value={

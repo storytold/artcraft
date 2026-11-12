@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon } from "lucide-react";
+import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon, RefreshCwIcon } from "lucide-react";
 import { DiscordIcon, GithubIcon, YoutubeIcon } from "@storyteller/icons";
 import { OpenUrl } from "@storyteller/tauri-api";
 import { Modal } from "@storyteller/ui-modal";
@@ -8,6 +8,9 @@ import { useTutorialModalStore } from "./help-menu-store";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { getNewsPosts, markdownToHtml } from "@storyteller/markdown-content";
+import { clickOnEnterOrSpace } from "@storyteller/common";
+
+import { UpdateDialog } from "./update-dialog";
 
 export type HelpMenuButtonProps = {
   items?: TutorialItem[];
@@ -42,7 +45,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         console.warn("Failed to fetch news feed, using bundled content.", e);
       }
     };
-    fetchNews();
+    void fetchNews();
   }, []);
 
   const selectedPost = useMemo(
@@ -109,6 +112,9 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
     <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
       {items.map((item) => (
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           key={item.slug}
           onClick={() => setSelectedSlug(item.slug)}
           className="bg-white/5 hover:bg-white/[0.07] border border-white/15 hover:border-white/25 p-4 rounded-none cursor-pointer transition-colors group"
@@ -146,6 +152,7 @@ export function HelpMenuButton({
   onOpenChange,
 }: HelpMenuButtonProps) {
   const [open, setOpen] = useState(false);
+  const [updatesOpen, setUpdatesOpen] = useState(false);
   const tutorials = useMemo(() => items ?? defaultTutorials, [items]);
   const view = useTutorialModalStore((s) => s.view);
   const selected = useTutorialModalStore((s) => s.selected);
@@ -176,6 +183,7 @@ export function HelpMenuButton({
 
   // Menu items for the popover
   const menuItems: PopoverItem[] = [
+    { label: "Check for Updates…", selected: false, icon: <RefreshCwIcon className="text-base" />, action: "updates" },
     {
       label: "Tutorials",
       selected: false,
@@ -210,6 +218,9 @@ export function HelpMenuButton({
 
   const handleMenuSelect = (item: PopoverItem) => {
     switch (item.action) {
+      case "updates":
+        setUpdatesOpen(true);
+        break;
       case "tutorials":
         handleOpenTutorials();
         break;
@@ -312,7 +323,7 @@ export function HelpMenuButton({
       });
     };
 
-    run();
+    void run();
 
     return () => {
       if (progressTimerRef.current) {
@@ -336,6 +347,7 @@ export function HelpMenuButton({
 
   return (
     <div className={className}>
+      <UpdateDialog isOpen={updatesOpen} onClose={() => setUpdatesOpen(false)} />
       <PopoverMenu
         items={menuItems}
         onSelect={handleMenuSelect}

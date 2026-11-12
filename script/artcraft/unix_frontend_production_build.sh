@@ -9,7 +9,7 @@ echo ""
 
 pushd "${frontend_path}" || exit
 
-npm install --verbose
+npm install --ignore-scripts --verbose
 
 export VITE_ENVIRONMENT_TYPE="production"
 

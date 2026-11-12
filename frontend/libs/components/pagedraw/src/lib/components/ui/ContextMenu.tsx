@@ -122,7 +122,8 @@ export const ContextMenuContainer: React.FC<ContextMenuContainerProps> = ({
   };
 
   return (
-    <div 
+    <div
+      role="presentation"
       onClick={handleClick}
       onContextMenu={handleContextMenu} 
       className={`w-full h-full relative z-[99999] ${className}`}
