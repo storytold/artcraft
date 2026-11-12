@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { type UploadMediaFn } from "@storyteller/api";
 import { downloadFileFromUrl } from "@storyteller/tauri-api";
@@ -174,10 +174,19 @@ export function useDeckMedia<
     referenceImagesRef.current = referenceImages;
   }, [referenceImages]);
 
+  const referenceVideosRef = useRef(referenceVideos);
+  const videoLimitsRef = useRef({ maxVideos, maxVideoTotalSec });
+  useLayoutEffect(() => {
+    referenceVideosRef.current = referenceVideos;
+    videoLimitsRef.current = { maxVideos, maxVideoTotalSec };
+  }, [referenceVideos, maxVideos, maxVideoTotalSec]);
+
   const referenceAudiosRef = useRef(referenceAudios);
-  useEffect(() => {
+  const audioLimitsRef = useRef({ maxAudios, maxAudioTotalSec });
+  useLayoutEffect(() => {
     referenceAudiosRef.current = referenceAudios;
-  }, [referenceAudios]);
+    audioLimitsRef.current = { maxAudios, maxAudioTotalSec };
+  }, [referenceAudios, maxAudios, maxAudioTotalSec]);
 
   // Committed refs live in the caller's store, whose update can render one
   // pass before this hook's entry-removal state lands — briefly showing the
@@ -352,9 +361,7 @@ export function useDeckMedia<
   };
 
   const processVideoFiles = async (files: File[]) => {
-    // Snapshot the committed state at call time so removes that happened
-    // before this call are respected (don't re-read a stale ref).
-    const baseVideos = [...referenceVideos];
+    const baseVideos = referenceVideosRef.current;
     const availableSlots = Math.max(0, maxVideos - baseVideos.length);
     if (availableSlots <= 0) {
       toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
@@ -364,14 +371,20 @@ export function useDeckMedia<
     }
 
     const filesToProcess = files.slice(0, availableSlots);
-    let committed = baseVideos;
 
     for (const file of filesToProcess) {
       const duration = await getVideoDuration(file);
-      const currentTotal = committed.reduce((sum, v) => sum + v.duration, 0);
+      const currentTotal = referenceVideosRef.current.reduce(
+        (sum, v) => sum + v.duration,
+        0,
+      );
 
-      if (currentTotal + duration > maxVideoTotalSec) {
-        toast.error(`Total video duration cannot exceed ${maxVideoTotalSec}s`, {
+      const limits = videoLimitsRef.current;
+      if (
+        referenceVideosRef.current.length >= limits.maxVideos ||
+        currentTotal + duration > limits.maxVideoTotalSec
+      ) {
+        toast.error(videoLimitMessage(limits.maxVideos, limits.maxVideoTotalSec), {
           id: "video-ref-limit",
         });
         break;
@@ -392,8 +405,23 @@ export function useDeckMedia<
           duration,
         });
         setUploadingVideo(null);
-        committed = [...committed, refVideo];
-        setReferenceVideos?.(committed);
+        const current = referenceVideosRef.current;
+        const limits = videoLimitsRef.current;
+        if (
+          current.length >= limits.maxVideos ||
+          current.reduce((sum, v) => sum + v.duration, 0) + duration > limits.maxVideoTotalSec
+        ) {
+          URL.revokeObjectURL(entry.previewUrl);
+          toast.error(videoLimitMessage(limits.maxVideos, limits.maxVideoTotalSec), {
+            id: "video-ref-limit",
+          });
+          return;
+        }
+        // Uploads can finish before another render/effect. Publish to the
+        // shared ref immediately so concurrent completions append safely.
+        const next = [...current, refVideo];
+        referenceVideosRef.current = next;
+        setReferenceVideos?.(next);
       };
 
       if (uploadVideo) {
@@ -449,8 +477,12 @@ export function useDeckMedia<
         0,
       );
 
-      if (currentTotal + duration > maxAudioTotalSec) {
-        toast.error(`Total audio duration cannot exceed ${maxAudioTotalSec}s`);
+      const limits = audioLimitsRef.current;
+      if (
+        referenceAudiosRef.current.length >= limits.maxAudios ||
+        currentTotal + duration > limits.maxAudioTotalSec
+      ) {
+        toast.error(`Max ${limits.maxAudios} audio tracks / ${limits.maxAudioTotalSec}s total`);
         break;
       }
 
@@ -466,7 +498,19 @@ export function useDeckMedia<
           duration,
         });
         setUploadingAudio(null);
-        setReferenceAudios?.([...referenceAudiosRef.current, refAudio]);
+        const current = referenceAudiosRef.current;
+        const limits = audioLimitsRef.current;
+        if (
+          current.length >= limits.maxAudios ||
+          current.reduce((sum, a) => sum + a.duration, 0) + duration > limits.maxAudioTotalSec
+        ) {
+          URL.revokeObjectURL(entry.previewUrl);
+          toast.error(`Max ${limits.maxAudios} audio tracks / ${limits.maxAudioTotalSec}s total`);
+          return;
+        }
+        const next = [...current, refAudio];
+        referenceAudiosRef.current = next;
+        setReferenceAudios?.(next);
       };
 
       if (uploadAudio) {
@@ -552,9 +596,7 @@ export function useDeckMedia<
 
   const handleGalleryImages = async (selectedItems: GalleryItem[]) => {
     if (galleryTarget === "video") {
-      // Snapshot committed state at call time to avoid re-reading a stale
-      // ref after removes.
-      const baseVideos = [...referenceVideos];
+      const baseVideos = referenceVideosRef.current;
       const availableSlots = Math.max(0, maxVideos - baseVideos.length);
       if (availableSlots <= 0) {
         toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
@@ -577,13 +619,18 @@ export function useDeckMedia<
           itemsToProcess.map((item) => getVideoDurationFromSrc(item.fullImage)),
         );
 
+        const current = referenceVideosRef.current;
+        const limits = videoLimitsRef.current;
         const newVideos: TVideo[] = [];
-        let currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
+        let currentTotal = current.reduce((sum, v) => sum + v.duration, 0);
         let exceeded = false;
         for (let i = 0; i < itemsToProcess.length; i++) {
           const item = itemsToProcess[i]!;
           const duration = durations[i]!;
-          if (currentTotal + duration > maxVideoTotalSec) {
+          if (
+            current.length + newVideos.length >= limits.maxVideos ||
+            currentTotal + duration > limits.maxVideoTotalSec
+          ) {
             exceeded = true;
             break;
           }
@@ -600,12 +647,14 @@ export function useDeckMedia<
         }
         if (exceeded) {
           toast.error(
-            `Total video duration cannot exceed ${maxVideoTotalSec}s`,
+            videoLimitMessage(limits.maxVideos, limits.maxVideoTotalSec),
             { id: "video-ref-limit" },
           );
         }
         if (newVideos.length > 0) {
-          setReferenceVideos?.([...baseVideos, ...newVideos]);
+          const next = [...current, ...newVideos];
+          referenceVideosRef.current = next;
+          setReferenceVideos?.(next);
         }
       } finally {
         setIsProcessingGallery(false);
@@ -614,7 +663,7 @@ export function useDeckMedia<
       return;
     }
     if (galleryTarget === "audio") {
-      const baseAudios = [...referenceAudios];
+      const baseAudios = referenceAudiosRef.current;
       const availableSlots = Math.max(0, maxAudios - baseAudios.length);
       if (availableSlots <= 0) {
         toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
@@ -641,13 +690,18 @@ export function useDeckMedia<
           ),
         );
 
+        const current = referenceAudiosRef.current;
+        const limits = audioLimitsRef.current;
         const newAudios: TAudio[] = [];
-        let currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+        let currentTotal = current.reduce((sum, a) => sum + a.duration, 0);
         let exceeded = false;
         for (let i = 0; i < itemsToProcess.length; i++) {
           const item = itemsToProcess[i]!;
           const duration = durations[i]!;
-          if (currentTotal + duration > maxAudioTotalSec) {
+          if (
+            current.length + newAudios.length >= limits.maxAudios ||
+            currentTotal + duration > limits.maxAudioTotalSec
+          ) {
             exceeded = true;
             break;
           }
@@ -664,12 +718,14 @@ export function useDeckMedia<
         }
         if (exceeded) {
           toast.error(
-            `Total audio duration cannot exceed ${maxAudioTotalSec}s`,
+            `Max ${limits.maxAudios} audio tracks / ${limits.maxAudioTotalSec}s total`,
             { id: "audio-ref-limit" },
           );
         }
         if (newAudios.length > 0) {
-          setReferenceAudios?.([...baseAudios, ...newAudios]);
+          const next = [...current, ...newAudios];
+          referenceAudiosRef.current = next;
+          setReferenceAudios?.(next);
         }
       } finally {
         setIsProcessingGallery(false);
