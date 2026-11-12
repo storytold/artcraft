@@ -74,6 +74,7 @@ export const MotionPopover = ({
 
   return (
     <div
+      role="presentation"
       id="motion-popover"
       className="border border-ui-panel-border bg-ui-controls pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none rounded-none p-3"
       style={{ left: `${Math.max(12, Math.min(88, leftPercent))}%` }}

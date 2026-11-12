@@ -30,7 +30,7 @@ interface TabState {
     [K in TabId]?: string;
   };
   // Actions
-  setActiveTab: (tabId: TabId) => Promise<boolean>;
+  setActiveTab: (tabId: TabId) => Promise<void>;
   updateTabData: (tabId: TabId, data: unknown) => void;
   getTabData: <T>(tabId: TabId) => T | null;
   clearTabData: (tabId: TabId) => void;
@@ -42,13 +42,12 @@ export const useTabStore = create<TabState>((set, get) => ({
 
   setActiveTab: async (newTabId) => {
     // Don't do anything if we're already on this tab
-    if (get().activeTabId === newTabId) return true;
+    if (get().activeTabId === newTabId) return;
 
     // The drawing store outlives its React page. Keep its live image objects,
     // selection, and undo history when switching tabs. Export/import is for
     // files; round-tripping here reread every image and rebuilt the scene.
     set({ activeTabId: newTabId });
-    return true;
   },
 
   updateTabData: (tabId, data) => {

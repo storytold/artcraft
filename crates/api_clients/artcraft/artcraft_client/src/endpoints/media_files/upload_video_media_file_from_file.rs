@@ -61,7 +61,7 @@ pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
   let client = storyteller_client_builder(args.api_host)
       .build()?;
 
-  let file_bytes = std::fs::read(args.path.as_ref())?;
+  let file_bytes = tokio::fs::read(args.path.as_ref()).await?;
   let file_name = args.path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()

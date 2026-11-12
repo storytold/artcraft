@@ -316,6 +316,7 @@ export const TimelineEditor = () => {
 
   return (
     <div
+      role="presentation"
       id="timeline-editor"
       className="border border-ui-panel-border bg-ui-controls absolute bottom-4 left-1/2 w-[90vw] max-w-5xl -translate-x-1/2 select-none rounded-none p-3 text-white"
       onMouseDown={(e) => e.stopPropagation()}

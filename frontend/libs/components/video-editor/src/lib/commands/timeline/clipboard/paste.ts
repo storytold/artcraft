@@ -100,8 +100,10 @@ export class PasteCommand extends Command {
                   placementResult.trackIndex - updatedTracks.overlay.length - 1
                 ];
         if (targetTrack?.id === updatedTracks.main.id) {
-          const earliestElement = elementsToAdd.reduce((earliest, element) =>
-            element.startTime < earliest.startTime ? element : earliest,
+          const earliestElement = elementsToAdd.reduce(
+            (earliest, element) =>
+              element.startTime < earliest.startTime ? element : earliest,
+            elementsToAdd[0],
           );
           const adjustedEarliestStartTime = enforceMainTrackStart({
             tracks: updatedTracks,

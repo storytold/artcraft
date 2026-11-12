@@ -19,7 +19,7 @@ export const DurationLabel = ({ className = "" }: { className?: string }) => {
   }, [editing]);
 
   const commit = () => {
-    const secs = parseFloat(value);
+    const secs = Number.parseFloat(value);
     if (editor && Number.isFinite(secs)) setTimelineDuration(editor, secs);
     setEditing(false);
   };

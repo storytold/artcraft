@@ -66,9 +66,9 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
           </div>
 
           <div className="space-y-1">
-            <label className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
               Currency
-            </label>
+            </span>
             <Select
               options={selectOptions}
               value={currency}

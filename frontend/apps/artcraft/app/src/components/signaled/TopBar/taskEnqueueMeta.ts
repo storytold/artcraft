@@ -125,7 +125,7 @@ export function storeEnqueueMeta(meta: EnqueueMeta) {
 
   // Then convert blob URLs to base64 in the background for persistence
   if (meta.refImageUrls && meta.refImageUrls.length > 0) {
-    Promise.all(meta.refImageUrls.map(toBase64Thumb)).then((dataUrls) => {
+    void Promise.all(meta.refImageUrls.map(toBase64Thumb)).then((dataUrls) => {
       const current = readEntries();
       const found = current.find((e) => e.id === entryId);
       if (found) {

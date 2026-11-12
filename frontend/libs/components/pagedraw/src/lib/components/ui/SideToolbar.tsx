@@ -119,9 +119,9 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     if (colorToUse && colorToUse.startsWith("#")) {
       // Convert hex to HSVA (simplified - might want to change to proper converter later)
       const hex = colorToUse;
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
+      const r = Number.parseInt(hex.slice(1, 3), 16);
+      const g = Number.parseInt(hex.slice(3, 5), 16);
+      const b = Number.parseInt(hex.slice(5, 7), 16);
 
       // Convert RGB to HSV (simplified)
       const max = Math.max(r, g, b);

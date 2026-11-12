@@ -248,7 +248,7 @@ function ItemActions({
       e.stopPropagation();
       const url = item.fullImage || item.thumbnail;
       if (!url) return;
-      applyMakeVideoFromImage(url, item.id);
+      void applyMakeVideoFromImage(url, item.id);
     },
     [item.fullImage, item.thumbnail, item.id],
   );

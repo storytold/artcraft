@@ -42,6 +42,7 @@ import {
   formatAspectRatio,
   formatDuration,
   formatResolution,
+  clickOnEnterOrSpace,
 } from "@storyteller/common";
 import { TagsSection } from "./tags/TagsSection";
 
@@ -179,7 +180,7 @@ export function LightboxModal({
           audioPlayerRef.current = null;
         };
         audioPlayerRef.current = audio;
-        audio.play();
+        void audio.play();
         setPlayingAudioToken(token);
       }
     },
@@ -962,6 +963,16 @@ export function LightboxModal({
                                   }
                                 >
                                   <div
+                                    role={isVideoRef ? "presentation" : "button"}
+                                    tabIndex={isVideoRef ? undefined : 0}
+                                    aria-label={
+                                      isAudio
+                                        ? `${isPlayingThis ? "Pause" : "Play"} reference ${index + 1} audio`
+                                        : isVideoRef
+                                          ? undefined
+                                          : `Preview reference ${index + 1}`
+                                    }
+                                    onKeyDown={clickOnEnterOrSpace}
                                     className="relative aspect-square w-12 overflow-hidden border border-white/15 bg-white/5 transition-colors hover:border-white/40 group cursor-pointer"
                                     onClick={() => {
                                       if (isAudio) {

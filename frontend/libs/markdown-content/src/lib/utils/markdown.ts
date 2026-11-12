@@ -143,7 +143,7 @@ export const markdownToHtml = (
       return renderImage(safeUrl, alt, size);
     });
     // links: [text](url)
-    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
+    out = out.replace(/\[([^\][]+)\]\(([^)]+)\)/g, (_m, label, url) => {
       const safeLabel = String(label || "").replace(/"/g, "&quot;");
       const safeUrl = normalizeLink(String(url || ""));
       return `<a href="${safeUrl}" class="underline hover:opacity-90">${safeLabel}</a>`;
@@ -220,7 +220,7 @@ export const markdownToHtml = (
 
     // Image/GIF embed: @image(url, size) or @gif(url, size)
     const imageMatch = ltrim.match(
-      /^@(image|gif)\(([^,)]+)(?:,\s*([^)]+))?\)\s*$/,
+      /^@(image|gif)\(([^,)]+)(?:,([^)]+))?\)\s*$/,
     );
     if (imageMatch) {
       flushParagraph();
@@ -232,12 +232,12 @@ export const markdownToHtml = (
     }
 
     // ATX headings: support #..###### with optional space after hashes
-    const heading = ltrim.match(/^(#{1,6})\s*(.*)$/);
+    const heading = ltrim.match(/^(#{1,6})(.*)$/);
     if (heading) {
       flushParagraph();
       closeListIfOpen();
       const level = Math.min(heading[1].length, 6);
-      const text = renderInline(heading[2] || "");
+      const text = renderInline((heading[2] || "").trimStart());
       htmlParts.push(`<h${level}>${text}</h${level}>`);
       continue;
     }
@@ -318,7 +318,7 @@ export const slugify = (s: string): string =>
     .replace(/[_\s]+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/--+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/^-|-$/g, "");
 
 export const pathToFilename = (path: string): string => {
   const parts = path.split("/");

@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 /// A file extension that can be either a compile-time constant or a runtime-parsed value.
 ///
@@ -16,7 +17,7 @@ use std::fmt;
 /// assert_eq!(ext.without_period(), "mp4");
 /// assert_eq!(ext.with_period(), ".mp4");
 /// ```
-#[derive(Clone, Eq, Hash)]
+#[derive(Clone, Eq)]
 pub struct Extension {
   /// The extension without the leading period, e.g. "png", "mp4".
   value: Cow<'static, str>,
@@ -34,20 +35,14 @@ impl Extension {
   /// const MP4: Extension = Extension::from_static("mp4", ".mp4");
   /// ```
   pub const fn from_static(ext: &'static str, dotted: &'static str) -> Self {
-    Self {
-      value: Cow::Borrowed(ext),
-      dotted: Cow::Borrowed(dotted),
-    }
+    Self { value: Cow::Borrowed(ext), dotted: Cow::Borrowed(dotted) }
   }
 
   /// Creates an `Extension` from a `&str` at runtime.
   /// The input must NOT include a leading period.
   pub fn new(ext: &str) -> Self {
-    let dotted = format!(".{}", ext);
-    Self {
-      value: Cow::Owned(ext.to_string()),
-      dotted: Cow::Owned(dotted),
-    }
+    let dotted = format!(".{ext}");
+    Self { value: Cow::Owned(ext.to_string()), dotted: Cow::Owned(dotted) }
   }
 
   /// Returns the extension without the leading period, e.g. `"png"`.
@@ -64,6 +59,12 @@ impl Extension {
 impl PartialEq for Extension {
   fn eq(&self, other: &Self) -> bool {
     self.value == other.value
+  }
+}
+
+impl Hash for Extension {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.value.hash(state);
   }
 }
 
@@ -135,12 +136,28 @@ mod tests {
 
   #[test]
   fn display() {
-    assert_eq!(format!("{}", PNG), "png");
+    assert_eq!(format!("{PNG}"), "png");
     assert_eq!(format!("{}", Extension::new("xyz")), "xyz");
   }
 
   #[test]
   fn debug() {
-    assert_eq!(format!("{:?}", PNG), "Extension(\"png\")");
+    assert_eq!(format!("{PNG:?}"), "Extension(\"png\")");
+  }
+
+  #[test]
+  fn hash_matches_equality() {
+    let plain = Extension::from_static("png", ".png");
+    let inconsistent = Extension::from_static("png", ".not-a-suffix");
+    assert_eq!(plain, inconsistent);
+    assert_eq!(hash(&plain), hash(&inconsistent));
+  }
+
+  fn hash(extension: &Extension) -> u64 {
+    use std::collections::hash_map::DefaultHasher;
+
+    let mut hasher = DefaultHasher::new();
+    extension.hash(&mut hasher);
+    hasher.finish()
   }
 }

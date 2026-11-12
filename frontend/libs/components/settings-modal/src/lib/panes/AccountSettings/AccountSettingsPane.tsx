@@ -1,6 +1,6 @@
 import { ArtcraftAccountBlock } from "./ArtcraftAccountBlock";
-import { MidjourneyAccountBlock } from "./MidjourneyAccountBlock";
-import { GrokAccountBlock } from "./GrokAccountBlock";
+import { ProviderAccountBlock } from "./ProviderAccountBlock";
+import { GrokGetCredentialInfo, MidjourneyGetCredentialInfo } from "@storyteller/tauri-api";
 
 interface AccountSettingsPaneProps {
   globalAccountLogoutCallback: () => void;
@@ -15,9 +15,17 @@ export const AccountSettingsPane = ({
         globalAccountLogoutCallback={globalAccountLogoutCallback}
       />
       <hr className="border-ui-panel-border" />
-      <GrokAccountBlock />
+      <ProviderAccountBlock
+        name="Grok"
+        commandPrefix="grok"
+        getCredentialInfo={GrokGetCredentialInfo}
+      />
       <hr className="border-ui-panel-border" />
-      <MidjourneyAccountBlock />
+      <ProviderAccountBlock
+        name="Midjourney"
+        commandPrefix="midjourney"
+        getCredentialInfo={MidjourneyGetCredentialInfo}
+      />
     </div>
   );
 };
