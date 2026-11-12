@@ -37,8 +37,8 @@ export const GenerationCountPicker = ({
   }
 
   const onSelect = (item: PopoverItem) => {
-    let count = parseInt(item.label, 10);
-    if (isNaN(count)) {
+    let count = Number.parseInt(item.label, 10);
+    if (Number.isNaN(count)) {
       return;
     }
     if (count < 1 || count > maxGenerationCount) {

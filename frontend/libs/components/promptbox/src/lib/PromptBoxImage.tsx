@@ -37,6 +37,8 @@ import {
   type DroppedFiles,
 } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
+import { v4 as uuidv4 } from "uuid";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -96,7 +98,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (canUseReferenceImages && imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -289,7 +291,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (canUseReferenceImages && imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -370,7 +372,7 @@ export const PromptBoxImage = ({
       console.warn("Cannot generate image: prompt is empty");
       return;
     }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -389,9 +391,7 @@ export const PromptBoxImage = ({
 
     gtagEvent("enqueue_image");
 
-    const subscriberId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+    const subscriberId = uuidv4();
 
     setTimeout(() => {
       console.debug("Turn off blocking of prompt box...");
@@ -474,7 +474,7 @@ export const PromptBoxImage = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 
@@ -509,11 +509,7 @@ export const PromptBoxImage = ({
                 onBlur={() => setIsFocused(false)}
               />
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between gap-2">

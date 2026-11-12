@@ -39,6 +39,7 @@ import {
   type GalleryItem,
 } from "@storyteller/ui-generation-list";
 import { useTabStore } from "~/pages/Stores/TabState";
+import { v4 as uuidv4 } from "uuid";
 
 // Media item actions shared by the TopBar gallery modal / lightbox wiring and
 // the create pages' generation feed (rows + cards). All of them operate on
@@ -130,7 +131,7 @@ export async function downloadMediaFilesToFolder(
 export async function applyMakeVideoFromImage(url: string, mediaToken?: string) {
   try {
     const referenceImage: RefImage = {
-      id: Math.random().toString(36).substring(7),
+      id: uuidv4(),
       url,
       file: new File([], "library-image"),
       mediaToken: mediaToken || "",
@@ -178,7 +179,7 @@ export function applyRecreateFromPromptData(data: {
 
     for (const ci of contextImages) {
       const base = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: ci.media_links.cdn_url,
         mediaToken: ci.media_token,
       };

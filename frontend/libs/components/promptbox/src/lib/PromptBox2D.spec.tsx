@@ -129,3 +129,24 @@ it("rejects stale extra references instead of exceeding the endpoint's total ref
   expect(onGenerateClick).not.toHaveBeenCalled();
   expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("0 additional image references"));
 });
+
+it("uses the shared prompt limit counter and validation for WaveSpeed canvas requests", async () => {
+  const model = IMAGE_MODELS.find((entry) => entry.tauriId === "seedream_4")!;
+  const direct = imageModelForProvider(model, GenerationProvider.WaveSpeed, 1)!;
+  const onGenerateClick = vi.fn();
+  usePrompt2DStore.setState({ prompt: "a".repeat(direct.maxPromptLength + 1) });
+  render(<PromptBox2D
+    selectedImageModel={direct}
+    selectedProvider={GenerationProvider.WaveSpeed}
+    onGenerateClick={onGenerateClick}
+    EncodeImageBitmapToBase64={vi.fn()}
+    usePrompt2DStore={usePrompt2DStore}
+  />);
+  expect(screen.getByText(`${direct.maxPromptLength + 1} / ${direct.maxPromptLength}`).className).toContain("text-red-500");
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
+  expect(onGenerateClick).not.toHaveBeenCalled();
+  expect(toast.error).toHaveBeenCalledWith(`Prompt exceeds the ${direct.maxPromptLength} character limit for this model`);
+  act(() => { usePrompt2DStore.setState({ prompt: "a".repeat(direct.maxPromptLength) }); });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
+  expect(onGenerateClick).toHaveBeenCalledTimes(1);
+});

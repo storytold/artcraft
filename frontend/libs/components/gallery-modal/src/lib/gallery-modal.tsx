@@ -408,7 +408,7 @@ const SIDEBAR_TAG_LIMIT = 5;
 
 const hashString = (s: string): number => {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = Math.imul(Math.imul(h, 31) + s.charCodeAt(i), 1); // int32 wrap
   return h;
 };
 
@@ -965,7 +965,7 @@ export const GalleryModal = React.memo(
       // couldn't see it — making the library button appear broken.
       galleryModalDraggingUnder.value = false;
       let cancelled = false;
-      (async () => {
+      void (async () => {
         setUsernameError(false);
         const name = await fetchCurrentUsername();
         if (cancelled) return;
@@ -2744,7 +2744,6 @@ export const GalleryModal = React.memo(
                           }}
                           onBlur={handleConfirmRename}
                           className="text-lg font-semibold bg-transparent px-1.5 py-0 text-base-fg outline-none min-w-[6rem] caret-primary"
-                          autoFocus
                         />
                       ) : (
                         <h2
@@ -2773,6 +2772,7 @@ export const GalleryModal = React.memo(
                         {folderMenuOpen && (
                           <>
                             <div
+                              role="presentation"
                               className="fixed inset-0 z-[58]"
                               onClick={() => setFolderMenuOpen(false)}
                             />
@@ -3608,6 +3608,7 @@ export const GalleryModal = React.memo(
                       <>
                         {/* Backdrop to close */}
                         <div
+                          role="presentation"
                           className="fixed inset-0 z-[59]"
                           onClick={() => setBulkFolderPopoverOpen(false)}
                         />
@@ -3752,6 +3753,7 @@ export const GalleryModal = React.memo(
           createPortal(
             <>
               <div
+                role="presentation"
                 className="fixed inset-0 z-[9998]"
                 onClick={() => setContextMenu(null)}
                 onContextMenu={(e) => {

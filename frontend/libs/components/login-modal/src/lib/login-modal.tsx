@@ -110,7 +110,7 @@ export function LoginModal({
   };
 
   const handleDiscordJoin = () => {
-    window.open("https://discord.gg/75svZP2Vje", "_blank");
+    window.open("https://discord.gg/75svZP2Vje", "_blank", "noopener,noreferrer");
     setShowDiscord(false);
     setShowSuccess(true);
   };
@@ -246,6 +246,7 @@ export function LoginModal({
             leaveTo="opacity-0 scale-95"
           >
             <div
+              role="presentation"
               className={`relative w-full ${loggedInUsername !== null ? "max-w-md" : "max-w-lg lg:max-w-5xl"}`}
               onClick={(e) => e.stopPropagation()}
             >

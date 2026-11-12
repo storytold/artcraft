@@ -373,7 +373,7 @@ export const Stage3DBody = ({
   useEffect(() => {
     const handler = onImageDrop(
       (item: GalleryItem, position: { x: number; y: number }) => {
-        (async () => {
+        void (async () => {
           if (!editor) {
             console.warn("Cannot drop asset: editor engine not ready");
             return;
@@ -471,6 +471,7 @@ export const Stage3DBody = ({
             <CompletionModal />
 
             <div
+              role="presentation"
               className="absolute left-0 top-0 w-full"
               onClick={handleOverlayClick}
             >
@@ -509,6 +510,7 @@ export const Stage3DBody = ({
             </div>
 
             <div
+              role="presentation"
               className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >

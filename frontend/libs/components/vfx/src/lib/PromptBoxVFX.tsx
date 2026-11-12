@@ -17,6 +17,7 @@ import {
   type VFXModelId,
   type VFXResolution,
 } from "./types";
+import { v4 as uuidv4 } from "uuid";
 
 export type VFXUploadFn = (args: {
   title: string;
@@ -95,12 +96,12 @@ export const PromptBoxVFX = ({
 
       setSourceUploading(true);
       await uploadVideo({
-        title: `vfx-source-${Math.random().toString(36).slice(2, 10)}`,
+        title: `vfx-source-${uuidv4()}`,
         assetFile: file,
         progressCallback: (state) => {
           if (state.status === UploaderStates.success && state.data) {
             setSource({
-              id: Math.random().toString(36).slice(2),
+              id: uuidv4(),
               url: previewUrl,
               mediaToken: state.data,
             });
@@ -136,12 +137,12 @@ export const PromptBoxVFX = ({
 
       setUploading(true);
       await uploadImage({
-        title: `vfx-${kind}-${Math.random().toString(36).slice(2, 10)}`,
+        title: `vfx-${kind}-${uuidv4()}`,
         assetFile: file,
         progressCallback: (state) => {
           if (state.status === UploaderStates.success && state.data) {
             setRef({
-              id: Math.random().toString(36).slice(2),
+              id: uuidv4(),
               url: previewUrl,
               mediaToken: state.data,
             });
@@ -183,7 +184,7 @@ export const PromptBoxVFX = ({
         return;
       }
       const ref = {
-        id: Math.random().toString(36).slice(2),
+        id: uuidv4(),
         url: item.fullImage || item.thumbnail || "",
         mediaToken: item.id,
       };

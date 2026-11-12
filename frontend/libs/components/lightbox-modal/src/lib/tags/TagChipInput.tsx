@@ -141,6 +141,7 @@ export function TagChipInput({
   return (
     <div className="relative">
       <div
+        role="presentation"
         className={`flex flex-wrap items-center gap-1.5 rounded-[3px] bg-ui-panel border border-ui-panel-border focus-within:border-primary/60 px-3 py-2.5 ${
           disabled ? "" : "cursor-text"
         }`}

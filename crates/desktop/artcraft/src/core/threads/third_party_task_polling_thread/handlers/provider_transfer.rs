@@ -1,8 +1,8 @@
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use reqwest::Client;
 use tempfile::NamedTempFile;
+use tokio::io::AsyncWriteExt;
 use super::public_media_client::{public_media_client, validate_media_url};
 
 const MAX_TRANSFER_BYTES: u64 = 1024 * 1024 * 1024;
@@ -58,19 +58,21 @@ pub(super) async fn download_with_client(client: &Client, url: &str, directory: 
     return Err("Provider output exceeds transfer size limit".into());
   }
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url).map(|extension| extension.as_extension_without_period()).unwrap_or("bin");
-  let mut file = tempfile::Builder::new().prefix("provider_").suffix(&format!(".{extension}")).tempfile_in(directory)?;
+  let file = tempfile::Builder::new().prefix("provider_").suffix(&format!(".{extension}")).tempfile_in(directory)?;
+  let mut output = tokio::fs::File::from_std(file.reopen()?);
   let mut received = 0u64;
   while let Some(chunk) = response.chunk().await? {
     received += chunk.len() as u64;
     if received > max_bytes {
       return Err("Provider output exceeds transfer size limit".into());
     }
-    file.write_all(&chunk)?;
+    output.write_all(&chunk).await?;
   }
   if received == 0 {
     return Err("Provider returned an empty media file".into());
   }
-  file.flush()?;
+  output.flush().await?;
+  drop(output);
   Ok(file)
 }
 

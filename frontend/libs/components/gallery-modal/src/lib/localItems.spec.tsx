@@ -89,6 +89,24 @@ describe("gallery tile in select mode", () => {
   });
 });
 
+it.each(["Enter", " "])("supports %s bulk-selection of local history without enabling cloud reference selection", (key) => {
+  const onClick = vi.fn();
+  const onBulkSelectToggle = vi.fn();
+  render(<GalleryDraggableItem
+    item={item(LOCAL_ID)}
+    mode="view"
+    activeFilter="image"
+    selected={false}
+    onClick={onClick}
+    onImageError={vi.fn()}
+    onBulkSelectToggle={onBulkSelectToggle}
+    disableTooltipAndBadge
+  />);
+  fireEvent.keyDown(screen.getByRole("checkbox", { name: "Select tile" }), { key });
+  expect(onBulkSelectToggle).toHaveBeenCalledTimes(1);
+  expect(onClick).not.toHaveBeenCalled();
+});
+
 function item(id: string): GalleryItem {
   return {
     id,

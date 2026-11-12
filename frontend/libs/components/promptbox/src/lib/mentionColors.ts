@@ -30,13 +30,13 @@ export function getMentionColor(
 ): string {
   const imgMatch = label.match(/^@Image(\d+)$/);
   if (imgMatch)
-    return IMAGE_COLORS[(parseInt(imgMatch[1]) - 1) % IMAGE_COLORS.length];
+    return IMAGE_COLORS[(Number.parseInt(imgMatch[1]) - 1) % IMAGE_COLORS.length];
   const vidMatch = label.match(/^@Video(\d+)$/);
   if (vidMatch)
-    return VIDEO_COLORS[(parseInt(vidMatch[1]) - 1) % VIDEO_COLORS.length];
+    return VIDEO_COLORS[(Number.parseInt(vidMatch[1]) - 1) % VIDEO_COLORS.length];
   const audMatch = label.match(/^@Audio(\d+)$/);
   if (audMatch)
-    return AUDIO_COLORS[(parseInt(audMatch[1]) - 1) % AUDIO_COLORS.length];
+    return AUDIO_COLORS[(Number.parseInt(audMatch[1]) - 1) % AUDIO_COLORS.length];
   // Character mentions: match by name from mentionItems
   if (mentionItems) {
     const charItems = mentionItems.filter((m) => m.type === "character");

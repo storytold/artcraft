@@ -240,7 +240,7 @@ export function useBookmarkDrag({
       const clampedTime =
         dragState.currentTime > duration ? duration : dragState.currentTime;
 
-      editor.scenes.moveBookmark({
+      void editor.scenes.moveBookmark({
         fromTime: dragState.bookmarkTime,
         toTime: clampedTime,
       });

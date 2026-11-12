@@ -10,6 +10,13 @@ on:
 # This workflow creates Universal macOS builds with signing certificate support.
 # On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
 
+# One release build per branch at a time. A run in progress is never cancelled, because it may
+# already have created or uploaded to the draft release. If more pushes arrive while one runs,
+# GitHub keeps only the newest as pending, so the next build is of the latest commit.
+concurrency:
+  group: macos-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish-artcraft:
     permissions:
@@ -28,7 +35,13 @@ jobs:
           #   args: ''
 
     runs-on: ${{ matrix.platform }}
+    # Successful builds took 10-22 min (2026-04 to 2026-11).
+    timeout-minutes: 60
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
       - uses: actions/checkout@v7
 
       - name: setup node
@@ -37,8 +50,9 @@ jobs:
           node-version: lts/*
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
         with:
+          toolchain: stable
           targets: ${{ matrix.platform == 'macos-latest-xlarge' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
@@ -63,7 +77,7 @@ jobs:
           npm cache clean --force
 
           echo "Installing all workspace dependencies..."
-          npm ci
+          npm ci --ignore-scripts
 
           echo "=== Version Information ==="
           echo "Node version:"
@@ -196,9 +210,8 @@ jobs:
           # Increase Node.js memory limit for the build
           export NODE_OPTIONS="--max-old-space-size=8192"
 
-          # Use npx to ensure we use the local nx version
-          echo "Building with npx nx..."
-          npx nx run artcraft:build
+          echo "Building with nx..."
+          ./node_modules/.bin/nx run artcraft:build
 
           echo "Checking build output..."
           # shellcheck disable=SC2012
@@ -217,7 +230,7 @@ jobs:
 
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@v0
+        uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}

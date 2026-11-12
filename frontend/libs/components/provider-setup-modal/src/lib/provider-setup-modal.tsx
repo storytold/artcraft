@@ -131,7 +131,7 @@ export function ProviderSetupModal({
           icon={ArrowRightIcon}
           iconFlip={true}
           onClick={() => {
-            buttonOnClick();
+            void buttonOnClick();
           }}
         >
           {modalButtonText}

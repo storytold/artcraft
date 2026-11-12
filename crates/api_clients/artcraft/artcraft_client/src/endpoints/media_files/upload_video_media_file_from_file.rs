@@ -72,7 +72,7 @@ pub async fn upload_video_media_file_from_file_with_idempotency_token<P: AsRef<P
       .retry(reqwest::retry::never())
       .build()?;
 
-  let file_bytes = std::fs::read(args.path.as_ref())?;
+  let file_bytes = tokio::fs::read(args.path.as_ref()).await?;
   let file_name = args.path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()
