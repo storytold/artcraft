@@ -54,6 +54,15 @@ impl DataDir {
     }
   }
 
+  /// Context for an error using the folder, naming it and whether it came from
+  /// `ARTCRAFT_DATA_DIR`.
+  pub fn unusable(&self) -> String {
+    match self.source {
+      DataDirSource::EnvVar => format!("couldn't use {:?} (from {}) as the data directory", self.path, DATA_DIR_ENV_VAR),
+      DataDirSource::Default | DataDirSource::IgnoredEnvVar(_) => format!("couldn't use {:?} as the data directory", self.path),
+    }
+  }
+
   /// A line for the startup log.
   pub fn describe(&self) -> String {
     match &self.source {

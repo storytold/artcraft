@@ -8,7 +8,7 @@ use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::expanduser::expanduser;
 use crate::core::state::os_platform::OsPlatform;
 use anyhow::{anyhow, Context};
-use artcraft_data_dir::{DataDir, DataDirSource, DATA_DIR_ENV_VAR};
+use artcraft_data_dir::DataDir;
 use std::path::{Path, PathBuf};
 
 /// Note: Tauri appends ".log" to the end of the filename.
@@ -36,16 +36,11 @@ pub struct AppDataRoot {
 impl AppDataRoot {
   /// `~/Artcraft`, or the folder named by `ARTCRAFT_DATA_DIR`. Created if it doesn't exist.
   pub fn create_default() -> anyhow::Result<Self> {
+    // NB: The logger isn't installed yet; `set_app_log_level` logs the choice once it is.
     let data_dir = DataDir::resolve()?;
 
-    // NB: The logger isn't installed yet, so this has to print.
-    println!("{}", data_dir.describe());
-
     // NB: Say which folder failed (eg. an unwritable ARTCRAFT_DATA_DIR) in the startup panic.
-    let mut root = Self::create_existing(&data_dir.path).with_context(|| match data_dir.source {
-      DataDirSource::EnvVar => format!("couldn't use {:?} (from {}) as the data directory", data_dir.path, DATA_DIR_ENV_VAR),
-      DataDirSource::Default | DataDirSource::IgnoredEnvVar(_) => format!("couldn't use {:?} as the data directory", data_dir.path),
-    })?;
+    let mut root = Self::create_existing(&data_dir.path).with_context(|| data_dir.unusable())?;
 
     root.maybe_data_dir = Some(data_dir);
     Ok(root)
