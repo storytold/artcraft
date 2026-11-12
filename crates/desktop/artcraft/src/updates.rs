@@ -19,7 +19,7 @@ pub struct Updates {
   busy: AtomicBool,
   installing: AtomicBool,
   maybe_release: Mutex<Option<Release>>,
-  maybe_restart: Mutex<Option<self_update::Restart>>,
+  maybe_restart: Mutex<Option<Restart>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,6 +31,21 @@ pub struct UpdateInfo {
   pub releases_url: String,
 }
 
+type Restart = Box<dyn FnOnce() -> Result<(), String> + Send>;
+
+/// Only effects cross this boundary. Tests exercise the same state transitions without
+/// networking, changing an installed copy, reading personal preferences, or exiting a process.
+trait Backend {
+  fn stable_choice(&self) -> Result<(), String>;
+  fn check(&self) -> Result<Option<Release>, String>;
+  fn idle(&self) -> Result<(), String>;
+  fn installation(&self) -> Option<(Install, Platform)>;
+  fn can_replace(&self) -> bool;
+  fn prepare(&self, install: &Install, release: &Release, platform: Platform, before_replace: &dyn Fn() -> Result<(), String>) -> Result<Restart, String>;
+  fn request_exit(&self);
+}
+
+struct NativeBackend<'a>(&'a AppHandle);
 struct Installing<'a>(&'a AtomicBool);
 
 pub(crate) struct Operation {
@@ -44,34 +59,39 @@ impl Updates {
   }
 
   pub(crate) fn check(&self, app: &AppHandle) -> Result<UpdateInfo, String> {
-    stable_choice()?;
-    let http = Http::new(&format!("ArtCraft/{ARTCRAFT_VERSION}"))?;
-    let maybe_release = craft_update::check_for_update(&APP, &http, ARTCRAFT_VERSION)?;
-    let tasks_running = ensure_idle(app).is_err();
-    let info = update_info(maybe_release.as_ref(), maybe_release.as_ref().is_some_and(replacement_available), tasks_running);
+    self.check_with(&NativeBackend(app))
+  }
+
+  fn check_with(&self, backend: &impl Backend) -> Result<UpdateInfo, String> {
+    backend.stable_choice()?;
+    let maybe_release = backend.check()?;
+    let tasks_running = backend.idle().is_err();
+    let self_updating = maybe_release.as_ref().is_some_and(|release| backend.can_replace() && backend.installation().is_some_and(|(install, platform)| release_fits_copy(release, &install, platform)));
+    let info = update_info(maybe_release.as_ref(), self_updating, tasks_running);
     *self.maybe_release.lock().map_err(|_| "The update state is unavailable. Restart ArtCraft and try again.")? = maybe_release;
     Ok(info)
   }
 
   pub(crate) fn install(&self, app: &AppHandle) -> Result<(), String> {
+    self.install_with(&NativeBackend(app))
+  }
+
+  fn install_with(&self, backend: &impl Backend) -> Result<(), String> {
     self.installing.store(true, Ordering::Release);
     let _installing = Installing(&self.installing);
-    ensure_idle(app)?;
-    stable_choice()?;
+    backend.idle()?;
+    backend.stable_choice()?;
     let release = self.maybe_release.lock().map_err(|_| "The update state is unavailable. Restart ArtCraft and try again.")?.clone().ok_or("Check for updates before installing one.")?;
-    let install = self_update::current(&APP).ok_or("This installation cannot update itself. Open Releases or use its package manager.")?;
-    let platform = Platform::current().ok_or("No installer is available for this platform.")?;
-    if !self_update::is_self_updating(&APP) || !release_fits_copy(&release, &install, platform) {
+    let (install, platform) = backend.installation().ok_or("This installation cannot update itself. Open Releases or use its package manager.")?;
+    if !backend.can_replace() || !release_fits_copy(&release, &install, platform) {
       return Err("Use Releases or your package manager to update this installation.".into());
     }
-    let http = Http::new(&format!("ArtCraft/{ARTCRAFT_VERSION}"))?;
-    let paths = Paths::for_app(&APP)?;
     // Recheck tasks and launcher choices immediately before replacing any application files.
-    let before_replace = || ensure_idle(app).and_then(|()| stable_choice());
-    let restart = self_update::prepare_update(&APP, &install, &release, platform, &http, &paths, &Stop::default(), &mut |_| {}, &before_replace, Some(ARTCRAFT_VERSION))?;
+    let before_replace = || backend.idle().and_then(|()| backend.stable_choice());
+    let restart = backend.prepare(&install, &release, platform, &before_replace)?;
     *self.maybe_restart.lock().map_err(|_| "The restart state is unavailable. Restart ArtCraft manually.")? = Some(restart);
     // The helper starts in RunEvent::Exit, after Tauri accepts the normal exit request.
-    app.exit(0);
+    backend.request_exit();
     Ok(())
   }
 
@@ -85,7 +105,7 @@ impl Updates {
     match self.maybe_restart.lock() {
       Ok(mut pending) => {
         if let Some(restart) = pending.take() {
-          if let Err(error) = restart.start() {
+          if let Err(error) = restart() {
             log::error!("Could not start the update helper: {error}");
           }
         }
@@ -144,13 +164,37 @@ fn active_task(status: TaskStatus) -> bool {
   matches!(status, TaskStatus::Pending | TaskStatus::Started | TaskStatus::AttemptFailed)
 }
 
-fn replacement_available(release: &Release) -> bool {
-  if !self_update::is_self_updating(&APP) {
-    return false;
+impl Backend for NativeBackend<'_> {
+  fn stable_choice(&self) -> Result<(), String> {
+    stable_choice()
   }
-  match (self_update::current(&APP), Platform::current()) {
-    (Some(install), Some(platform)) => release_fits_copy(release, &install, platform),
-    _ => false,
+
+  fn check(&self) -> Result<Option<Release>, String> {
+    let http = Http::new(&format!("ArtCraft/{ARTCRAFT_VERSION}"))?;
+    craft_update::check_for_update(&APP, &http, ARTCRAFT_VERSION)
+  }
+
+  fn idle(&self) -> Result<(), String> {
+    ensure_idle(self.0)
+  }
+
+  fn installation(&self) -> Option<(Install, Platform)> {
+    self_update::current(&APP).zip(Platform::current())
+  }
+
+  fn can_replace(&self) -> bool {
+    self_update::is_self_updating(&APP)
+  }
+
+  fn prepare(&self, install: &Install, release: &Release, platform: Platform, before_replace: &dyn Fn() -> Result<(), String>) -> Result<Restart, String> {
+    let http = Http::new(&format!("ArtCraft/{ARTCRAFT_VERSION}"))?;
+    let paths = Paths::for_app(&APP)?;
+    let restart = self_update::prepare_update(&APP, install, release, platform, &http, &paths, &Stop::default(), &mut |_| {}, before_replace, Some(ARTCRAFT_VERSION))?;
+    Ok(Box::new(move || restart.start()))
+  }
+
+  fn request_exit(&self) {
+    self.0.exit(0);
   }
 }
 
@@ -236,5 +280,210 @@ mod tests {
     drop(first);
     assert!(state.begin().is_ok());
     assert!(state.maybe_release.lock().expect("state").is_none());
+  }
+
+  #[test]
+  fn a_manual_check_offers_a_matching_idle_install_and_defers_its_helper_until_exit() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    let info = state.check_with(&backend).expect("checked");
+    assert!(info.can_install);
+    state.install_with(&backend).expect("prepared");
+    assert!(backend.exit_requested.load(Ordering::Acquire));
+    assert!(!backend.helper_started.load(Ordering::Acquire));
+    assert!(!state.prevents_exit(), "the prepared update may exit normally");
+    state.finish();
+    assert!(backend.helper_started.load(Ordering::Acquire));
+    state.finish();
+    assert_eq!(backend.helper_runs.load(Ordering::Acquire), 1, "exit events cannot run a helper twice");
+  }
+
+  #[test]
+  fn a_pin_stops_network_checks_and_replacement() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    backend.pinned.store(true, Ordering::Release);
+    assert!(state.check_with(&backend).unwrap_err().contains("pinned"));
+    assert!(!backend.checked.load(Ordering::Acquire));
+    assert!(state.install_with(&backend).unwrap_err().contains("pinned"));
+    assert!(!state.prevents_exit());
+    assert!(!backend.exit_requested.load(Ordering::Acquire));
+  }
+
+  #[test]
+  fn running_tasks_allow_a_check_but_block_the_install() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    backend.busy.store(true, Ordering::Release);
+    let info = state.check_with(&backend).expect("checking while busy");
+    assert!(info.tasks_running);
+    assert!(!info.can_install);
+    assert!(state.install_with(&backend).unwrap_err().contains("busy"));
+    assert!(!state.prevents_exit());
+    assert!(!backend.exit_requested.load(Ordering::Acquire));
+  }
+
+  #[test]
+  fn a_pin_or_task_started_during_download_stops_replacement_and_exit() {
+    for pin in [false, true] {
+      let state = Updates::default();
+      let backend = FakeBackend::default();
+      state.check_with(&backend).expect("checked");
+      backend.pin_during_download.store(pin, Ordering::Release);
+      backend.task_during_download.store(!pin, Ordering::Release);
+      assert!(state.install_with(&backend).is_err());
+      assert!(!state.prevents_exit(), "failed installation releases the close guard");
+      assert!(!backend.exit_requested.load(Ordering::Acquire));
+      assert!(state.maybe_restart.lock().expect("restart state").is_none());
+    }
+  }
+
+  #[test]
+  fn an_install_requires_a_previous_check_and_a_replaceable_matching_copy() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    assert!(state.install_with(&backend).unwrap_err().contains("Check for updates"));
+    state.check_with(&backend).expect("checked");
+    backend.managed.store(true, Ordering::Release);
+    assert!(!state.check_with(&backend).expect("managed check").can_install);
+    assert!(state.install_with(&backend).unwrap_err().contains("package manager"));
+    backend.managed.store(false, Ordering::Release);
+    backend.missing_install.store(true, Ordering::Release);
+    assert!(!state.check_with(&backend).expect("unknown install").can_install);
+    assert!(state.install_with(&backend).unwrap_err().contains("cannot update"));
+    backend.missing_install.store(false, Ordering::Release);
+    backend.wrong_arch.store(true, Ordering::Release);
+    assert!(!state.check_with(&backend).expect("no matching asset").can_install);
+    assert!(state.install_with(&backend).unwrap_err().contains("package manager"));
+    assert!(!backend.exit_requested.load(Ordering::Acquire));
+  }
+
+  #[test]
+  fn no_new_release_clears_a_previous_offer_and_a_failed_check_is_reported() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    state.check_with(&backend).expect("first check");
+    backend.no_release.store(true, Ordering::Release);
+    assert!(!state.check_with(&backend).expect("current version").can_install);
+    assert!(state.maybe_release.lock().expect("release").is_none());
+    backend.network_error.store(true, Ordering::Release);
+    assert!(state.check_with(&backend).unwrap_err().contains("offline"));
+  }
+
+  #[test]
+  fn a_failed_download_never_requests_exit_or_keeps_the_close_guard() {
+    let state = Updates::default();
+    let backend = FakeBackend::default();
+    state.check_with(&backend).expect("check");
+    backend.download_error.store(true, Ordering::Release);
+    assert!(state.install_with(&backend).unwrap_err().contains("download"));
+    assert!(!state.prevents_exit());
+    assert!(!backend.exit_requested.load(Ordering::Acquire));
+  }
+
+  #[test]
+  fn poisoned_state_returns_an_error_and_refuses_an_unsafe_exit() {
+    let state = Arc::new(Updates::default());
+    let other = Arc::clone(&state);
+    let _ = std::thread::spawn(move || {
+      let _guard = other.maybe_release.lock().unwrap();
+      panic!("simulate a previous worker failure");
+    })
+    .join();
+    let backend = FakeBackend::default();
+    assert!(state.check_with(&backend).is_err());
+    assert!(state.install_with(&backend).is_err());
+    let other = Arc::clone(&state);
+    let _ = std::thread::spawn(move || {
+      let _guard = other.maybe_restart.lock().unwrap();
+      panic!("simulate a previous helper-state failure");
+    })
+    .join();
+    state.installing.store(true, Ordering::Release);
+    assert!(state.prevents_exit());
+    state.finish();
+  }
+
+  #[test]
+  fn every_supported_install_kind_requires_its_own_asset() {
+    use craft_update::{Arch, Asset};
+    let linux = Platform { os: Os::Linux, arch: Arch::X64 };
+    let windows = Platform { os: Os::Windows, arch: Arch::X64 };
+    let release = Release { assets: ["artcraft-99.0.0-linux-x86_64.AppImage", "artcraft-99.0.0-linux-x86_64.tar.gz", "artcraft-99.0.0-linux-x86_64.deb", "artcraft-99.0.0-windows-x64-portable.zip"].into_iter().map(|name| Asset { name: name.into(), ..Asset::default() }).collect(), ..Release::default() };
+    for install in [Install::AppImage("unused".into()), Install::Standalone("unused".into()), Install::Package(PackageKind::Deb, "unused".into())] {
+      assert!(release_fits_copy(&release, &install, linux));
+    }
+    assert!(release_fits_copy(&release, &Install::Portable("unused".into()), windows));
+    assert!(!release_fits_copy(&release, &Install::Package(PackageKind::Rpm, "unused".into()), linux));
+  }
+
+  #[derive(Default)]
+  struct FakeBackend {
+    pinned: AtomicBool,
+    busy: AtomicBool,
+    managed: AtomicBool,
+    missing_install: AtomicBool,
+    wrong_arch: AtomicBool,
+    no_release: AtomicBool,
+    network_error: AtomicBool,
+    download_error: AtomicBool,
+    pin_during_download: AtomicBool,
+    task_during_download: AtomicBool,
+    checked: AtomicBool,
+    exit_requested: AtomicBool,
+    helper_started: Arc<AtomicBool>,
+    helper_runs: Arc<std::sync::atomic::AtomicUsize>,
+  }
+
+  impl Backend for FakeBackend {
+    fn stable_choice(&self) -> Result<(), String> {
+      if self.pinned.load(Ordering::Acquire) {
+        Err("pinned".into())
+      } else {
+        Ok(())
+      }
+    }
+    fn check(&self) -> Result<Option<Release>, String> {
+      self.checked.store(true, Ordering::Release);
+      if self.network_error.load(Ordering::Acquire) {
+        return Err("offline".into());
+      }
+      Ok((!self.no_release.load(Ordering::Acquire)).then(|| Release { tag: "artcraft-v99.0.0".into(), assets: vec![craft_update::Asset { name: "artcraft-99.0.0-linux-x86_64.flatpak".into(), ..Default::default() }], ..Default::default() }))
+    }
+    fn idle(&self) -> Result<(), String> {
+      if self.busy.load(Ordering::Acquire) {
+        Err("busy".into())
+      } else {
+        Ok(())
+      }
+    }
+    fn installation(&self) -> Option<(Install, Platform)> {
+      (!self.missing_install.load(Ordering::Acquire)).then(|| (Install::Flatpak, Platform { os: Os::Linux, arch: if self.wrong_arch.load(Ordering::Acquire) { craft_update::Arch::Arm64 } else { craft_update::Arch::X64 } }))
+    }
+    fn can_replace(&self) -> bool {
+      !self.managed.load(Ordering::Acquire)
+    }
+    fn prepare(&self, _: &Install, _: &Release, _: Platform, before_replace: &dyn Fn() -> Result<(), String>) -> Result<Restart, String> {
+      if self.download_error.load(Ordering::Acquire) {
+        return Err("download failed".into());
+      }
+      if self.pin_during_download.load(Ordering::Acquire) {
+        self.pinned.store(true, Ordering::Release);
+      }
+      if self.task_during_download.load(Ordering::Acquire) {
+        self.busy.store(true, Ordering::Release);
+      }
+      before_replace()?;
+      let started = Arc::clone(&self.helper_started);
+      let runs = Arc::clone(&self.helper_runs);
+      Ok(Box::new(move || {
+        started.store(true, Ordering::Release);
+        runs.fetch_add(1, Ordering::AcqRel);
+        Ok(())
+      }))
+    }
+    fn request_exit(&self) {
+      self.exit_requested.store(true, Ordering::Release);
+    }
   }
 }
