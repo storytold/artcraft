@@ -30,7 +30,17 @@ vi.mock("@storyteller/ui-button", () => ({
 }));
 vi.mock("@storyteller/ui-modal", () => ({ Modal: () => null }));
 vi.mock("@storyteller/ui-toaster", () => ({ toast: { error: vi.fn() } }));
-vi.mock("./ImagePromptRow", () => ({ ImagePromptRow: () => null }));
+vi.mock("./ImagePromptRow", () => ({
+  ImagePromptRow: ({ referenceImages, setReferenceImages, allowUpload, maxImagePromptCount }: {
+    referenceImages: { id: string }[];
+    setReferenceImages: (images: { id: string }[]) => void;
+    allowUpload: boolean;
+    maxImagePromptCount: number;
+  }) => <div>
+    {allowUpload && referenceImages.length < maxImagePromptCount && <button>Upload reference</button>}
+    {referenceImages.slice(0, maxImagePromptCount).map((image) => <button key={image.id} onClick={() => setReferenceImages(referenceImages.filter((entry) => entry.id !== image.id))}>Remove reference {image.id}</button>)}
+  </div>,
+}));
 vi.mock("./PromptFullscreenButton", () => ({ PromptFullscreenButton: () => null }));
 vi.mock("./PromptClearAllButton", () => ({ PromptClearAllButton: () => null, PROMPT_TOOLBAR_ICON_BUTTON_CLASSES: "" }));
 vi.mock("./PromptFullscreenModal", () => ({
@@ -149,4 +159,22 @@ it("uses the shared prompt limit counter and validation for WaveSpeed canvas req
   act(() => { usePrompt2DStore.setState({ prompt: "a".repeat(direct.maxPromptLength) }); });
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
   expect(onGenerateClick).toHaveBeenCalledTimes(1);
+});
+
+it("keeps unsupported references removable after switching models without clearing the prompt", async () => {
+  const model = IMAGE_MODELS.find((entry) => entry.tauriId === "seedream_4")!;
+  const zeroReferences = IMAGE_MODELS.find((entry) => entry.tauriId === "flux_1_dev")!;
+  const onGenerateClick = vi.fn();
+  usePrompt2DStore.setState({ referenceImages: ["first", "second"].map((id) => ({ id, mediaToken: `mf_${id}`, url: `https://example.com/${id}.png`, file: new File([], `${id}.png`) })) });
+  const props = { selectedProvider: GenerationProvider.WaveSpeed, onGenerateClick, EncodeImageBitmapToBase64: vi.fn(), usePrompt2DStore };
+  const { rerender } = render(<PromptBox2D {...props} selectedImageModel={imageModelForProvider(model, GenerationProvider.WaveSpeed, 1)} />);
+  rerender(<PromptBox2D {...props} selectedImageModel={imageModelForProvider(zeroReferences, GenerationProvider.WaveSpeed, 1)} />);
+  expect(screen.queryByRole("button", { name: "Upload reference" })).toBeNull();
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
+  expect(onGenerateClick).not.toHaveBeenCalled();
+  for (const id of ["first", "second"]) fireEvent.click(screen.getByRole("button", { name: `Remove reference ${id}` }));
+  expect(usePrompt2DStore.getState().prompt).toBe("edit this image");
+  expect(usePrompt2DStore.getState().referenceImages).toEqual([]);
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
+  expect(onGenerateClick).toHaveBeenCalledWith("edit this image", expect.objectContaining({ images: [] }));
 });

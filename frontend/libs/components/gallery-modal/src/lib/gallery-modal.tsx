@@ -608,7 +608,9 @@ export const GalleryModal = React.memo(
     // Separate state for pagination spinner (bottom of list) — not shared with background refresh
     const [paginationLoading, setPaginationLoading] = useState(false);
     // Ref-based lock to prevent re-entrant loadItems calls
-    const isLoadingRef = useRef(false);
+    const activeLoadRef = useRef<{ scope: string } | null>(null);
+    const loadEpochRef = useRef(0);
+    const verifiedUsernameRef = useRef("");
     // Lightbox state is now handled via signals
     const lightboxImageSignal = galleryModalLightboxImage;
     const lightboxVisibleSignal = galleryModalLightboxVisible;
@@ -964,12 +966,21 @@ export const GalleryModal = React.memo(
       // freshly-opened modal would render hidden (contentHidden) and the user
       // couldn't see it — making the library button appear broken.
       galleryModalDraggingUnder.value = false;
+      loadEpochRef.current += 1;
+      activeLoadRef.current = null;
+      verifiedUsernameRef.current = "";
+      setRemoteItems([]);
+      setInitialLoading(true);
       let cancelled = false;
       void (async () => {
         setUsernameError(false);
         const name = await fetchCurrentUsername();
         if (cancelled) return;
+        verifiedUsernameRef.current = name ?? "";
+        setLoading(false);
+        setPaginationLoading(false);
         if (!name) {
+          usernameRef.current = "";
           setUsername("");
           setRemoteItems([]);
           setHasMore(false);
@@ -986,6 +997,7 @@ export const GalleryModal = React.memo(
           setPageIndex(0);
           setHasMore(true);
           setInitialLoading(true);
+          usernameRef.current = name;
           setUsername(name);
         } else {
           // Same user reopening — just refresh (shows cache + background refetch).
@@ -994,12 +1006,15 @@ export const GalleryModal = React.memo(
       })();
       return () => {
         cancelled = true;
+        loadEpochRef.current += 1;
+        verifiedUsernameRef.current = "";
+        activeLoadRef.current = null;
       };
     }, [mode, galleryModalVisibleViewMode.value, isOpen, usernameRetryCount]);
 
     // Helper to build the cache key for the current filter
     const getCacheKey = useCallback(
-      () => `gallery_${activeFilterRef.current}`,
+      () => `gallery_${usernameRef.current}_${activeFilterRef.current}`,
       [],
     );
 
@@ -1084,10 +1099,14 @@ export const GalleryModal = React.memo(
       async (reset = false) => {
         const currentUsername = usernameRef.current;
         const currentFilter = activeFilterRef.current;
-        if (!currentUsername) return;
-        // Ref-based lock prevents concurrent/re-entrant calls
-        if (isLoadingRef.current) return;
-        isLoadingRef.current = true;
+        if (!currentUsername || currentUsername !== verifiedUsernameRef.current) return;
+        const epoch = loadEpochRef.current;
+        const scope = `${epoch}:${currentUsername}:${currentFilter}`;
+        if (activeLoadRef.current?.scope === scope) return;
+        const request = { scope };
+        activeLoadRef.current = request;
+        const isCurrent = () => epoch === loadEpochRef.current && currentUsername === verifiedUsernameRef.current && currentFilter === activeFilterRef.current;
+        const cacheKey = getCacheKey();
         setLoading(true);
         if (!reset) setPaginationLoading(true);
         try {
@@ -1107,6 +1126,7 @@ export const GalleryModal = React.memo(
                     cursor,
                     page_size: PAGE_SIZE,
                   });
+            if (!isCurrent()) return;
 
             if (response.success && response.data) {
               setItemsLoadError(null);
@@ -1115,7 +1135,7 @@ export const GalleryModal = React.memo(
               if (reset) {
                 setRemoteItems(newItems);
               } else {
-                setRemoteItems((prev) => [...prev, ...newItems]);
+                setRemoteItems((prev) => isCurrent() ? [...prev, ...newItems] : prev);
               }
 
               const nextCursor = response.pagination?.maybe_next ?? undefined;
@@ -1124,8 +1144,8 @@ export const GalleryModal = React.memo(
               setPageIndex(0);
               setHasMore(more);
 
-              const cacheKey = getCacheKey();
               setRemoteItems((latest) => {
+                if (!isCurrent()) return latest;
                 galleryCacheMap.set(cacheKey, {
                   items: latest,
                   pageIndex: 0,
@@ -1141,10 +1161,6 @@ export const GalleryModal = React.memo(
               );
             }
 
-            setLoading(false);
-            setPaginationLoading(false);
-            setInitialLoading(false);
-            isLoadingRef.current = false;
             return;
           }
 
@@ -1163,6 +1179,7 @@ export const GalleryModal = React.memo(
             page_size: PAGE_SIZE,
           };
           const response = await api.listUserMediaFiles(query);
+          if (!isCurrent()) return;
 
           if (response.success && response.data) {
             setItemsLoadError(null);
@@ -1190,6 +1207,7 @@ export const GalleryModal = React.memo(
               // that would evict everything loaded by infinite scroll.
               // Deletions are handled live via `media_file_deleted_event`.
               setRemoteItems((prev) => {
+                if (!isCurrent()) return prev;
                 if (prev.length === 0) return newItems;
                 if (newItems.length === 0) return prev;
                 const existingIds = new Set(prev.map((it) => it.id));
@@ -1222,7 +1240,7 @@ export const GalleryModal = React.memo(
                 return [...brandNew, ...updated];
               });
             } else {
-              setRemoteItems((prev) => [...prev, ...newItems]);
+              setRemoteItems((prev) => isCurrent() ? [...prev, ...newItems] : prev);
             }
 
             // Pagination logic
@@ -1232,8 +1250,8 @@ export const GalleryModal = React.memo(
             setHasMore(current + 1 < total);
 
             // Update cache
-            const cacheKey = getCacheKey();
             setRemoteItems((latest) => {
+              if (!isCurrent()) return latest;
               galleryCacheMap.set(cacheKey, {
                 items: latest,
                 pageIndex: current + 1,
@@ -1248,14 +1266,20 @@ export const GalleryModal = React.memo(
             );
           }
         } catch (error) {
+          if (!isCurrent()) return;
           const msg = error instanceof Error ? error.message : String(error);
           console.error("Failed to fetch library items:", msg);
           setItemsLoadError(msg);
+        } finally {
+          if (activeLoadRef.current === request) {
+            activeLoadRef.current = null;
+            if (isCurrent()) {
+              setLoading(false);
+              setPaginationLoading(false);
+              setInitialLoading(false);
+            }
+          }
         }
-        setLoading(false);
-        setPaginationLoading(false);
-        setInitialLoading(false);
-        isLoadingRef.current = false;
       },
       [api, mediaFilesApi, mapApiItem, getCacheKey],
     );
@@ -1264,7 +1288,7 @@ export const GalleryModal = React.memo(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const refreshGallery = useCallback(() => {
       setItemsLoadError(null);
-      const cacheKey = `gallery_${activeFilterRef.current}`;
+      const cacheKey = getCacheKey();
       const cached = galleryCacheMap.get(cacheKey);
 
       if (cached && cached.items.length > 0) {
@@ -1284,7 +1308,7 @@ export const GalleryModal = React.memo(
         setInitialLoading(true);
         loadItems(true);
       }
-    }, [loadItems]);
+    }, [loadItems, getCacheKey]);
 
     // Keep the ref pointed at the latest refreshGallery so the session-fetch
     // effect can call it without taking it as a dep (avoids tearing).
@@ -2532,7 +2556,7 @@ export const GalleryModal = React.memo(
         } else if (
           galleryTabRef.current !== "folders" &&
           hasMore &&
-          !isLoadingRef.current
+          !activeLoadRef.current
         ) {
           loadItems();
         }

@@ -42,6 +42,24 @@ afterEach(() => {
 });
 
 describe("native login modal integration", () => {
+  it("cannot continue signed out while password authentication is pending", async () => {
+    await act(async () => { render(<LoginModal isSignUp={false} />); });
+    let rejectLogin!: (reason: Error) => void;
+    native.mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectLogin = reject; }));
+    fireEvent.change(screen.getByPlaceholderText("you@example.com or username"), { target: { value: "native_user" } });
+    fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), { target: { value: "password123" } });
+    await act(async () => { fireEvent.click(screen.getAllByRole("button", { name: "Log in" }).find((button) => button.getAttribute("type") === "submit")!); });
+    const signedOut = screen.getByRole("button", { name: "Continue without an account" }) as HTMLButtonElement;
+    expect(signedOut.disabled).toBe(true);
+    fireEvent.click(signedOut);
+    expect(useLoginModalStore.getState().isOpen).toBe(true);
+    expect(localStorage.getItem("artcraft.continueWithoutAccount")).toBeNull();
+    await act(async () => { rejectLogin(new Error("Login failed")); });
+    expect(signedOut.disabled).toBe(false);
+    fireEvent.click(signedOut);
+    expect(useLoginModalStore.getState().isOpen).toBe(false);
+  });
+
   it("remembers continuing without an account and skips the startup login prompt", async () => {
     await act(async () => { render(<LoginModal />); });
     fireEvent.click(screen.getByRole("button", { name: "Continue without an account" }));

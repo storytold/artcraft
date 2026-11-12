@@ -214,6 +214,7 @@ export function LoginModal({
 
   /** Invalidate pending authentication callbacks, remember the signed-out choice when storage permits, and close the modal. */
   const continueSignedOut = () => {
+    if (isLoading) return;
     authGeneration.current += 1;
     try {
       localStorage.setItem(CONTINUE_SIGNED_OUT_KEY, "1");
@@ -310,7 +311,8 @@ export function LoginModal({
                           <button
                             type="button"
                             onClick={continueSignedOut}
-                            className="text-sm font-medium text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+                            disabled={isLoading}
+                            className="text-sm font-medium text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             Continue without an account
                           </button>

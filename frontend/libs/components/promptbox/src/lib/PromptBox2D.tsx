@@ -173,10 +173,9 @@ export const PromptBox2D = ({
   }, [resolution]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isImageRowVisible =
-    showImagePrompts ||
-    (selectedImageModel?.canUseImagePrompt && referenceImages.length > 0) ||
-    false;
+  const canAddImagePrompts = !!selectedImageModel?.canUseImagePrompt && (selectedImageModel.maxImagePromptCount ?? 0) > 0;
+  const visibleReferenceCount = Math.max(referenceImages.length, canAddImagePrompts ? selectedImageModel?.maxImagePromptCount ?? 1 : 0);
+  const isImageRowVisible = referenceImages.length > 0 || (canAddImagePrompts && showImagePrompts);
 
   useEffect(() => {
     if (isExpanded) return;
@@ -382,14 +381,11 @@ export const PromptBox2D = ({
         {content}
       </Modal>
       <div className="absolute bottom-4 left-1/2 flex w-[90vw] max-w-5xl -translate-x-1/2 flex-col gap-3">
-        {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
+        {isImageRowVisible && (
           <ImagePromptRow
             visible={true}
-            maxImagePromptCount={Math.max(
-              1,
-              selectedImageModel?.maxImagePromptCount ?? 1,
-            )}
-            allowUpload={true}
+            maxImagePromptCount={visibleReferenceCount}
+            allowUpload={canAddImagePrompts}
             referenceImages={referenceImages}
             setReferenceImages={setReferenceImages}
             uploadImage={uploadImage as any}
@@ -408,13 +404,12 @@ export const PromptBox2D = ({
         <div
           className={twMerge(
             "glass relative w-full p-4",
-            selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
+            isImageRowVisible &&
               "rounded-t-none",
           )}
         >
           <div className="flex gap-3">
-            {selectedImageModel?.canUseImagePrompt && (
+            {canAddImagePrompts && (
               <Tooltip
                 content="Add Image"
                 position="top"
@@ -596,14 +591,11 @@ export const PromptBox2D = ({
           />
         }
         imagePromptRow={
-          selectedImageModel?.canUseImagePrompt ? (
+          canAddImagePrompts || referenceImages.length > 0 ? (
             <ImagePromptRow
               visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedImageModel?.maxImagePromptCount ?? 1,
-              )}
-              allowUpload={true}
+              maxImagePromptCount={visibleReferenceCount}
+              allowUpload={canAddImagePrompts}
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage as any}

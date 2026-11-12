@@ -1058,6 +1058,10 @@ export const PromptBoxVideo = ({
       toast.error("Choose exactly one input video to edit or extend");
       return;
     }
+    if (canUseReferenceMedia && referenceImages.length > maxImageCount) {
+      toast.error(`Remove reference images above the current limit of ${maxImageCount}`);
+      return;
+    }
     if (!prompt.trim()) {
       console.warn("Cannot generate video: prompt is empty");
       toast.error("Please enter a prompt to generate video");

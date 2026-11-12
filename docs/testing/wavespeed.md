@@ -23,3 +23,9 @@ creates cloud media and does not prove video/legacy endpoint deduplication.
 OS keychain migration tests use a mock credential store. Manually verify Keychain
 on macOS, Credential Manager on Windows, and an unlocked Secret Service on Linux,
 including missing/locked-store errors. No plaintext fallback is permitted.
+
+Review regressions cover cached executable-filename rejection, pending-login
+signed-out controls, image-reference limits after model/mode switches, and Draw
+coordinate preservation. Gallery tests delay old user and session-scoped media
+responses across account switches and logout, including stale success and error
+responses, without blocking the new user's initial request.

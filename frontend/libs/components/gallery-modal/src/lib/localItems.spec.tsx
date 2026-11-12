@@ -1,9 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GalleryItem } from "./gallery-modal";
-import { GalleryModal } from "./gallery-modal";
+import { clearGalleryCache, GalleryModal } from "./gallery-modal";
 import { galleryModalVisibleViewMode } from "./galleryModalSignals";
-import { GalleryModalApi, UsersApi } from "@storyteller/api";
+import { GalleryModalApi, MediaFilesApi, UsersApi } from "@storyteller/api";
 import { GalleryDraggableItem } from "./GalleryDraggableItem";
 import { GalleryItemMenuItems } from "./GalleryItemMenuItems";
 import { showActionReminder } from "@storyteller/ui-action-reminder-modal";
@@ -19,7 +19,69 @@ vi.mock("@storyteller/ui-action-reminder-modal", async () => {
   const { signal } = await import("@preact/signals-react");
   return { showActionReminder: vi.fn(), isActionReminderOpen: signal(false) };
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); galleryModalVisibleViewMode.value = false; vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); clearGalleryCache(); vi.restoreAllMocks(); vi.clearAllMocks(); galleryModalVisibleViewMode.value = false; vi.unstubAllGlobals(); });
+
+it.each(["success", "failure", "exception"])("discards a previous user's late %s without blocking the new user's refresh", async (outcome) => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  const session = vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: true, data: { user: { username: "alice" } } } as any);
+  let settleAlice!: (value: any) => void;
+  let rejectAlice!: (error: Error) => void;
+  const pendingAlice = new Promise<any>((resolve, reject) => { settleAlice = resolve; rejectAlice = reject; });
+  const remoteItem = (name: string) => ({ token: `mf_${name}`, title: name, media_class: "image", created_at: "2026-11-12T00:00:00Z", media_links: { cdn_url: `https://example.com/${name}.png` } });
+  const list = vi.spyOn(GalleryModalApi.prototype, "listUserMediaFiles").mockImplementation((query) => query.username === "alice"
+    ? pendingAlice : Promise.resolve({ success: true, data: [remoteItem("bob")], pagination: { current: 0, total_page_count: 1 } } as any));
+  const { rerender } = render(<GalleryModal mode="select" isOpen forceFilter="image" />);
+  await waitFor(() => expect(list).toHaveBeenCalledWith(expect.objectContaining({ username: "alice" })));
+  rerender(<GalleryModal mode="select" isOpen={false} forceFilter="image" />);
+  session.mockResolvedValue({ success: true, data: { user: { username: "bob" } } } as any);
+  rerender(<GalleryModal mode="select" isOpen forceFilter="image" />);
+  try {
+    await waitFor(() => expect(list).toHaveBeenCalledWith(expect.objectContaining({ username: "bob" })));
+  } finally {
+    await act(async () => {
+      if (outcome === "exception") rejectAlice(new Error("Alice's stale failure"));
+      else settleAlice(outcome === "success" ? { success: true, data: [remoteItem("alice")], pagination: { current: 0, total_page_count: 1 } } : { success: false, errorMessage: "Alice's stale failure" });
+    });
+  }
+  await waitFor(() => expect(document.querySelector('[data-media-id="mf_bob"]')).toBeTruthy());
+  expect(document.querySelector('[data-media-id="mf_alice"]')).toBeNull();
+  expect(screen.queryByText("Alice's stale failure")).toBeNull();
+});
+
+it.each(["mesh", "splat"])("ignores old session-scoped %s responses after switching users", async (mediaClass) => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  const session = vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: true, data: { user: { username: "alice" } } } as any);
+  let settleAlice!: (value: any) => void;
+  const pendingAlice = new Promise<any>((resolve) => { settleAlice = resolve; });
+  const response = (name: string) => ({ success: true, data: [{ token: `mf_${name}`, media_class: mediaClass, created_at: "2026-11-12T00:00:00Z", media_links: { cdn_url: `https://example.com/${name}.glb` } }], pagination: {} });
+  const list = vi.spyOn(MediaFilesApi.prototype, mediaClass === "mesh" ? "ListSessionMeshMediaFiles" : "ListSessionSplatMediaFiles").mockImplementationOnce(() => pendingAlice).mockResolvedValue(response("bob") as any);
+  const { rerender } = render(<GalleryModal mode="select" isOpen forceFilter={mediaClass} />);
+  await waitFor(() => expect(list).toHaveBeenCalledTimes(1));
+  rerender(<GalleryModal mode="select" isOpen={false} forceFilter={mediaClass} />);
+  session.mockResolvedValue({ success: true, data: { user: { username: "bob" } } } as any);
+  rerender(<GalleryModal mode="select" isOpen forceFilter={mediaClass} />);
+  try {
+    await waitFor(() => expect(document.querySelector('[data-media-id="mf_bob"]')).toBeTruthy());
+  } finally {
+    await act(async () => { settleAlice(response("alice")); });
+  }
+  expect(document.querySelector('[data-media-id="mf_alice"]')).toBeNull();
+});
+
+it("does not restore remote items after reopening the gallery signed out", async () => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  const session = vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: true, data: { user: { username: "alice" } } } as any);
+  let settleAlice!: (value: any) => void;
+  const list = vi.spyOn(GalleryModalApi.prototype, "listUserMediaFiles").mockImplementation(() => new Promise((resolve) => { settleAlice = resolve; }));
+  const { rerender } = render(<GalleryModal mode="select" isOpen forceFilter="image" />);
+  await waitFor(() => expect(list).toHaveBeenCalled());
+  rerender(<GalleryModal mode="select" isOpen={false} forceFilter="image" />);
+  session.mockResolvedValue({ success: false } as any);
+  rerender(<GalleryModal mode="select" isOpen forceFilter="image" />);
+  await waitFor(() => expect(session).toHaveBeenCalledTimes(2));
+  await act(async () => { settleAlice({ success: true, data: [{ token: "mf_alice", media_class: "image", created_at: "2026-11-12T00:00:00Z", media_links: { cdn_url: "https://example.com/alice.png" } }], pagination: { current: 0, total_page_count: 1 } }); });
+  expect(document.querySelector('[data-media-id="mf_alice"]')).toBeNull();
+});
 
 it.each(["rejection", "failure response"])("retains failed bulk deletions for retry and reports a %s", async (failure) => {
   vi.spyOn(UsersApi.prototype, "GetSession").mockResolvedValue({ success: false });

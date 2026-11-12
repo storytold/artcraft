@@ -1369,11 +1369,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     get().saveState();
   },
 
+  /** Keep loaded imagery and edits in native coordinates; output ratios size blank canvases only. */
   getAspectRatioDimensions: () => {
     const bitmap = get().baseImageBitmap;
 
     if (bitmap) {
-      return outputDimensions({ width: bitmap.width, height: bitmap.height }, get().outputAspectRatio);
+      return { width: bitmap.width, height: bitmap.height };
     }
 
     const info = get().baseImageInfo;

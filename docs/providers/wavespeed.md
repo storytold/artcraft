@@ -36,6 +36,12 @@ Image defaults are square, medium quality where selectable, and the resolution
 shown first. Basic ratios are 1:1, 4:3, 16:9, 3:4, and 9:16. Extended ratios also
 include 3:2, 2:3, 5:4, 4:5, and 21:9. Native means there is no resolution control.
 
+In Draw, a loaded image keeps its original editing dimensions so brush marks and
+masks stay aligned with image features. The selected ratio applies to the next
+generation, not a stretch of the existing image. Blank canvases can adopt the
+selected ratio directly. Retained image references remain removable after a
+model switch, even when the new model cannot accept references.
+
 | Image model            | Max batch | Max references | Resolution choices | Ratios             |
 |------------------------|-----------|----------------|--------------------|--------------------|
 | FLUX Dev               | 4         | 1              | Native             | Basic              |

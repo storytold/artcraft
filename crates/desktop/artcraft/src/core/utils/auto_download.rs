@@ -3,7 +3,7 @@ use crate::core::state::app_preferences::app_preferences::AppPreferences;
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
-use crate::core::utils::download_url_to_user_download_dir::{download_url_with_filename, suggested_download_filename, persist_download};
+use crate::core::utils::download_url_to_user_download_dir::{check_url_file_name_for_downloadability, download_url_with_filename, suggested_download_filename, persist_download};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use anyhow::{anyhow, ensure};
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
@@ -114,6 +114,7 @@ async fn download_results(root: &AppDataRoot, prefs: &AppPreferences, task: &Tas
       continue;
     }
     let filename = suggested_download_filename(url, prefs, task.model_type.as_ref().map(|model| model.to_str()), (urls.len() > 1).then_some(index + 1), checkpoint.download_time);
+    check_url_file_name_for_downloadability(&filename)?;
     let saved = if let Some(files) = maybe_files {
       std::fs::create_dir_all(&directory)?;
       let temporary = NamedTempFile::new_in(&directory)?;
@@ -163,6 +164,19 @@ mod tests {
     .await
     .unwrap();
     assert!(!dir.path().join("chosen").exists());
+  }
+
+  #[tokio::test]
+  async fn cached_results_reject_executable_filenames_before_creating_downloads() {
+    for extension in ["exe", "EXE", "sh", "ps1", "dll"] {
+      let directory = tempfile::tempdir().unwrap();
+      let root = AppDataRoot::create_existing(directory.path()).unwrap();
+      let source = directory.path().join("cached.bin");
+      std::fs::write(&source, b"untrusted provider output").unwrap();
+      let urls = [Url::parse(&format!("https://example.com/output.{extension}")).unwrap()];
+      assert!(download_results(&root, &preferences(&root), &task(GenerationProvider::WaveSpeed), &urls, Some(&[source])).await.is_err());
+      assert!(!directory.path().join("chosen").exists());
+    }
   }
 
   #[tokio::test]

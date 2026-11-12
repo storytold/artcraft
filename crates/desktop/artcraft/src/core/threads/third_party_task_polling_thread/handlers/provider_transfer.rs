@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use anyhow::{bail, Result as AnyhowResult};
 use reqwest::Client;
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
@@ -8,14 +9,14 @@ use super::public_media_client::{public_media_client, validate_media_url};
 const MAX_TRANSFER_BYTES: u64 = 1024 * 1024 * 1024;
 
 /// Cache bounded provider outputs using the public-only production media client.
-pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+pub(super) async fn cache_downloads(checkpoint_path: &Path, urls: &[String]) -> AnyhowResult<Vec<PathBuf>> {
   cache_downloads_with_client(&public_media_client()?, checkpoint_path, urls).await
 }
 
 /// Validate output URLs and count, reusing durable cached bytes across retries.
-pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path: &Path, urls: &[String]) -> AnyhowResult<Vec<PathBuf>> {
   if urls.is_empty() || urls.len() > wavespeed_client::MAX_OUTPUTS {
-    return Err("Invalid provider output count".into());
+    bail!("Invalid provider output count");
   }
   for url in urls { validate_media_url(url)?; }
   let directory = checkpoint_path.with_extension("media");
@@ -26,7 +27,7 @@ pub(super) async fn cache_downloads_with_client(client: &Client, checkpoint_path
     let path = directory.join(format!("{index}.{extension}"));
     match std::fs::symlink_metadata(&path) {
       Ok(metadata) if metadata.is_file() && metadata.len() > 0 && metadata.len() <= MAX_TRANSFER_BYTES => {},
-      Ok(_) => return Err("Invalid cached provider media".into()),
+      Ok(_) => bail!("Invalid cached provider media"),
       Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
         let download = download_with_client(client, url, &directory, MAX_TRANSFER_BYTES).await?;
         download.as_file().sync_all()?;
@@ -49,13 +50,13 @@ pub(super) fn clear_cached_downloads(checkpoint_path: &Path) -> Result<(), std::
 }
 
 /// Stream a successful nonredirect response to an owned temporary file within a byte cap.
-pub(super) async fn download_with_client(client: &Client, url: &str, directory: &Path, max_bytes: u64) -> Result<NamedTempFile, Box<dyn std::error::Error>> {
+pub(super) async fn download_with_client(client: &Client, url: &str, directory: &Path, max_bytes: u64) -> AnyhowResult<NamedTempFile> {
   let mut response = client.get(url).send().await?.error_for_status()?;
   if !response.status().is_success() {
-    return Err("Provider output redirects are not permitted".into());
+    bail!("Provider output redirects are not permitted");
   }
   if response.content_length().is_some_and(|length| length > max_bytes) {
-    return Err("Provider output exceeds transfer size limit".into());
+    bail!("Provider output exceeds transfer size limit");
   }
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url).map(|extension| extension.as_extension_without_period()).unwrap_or("bin");
   let file = tempfile::Builder::new().prefix("provider_").suffix(&format!(".{extension}")).tempfile_in(directory)?;
@@ -64,12 +65,12 @@ pub(super) async fn download_with_client(client: &Client, url: &str, directory: 
   while let Some(chunk) = response.chunk().await? {
     received += chunk.len() as u64;
     if received > max_bytes {
-      return Err("Provider output exceeds transfer size limit".into());
+      bail!("Provider output exceeds transfer size limit");
     }
     output.write_all(&chunk).await?;
   }
   if received == 0 {
-    return Err("Provider returned an empty media file".into());
+    bail!("Provider returned an empty media file");
   }
   output.flush().await?;
   drop(output);
@@ -77,7 +78,7 @@ pub(super) async fn download_with_client(client: &Client, url: &str, directory: 
 }
 
 #[cfg(test)]
-mod provider_transfer_tests {
+mod tests {
   use super::*;
   use std::time::Duration;
   use tokio::io::{AsyncReadExt, AsyncWriteExt};

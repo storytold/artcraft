@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { VIDEO_MODELS } from "@storyteller/model-list";
 import { GenerateVideo } from "@storyteller/tauri-api";
+import { toast } from "@storyteller/ui-toaster";
 import { PromptBoxVideo } from "./PromptBoxVideo";
 import { useCharactersStore, usePromptVideoStore } from "./promptStore";
 import userEvent from "@testing-library/user-event";
@@ -12,6 +13,7 @@ const deckOptions = vi.hoisted(() => vi.fn());
 vi.mock("@storyteller/tauri-api", () => ({ GenerateVideo: vi.fn().mockResolvedValue({ status: "success", payload: {} }) }));
 vi.mock("@storyteller/api", () => ({ CharactersApi: vi.fn() }));
 vi.mock("@storyteller/google-analytics", () => ({ gtagEvent: vi.fn() }));
+vi.mock("@storyteller/ui-toaster", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@storyteller/ui-popover", () => ({ PopoverMenu: ({ panelTitle, items = [] }: { panelTitle: string; items?: { label: string }[] }) => (
   <select aria-label={panelTitle}>{items.map((item) => <option key={item.label}>{item.label}</option>)}</select>
 ) }));
@@ -117,6 +119,20 @@ it("limits reference clips without capping edit or extension source videos", () 
     fireEvent.change(screen.getByRole("combobox", { name: "WaveSpeed video mode" }), { target: { value: mode } });
     expect(deckOptions).toHaveBeenLastCalledWith(expect.objectContaining({ maxVideoTotalSec: Infinity, maxVideos: 1 }));
   }
+});
+
+it("rejects an image upload that finishes after switching to Extend video", async () => {
+  usePromptVideoStore.setState({ inputMode: "reference", prompt: "Extend this clip" });
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
+  render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={model} selectedProvider={GenerationProvider.WaveSpeed} />);
+  fireEvent.change(screen.getByRole("combobox", { name: "WaveSpeed video mode" }), { target: { value: "extend" } });
+  act(() => usePromptVideoStore.setState({
+    referenceImages: [{ id: "late", mediaToken: "mf_late", url: "https://example.com/image.png", file: new File([], "image.png") }],
+    referenceVideos: [{ id: "source", mediaToken: "mf_source", url: "https://example.com/source.mp4", duration: 5, file: new File([], "source.mp4") }],
+  }));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
+  expect(GenerateVideo).not.toHaveBeenCalled();
+  expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("reference images"));
 });
 
 it("keeps the labelled WaveSpeed mode control keyboard-focusable with a visible focus style", async () => {
