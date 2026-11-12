@@ -7,7 +7,7 @@ use url::Url;
 pub async fn download_url_to_temp_dir(url: &str, app_data_root: &AppDataRoot) -> AnyhowResult<NamedTempFile> {
   let url = Url::parse(&url)?;
 
-  let response = reqwest::get(url.clone()).await?;
+  let response = reqwest::get(url.clone()).await?.error_for_status()?;
   let response_bytes = response.bytes().await?;
 
   let ext = url.path().split(".").last().unwrap_or("png");

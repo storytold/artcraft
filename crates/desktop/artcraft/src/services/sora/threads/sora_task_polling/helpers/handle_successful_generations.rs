@@ -198,7 +198,7 @@ async fn download_generation_item(
 ) -> AnyhowResult<PathBuf> {
   info!("Downloading generation item from URL: {}", generation.url.as_str());
 
-  let response = reqwest::get(&generation.url).await?;
+  let response = reqwest::get(&generation.url).await?.error_for_status()?;
   let image_bytes = response.bytes().await?;
 
   let extension = extract_download_extension_from_url_str(&generation.url)
