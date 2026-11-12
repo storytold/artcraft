@@ -58,6 +58,18 @@ impl Updates {
     Ok(Operation { updates: Arc::clone(self) })
   }
 
+  /// Runs `work` off the async runtime while it holds the one-operation guard.
+  pub(crate) async fn run<T: Send + 'static>(self: &Arc<Self>, stopped: &str, work: impl FnOnce(&Updates) -> Result<T, String> + Send + 'static) -> Result<T, String> {
+    let operation = self.begin()?;
+    let state = Arc::clone(self);
+    tauri::async_runtime::spawn_blocking(move || {
+      let _operation = operation;
+      work(&state)
+    })
+    .await
+    .map_err(|error| format!("{stopped}: {error}"))?
+  }
+
   pub(crate) fn check(&self, app: &AppHandle) -> Result<UpdateInfo, String> {
     self.check_with(&NativeBackend(app))
   }
@@ -135,16 +147,28 @@ pub fn show_previous_outcome(app: &AppHandle) {
   let Ok(paths) = Paths::for_app(&APP) else {
     return;
   };
-  let message = match self_update::take_outcome(&paths, ARTCRAFT_VERSION) {
-    Some(self_update::Outcome::Installed(version)) => format!("ArtCraft was updated to {version}."),
-    Some(self_update::Outcome::Failed(error)) => format!("The ArtCraft update failed: {error}"),
-    None => return,
-  };
-  app.dialog().message(message).title("ArtCraft update").show(|_| {});
+  if let Some(message) = outcome_message(self_update::take_outcome(&paths, ARTCRAFT_VERSION)) {
+    app.dialog().message(message).title("ArtCraft update").show(|_| {});
+  }
 }
 
-fn stable_choice() -> Result<(), String> {
-  match Pins::load_default().choice(APP.id) {
+fn outcome_message(outcome: Option<self_update::Outcome>) -> Option<String> {
+  match outcome? {
+    self_update::Outcome::Installed(version) => Some(format!("ArtCraft was updated to {version}.")),
+    self_update::Outcome::Failed(error) => Some(format!("The ArtCraft update failed: {error}")),
+  }
+}
+
+pub(crate) fn require_confirmation(confirmed: bool) -> Result<(), String> {
+  if confirmed {
+    Ok(())
+  } else {
+    Err("Confirm that you saved your work before installing the update.".into())
+  }
+}
+
+fn stable_choice(pins: &Pins) -> Result<(), String> {
+  match pins.choice(APP.id) {
     Choice::Stable => Ok(()),
     _ => Err("ArtCraft Launcher manages this app's version. Change its version there.".into()),
   }
@@ -153,7 +177,11 @@ fn stable_choice() -> Result<(), String> {
 fn ensure_idle(app: &AppHandle) -> Result<(), String> {
   let db = app.try_state::<TaskDatabase>().ok_or("ArtCraft is still starting. Try checking again in a moment.")?;
   let tasks = tauri::async_runtime::block_on(list_tasks_for_frontend(db.get_connection())).map_err(|error| format!("Could not check running tasks: {error}"))?;
-  if tasks.tasks.iter().any(|task| active_task(task.status)) {
+  no_active_tasks(tasks.tasks.iter().map(|task| task.status))
+}
+
+fn no_active_tasks(statuses: impl IntoIterator<Item = TaskStatus>) -> Result<(), String> {
+  if statuses.into_iter().any(active_task) {
     Err("Finish or cancel running tasks before installing an update.".into())
   } else {
     Ok(())
@@ -166,7 +194,7 @@ fn active_task(status: TaskStatus) -> bool {
 
 impl Backend for NativeBackend<'_> {
   fn stable_choice(&self) -> Result<(), String> {
-    stable_choice()
+    stable_choice(&Pins::load_default())
   }
 
   fn check(&self) -> Result<Option<Release>, String> {
@@ -260,6 +288,54 @@ mod tests {
     for status in [TaskStatus::CompleteSuccess, TaskStatus::CompleteFailure, TaskStatus::Dead, TaskStatus::CancelledByUser, TaskStatus::CancelledByProvider, TaskStatus::CancelledByUs] {
       assert!(!active_task(status));
     }
+    assert!(no_active_tasks([TaskStatus::CompleteSuccess, TaskStatus::Dead]).is_ok());
+    assert!(no_active_tasks([]).is_ok());
+    assert_eq!(no_active_tasks([TaskStatus::CompleteSuccess, TaskStatus::Started]), Err("Finish or cancel running tasks before installing an update.".into()));
+  }
+
+  #[test]
+  fn only_the_stable_track_lets_artcraft_update_itself() {
+    use craft_update::pins::VersionTrack;
+    let mut pins = Pins::default();
+    assert!(stable_choice(&pins).is_ok());
+    pins.set(APP.id, &VersionTrack::Pinned("0.41.0".into()));
+    assert!(stable_choice(&pins).unwrap_err().contains("ArtCraft Launcher manages this app's version"));
+    pins.set(APP.id, &VersionTrack::Nightly);
+    assert!(stable_choice(&pins).is_err());
+    pins.set(APP.id, &VersionTrack::Stable);
+    assert!(stable_choice(&pins).is_ok());
+  }
+
+  #[test]
+  fn a_previous_update_outcome_is_reported_once_with_its_version_or_error() {
+    let installed = craft_update::parse_version("0.42.1").expect("version");
+    assert_eq!(outcome_message(Some(self_update::Outcome::Installed(installed))).as_deref(), Some("ArtCraft was updated to 0.42.1."));
+    assert_eq!(outcome_message(Some(self_update::Outcome::Failed("disk full".into()))).as_deref(), Some("The ArtCraft update failed: disk full"));
+    assert_eq!(outcome_message(None), None);
+  }
+
+  #[test]
+  fn installing_requires_confirmation_and_an_ordinary_start_is_not_the_helper() {
+    assert!(require_confirmation(false).unwrap_err().contains("saved your work"));
+    assert!(require_confirmation(true).is_ok());
+    // The test harness's own arguments never carry the helper flag.
+    assert!(finish_helper().is_none());
+  }
+
+  #[test]
+  fn commands_run_one_operation_at_a_time_and_release_it_after_failures() {
+    let state = Arc::new(Updates::default());
+    let value = tauri::async_runtime::block_on(state.run("stopped", |_| Ok(7)));
+    assert_eq!(value, Ok(7));
+    let failed: Result<(), String> = tauri::async_runtime::block_on(state.run("stopped", |_| Err("offline".into())));
+    assert_eq!(failed, Err("offline".into()));
+    let held = state.begin().expect("guard released after a failure");
+    let busy = tauri::async_runtime::block_on(state.run("stopped", |_| Ok(())));
+    assert!(busy.unwrap_err().contains("already running"));
+    drop(held);
+    let panicked: Result<(), String> = tauri::async_runtime::block_on(state.run("The update check stopped unexpectedly", |_| panic!("worker crashed")));
+    assert!(panicked.unwrap_err().starts_with("The update check stopped unexpectedly:"));
+    assert!(state.begin().is_ok(), "a crashed worker still releases the guard");
   }
 
   #[test]
