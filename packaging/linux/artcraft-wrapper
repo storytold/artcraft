@@ -10,6 +10,13 @@ set -eu
 # ${VAR:-0} rather than plain assignment, so a user whose driver does need the
 # unaccelerated path can take it back:
 #   flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 ai.artcraft.app
+# Workaround for WebKitGTK composition failure with NVIDIA drivers on Linux (Issue #2514)
+# Force shared memory (SHM), bypass broken GBM allocations, and disable NVIDIA explicit sync.
+export WEBKIT_DMABUF_RENDERER_FORCE_SHM="${WEBKIT_DMABUF_RENDERER_FORCE_SHM:-1}"
+export WEBKIT_DMABUF_RENDERER_DISABLE_GBM="${WEBKIT_DMABUF_RENDERER_DISABLE_GBM:-1}"
+export WEBKIT_WEBGL_DISABLE_GBM="${WEBKIT_WEBGL_DISABLE_GBM:-1}"
+export __NV_DISABLE_EXPLICIT_SYNC="${__NV_DISABLE_EXPLICIT_SYNC:-1}"
+
 export WEBKIT_DISABLE_DMABUF_RENDERER="${WEBKIT_DISABLE_DMABUF_RENDERER:-0}"
 export WEBKIT_DISABLE_COMPOSITING_MODE="${WEBKIT_DISABLE_COMPOSITING_MODE:-0}"
 
