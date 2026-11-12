@@ -655,7 +655,9 @@ export const TopBar = ({ pageName }: Props) => {
               {/* TODO(bt,2025-09-12): This was the old auth buttons that didn't work. We need to remove this and clean up the DOM. */}
             </div>
 
-            {isDesktop && platform !== "macos" && (
+            {/* Only Windows hides the native title bar (`decorations(false)` in setup_main_window.rs);
+                macOS overlays its traffic lights and Linux keeps the window manager's own buttons. */}
+            {isDesktop && platform === "windows" && (
               <div className="no-drag flex items-center">
                 <Button
                   variant="secondary"
