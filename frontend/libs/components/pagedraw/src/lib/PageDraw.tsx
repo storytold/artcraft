@@ -957,6 +957,10 @@ const PageDraw = ({
         }
         if (result?.status === "success") {
           addPendingGeneration(subscriberId, generationCount);
+        } else if (result?.error_type === "server_error") {
+          // Billing and login problems open their own modals; anything else (such as a model no
+          // provider can serve) would otherwise fail without a word.
+          toast.error("This generation couldn't be started. Please try another model.");
         }
       } finally {
         generateInFlightRef.current = false;
