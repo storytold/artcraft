@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use log::warn;
+use filesys::private_file::{ensure_private_directory, write_private_atomic};
 use midjourney_client::credentials::credential_manager::MidjourneyCredentialManager;
 
 const MIDJOURNEY_FILENAME: &str = "midjourney_cookies.toml";
@@ -22,7 +23,7 @@ pub struct ProviderAccounts {
 impl ProviderAccounts {
   pub fn load(data_root: &Path) -> Self {
     let dir = data_root.join("credentials");
-    if let Err(err) = std::fs::create_dir_all(&dir) {
+    if let Err(err) = ensure_private_directory(&dir) {
       warn!("Couldn't create {}: {err}", dir.display());
     }
     let (path, legacy) = (dir.join(MIDJOURNEY_FILENAME), vec![dir.join(MIDJOURNEY_LEGACY_FILENAME)]);
@@ -51,7 +52,7 @@ impl ProviderAccounts {
   }
 
   pub fn set_fal_key(&self, key: &str) -> std::io::Result<()> {
-    std::fs::write(&*self.fal_key_path, key.trim())
+    write_private_atomic(&self.fal_key_path, key.trim().as_bytes())
   }
 
   pub fn clear_fal_key(&self) -> std::io::Result<()> {
