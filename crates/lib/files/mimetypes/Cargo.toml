@@ -16,7 +16,7 @@ path = "src/lib.rs"
 [dependencies]
 
 # External
-infer = "0.19.0" # Mimetype detection
+infer = "0.22.0" # Mimetype detection
 
 [dev-dependencies]
 test_utils = { path = "../../../testing/test_utils" }
