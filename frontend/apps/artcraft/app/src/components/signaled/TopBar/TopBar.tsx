@@ -47,6 +47,7 @@ import {
   applyMakeVideoFromImage,
   applyRecreateFromPromptData,
   downloadMediaFileToDisk,
+  openDownloadsFolder,
 } from "~/components/generation-feed/desktopMediaActions";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
@@ -704,6 +705,7 @@ export const TopBar = ({ pageName }: Props) => {
       <GalleryModal
         mode="view"
         onDownloadClicked={downloadFile}
+        onOpenDownloadsFolder={openDownloadsFolder}
         onEditClicked={handleEditFromGallery}
         onTurnIntoVideoClicked={handleTurnIntoVideoFromGallery}
         onRemoveBackgroundClicked={handleRemoveBackgroundFromGallery}
