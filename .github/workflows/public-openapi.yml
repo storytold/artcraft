@@ -1,0 +1,21 @@
+name: Public OpenAPI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-openapi-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the public spec, auth rules, and guide
+        run: python3 -m unittest discover -s script/openapi -t script -v

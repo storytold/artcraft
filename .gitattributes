@@ -5,4 +5,4 @@ old_code/voder-vocodes-1.0/frontends/admin/node_modules/** linguist-vendored
 test_data/html_scraping/** linguist-vendored
 windows/sqlite/** linguist-vendored
 
-frontend/api.json linguist-generated
+frontend/openapi/upstream.openapi.json linguist-generated
