@@ -4,6 +4,10 @@ runtime-version: '51'
 sdk: org.gnome.Sdk
 command: artcraft
 finish-args:
+  # The shared updater inspects and replaces this signed release bundle on the host.
+  - --talk-name=org.freedesktop.Flatpak
+  # Honor launcher-pinned versions without access to other host application data.
+  - --filesystem=xdg-data/ArtCraft/versions:ro
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio

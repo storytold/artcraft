@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Integration fixture: real DEB/RPM archives, with no Rust compilation or signing key.
 set -euo pipefail
+bash "$(dirname "$0")/flatpak-update-test.sh"
 script="$(realpath "$(dirname "$0")/package.sh")"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
