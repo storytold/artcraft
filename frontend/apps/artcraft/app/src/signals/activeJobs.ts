@@ -8,7 +8,7 @@ import { isJobStatusTerminal } from "~/utilities";
 
 export const recentJobs = signal<Job[] | undefined>(undefined);
 export const setJobs = (newJobList: Job[]) => {
-  if (!deepEqual(setJobs, newJobList)) {
+  if (!deepEqual(recentJobs.value, newJobList)) {
     recentJobs.value = [...newJobList];
   }
   //else, same list, do nothing.
