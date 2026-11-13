@@ -40,7 +40,7 @@ import {
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
-import { readTaskQueueLastReadAt } from "./taskQueueStorage";
+import { readTaskQueueLastReadAt, writeTaskQueueLastReadAt } from "./taskQueueStorage";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
 
@@ -931,7 +931,7 @@ export const TaskQueue = () => {
     if (open) {
       const now = Date.now();
       setLastReadAt(now);
-      localStorage.setItem("taskQueueLastReadAt", String(now));
+      writeTaskQueueLastReadAt(now);
       setUnreadCompletedIds([]);
     }
   };

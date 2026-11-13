@@ -14,3 +14,12 @@ export function readTaskQueueLastReadAt(): number {
     return 0;
   }
 }
+
+export function writeTaskQueueLastReadAt(timestamp: number): void {
+  try {
+    localStorage.setItem(TASK_QUEUE_LAST_READ_KEY, String(timestamp));
+  } catch {
+    // A denied write only loses the unread badge across reloads; it must not
+    // break the popover that triggered it, for the same reason as the read.
+  }
+}
