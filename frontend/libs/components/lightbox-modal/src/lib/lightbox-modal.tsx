@@ -1,7 +1,9 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
+import "dayjs/locale/zh-cn";
 import { ArrowDownToLineIcon, BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, GlobeIcon, ImageIcon, InfoIcon, LinkIcon, LogOutIcon, MusicIcon, PauseIcon, PencilIcon, PlayIcon, RotateCwIcon, SearchIcon, Trash2Icon, UserIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
@@ -126,6 +128,7 @@ export function LightboxModal({
   onNavigateToMedia,
   initialIndex,
 }: LightboxModalProps) {
+  const { t: tr } = useTranslation();
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
@@ -395,15 +398,14 @@ export function LightboxModal({
     (mediaToken: string) => {
       showActionReminder({
         reminderType: "default",
-        title: "Delete this media?",
+        title: tr("Delete this media?"),
         message: (
           <p className="text-sm text-white/70">
-            This will permanently remove the media from your library. This
-            action cannot be undone.
+            {tr("This will permanently remove the media from your library. This action cannot be undone.")}
           </p>
         ),
-        primaryActionText: "Delete",
-        secondaryActionText: "Cancel",
+        primaryActionText: tr("Delete"),
+        secondaryActionText: tr("Cancel"),
         primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
         onPrimaryAction: async () => {
           try {
@@ -415,7 +417,7 @@ export function LightboxModal({
         },
       });
     },
-    [onClose],
+    [onClose, tr],
   );
 
   const onSelect = useCallback(() => {
@@ -565,7 +567,7 @@ export function LightboxModal({
           <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden bg-black">
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black">
-                <span className="text-base-fg/60">Image not available</span>
+                <span className="text-base-fg/60">{tr("Image not available")}</span>
               </div>
             ) : mediaClass === "dimensional" ||
               mediaClass === "mesh" ||
@@ -598,7 +600,7 @@ export function LightboxModal({
                 }}
               >
                 <source src={selectedImageUrl as string} type="video/mp4" />
-                Your browser does not support the video tag.
+                {tr("Your browser does not support the video tag.")}
               </video>
             ) : mediaClass === "audio" ? (
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
@@ -630,7 +632,7 @@ export function LightboxModal({
                           <img
                             data-lightbox-modal="true"
                             src={addCorsParam(url) || url}
-                            alt={`${imageAlt || "Generated image"} ${idx + 1}`}
+                            alt={imageAlt ? `${imageAlt} ${idx + 1}` : tr("Generated image {{number}}", { number: idx + 1 })}
                             className="h-full w-full object-contain"
                             onError={(e) => {
                               onImageError?.();
@@ -683,7 +685,7 @@ export function LightboxModal({
                             >
                               <img
                                 src={addCorsParam(url) || url}
-                                alt={`Thumbnail ${idx + 1}`}
+                                alt={tr("Thumbnail {{number}}", { number: idx + 1 })}
                                 className="h-full w-full object-cover bg-black/20"
                               />
                             </button>
@@ -715,7 +717,7 @@ export function LightboxModal({
                   onNavigatePrev();
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
-                aria-label="Previous item"
+                aria-label={tr("Previous item")}
               >
                 <ChevronLeftIcon  className="text-lg" />
               </button>
@@ -727,7 +729,7 @@ export function LightboxModal({
                   onNavigateNext();
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
-                aria-label="Next item"
+                aria-label={tr("Next item")}
               >
                 <ChevronRightIcon  className="text-lg" />
               </button>
@@ -760,7 +762,7 @@ export function LightboxModal({
                       {creator.display_name}
                     </span>
                     <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      Author
+                      {tr("Author")}
                     </span>
                   </div>
                 </div>
@@ -780,7 +782,7 @@ export function LightboxModal({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                         <PencilIcon />
-                        <span>Prompt</span>
+                        <span>{tr("Prompt")}</span>
                       </div>
                       {!promptLoading && prompt && (
                         <button
@@ -791,7 +793,7 @@ export function LightboxModal({
                             navigator.clipboard
                               .writeText(prompt)
                               .catch(() => {});
-                            toast.success("Prompt copied");
+                            toast.success(tr("Prompt copied"));
                             setPromptCopied(true);
                             if (promptCopiedTimeoutRef.current) {
                               window.clearTimeout(
@@ -811,7 +813,7 @@ export function LightboxModal({
                             icon={promptCopied ? CheckIcon : CopyIcon}
                             className="h-3 w-3"
                           />
-                          <span>{promptCopied ? "Copied!" : "Copy"}</span>
+                          <span>{promptCopied ? tr("Copied!") : tr("Copy")}</span>
                         </button>
                       )}
                     </div>
@@ -833,7 +835,7 @@ export function LightboxModal({
                         >
                           {prompt || (
                             <span className="text-sm text-base-fg">
-                              No prompt
+                              {tr("No prompt")}
                             </span>
                           )}
                         </div>
@@ -850,7 +852,7 @@ export function LightboxModal({
                             setIsPromptExpanded((prev) => !prev);
                           }}
                         >
-                          <span>{isPromptExpanded ? "Hide" : "See all"}</span>
+                          <span>{isPromptExpanded ? tr("Hide") : tr("See all")}</span>
                           <svg
                             className={twMerge(
                               "h-3 w-3 transition-transform duration-200",
@@ -906,7 +908,7 @@ export function LightboxModal({
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
                             <ImageIcon />
-                            <span>Reference Media</span>
+                            <span>{tr("Reference Media")}</span>
                           </div>
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
@@ -940,7 +942,7 @@ export function LightboxModal({
                                           <SearchIcon
                                             
                                             className="mr-1.5" />
-                                          Preview image
+                                          {tr("Preview image")}
                                         </button>
                                       )}
                                       {onNavigateToMedia && (
@@ -956,7 +958,7 @@ export function LightboxModal({
                                           <LogOutIcon
                                             
                                             className="mr-1.5" />
-                                          View as media
+                                          {tr("View as media")}
                                         </button>
                                       )}
                                     </div>
@@ -993,7 +995,7 @@ export function LightboxModal({
                                       <>
                                         <img
                                           src={thumbnail}
-                                          alt={`Reference ${index + 1}`}
+                                          alt={tr("Reference {{number}}", { number: index + 1 })}
                                           className="h-full w-full object-cover"
                                         />
                                         {isVideoRef && (
@@ -1069,7 +1071,7 @@ export function LightboxModal({
                         });
                       }}
                     >
-                      Recreate
+                      {tr("Recreate")}
                     </Button>
                   )}
 
@@ -1086,7 +1088,7 @@ export function LightboxModal({
                         await onEditClicked(actionUrl, selectedMediaToken);
                       }}
                     >
-                      Edit Image
+                      {tr("Edit Image")}
                     </Button>
                   )}
 
@@ -1106,7 +1108,7 @@ export function LightboxModal({
                         );
                       }}
                     >
-                      Make Video
+                      {tr("Make Video")}
                     </Button>
                   )}
 
@@ -1128,7 +1130,7 @@ export function LightboxModal({
                         onCloseGallery();
                       }}
                     >
-                      Remove BG
+                      {tr("Remove BG")}
                     </Button>
                   )}
 
@@ -1150,7 +1152,7 @@ export function LightboxModal({
                         onCloseGallery();
                       }}
                     >
-                      Make 3D
+                      {tr("Make 3D")}
                     </Button>
                   )}
 
@@ -1172,7 +1174,7 @@ export function LightboxModal({
                         onCloseGallery();
                       }}
                     >
-                      Make 3D World
+                      {tr("Make 3D World")}
                     </Button>
                   )}
 
@@ -1191,7 +1193,7 @@ export function LightboxModal({
                       await onDownloadClicked(actionUrl, mediaClass, modelType ?? undefined);
                     }}
                   >
-                    Download
+                    {tr("Download")}
                   </Button>
                 )}
 
@@ -1207,7 +1209,7 @@ export function LightboxModal({
                       onCloseGallery();
                     }}
                   >
-                    Add to Scene
+                    {tr("Add to Scene")}
                   </Button>
                 )}
 
@@ -1222,7 +1224,7 @@ export function LightboxModal({
                       const shareUrl = `https://getartcraft.com/media/${selectedMediaToken}`;
                       try {
                         await navigator.clipboard.writeText(shareUrl);
-                        toast.success("Share link copied");
+                        toast.success(tr("Share link copied"));
                         setShareCopied(true);
                         if (shareCopiedTimeoutRef.current) {
                           window.clearTimeout(shareCopiedTimeoutRef.current);
@@ -1235,11 +1237,11 @@ export function LightboxModal({
                           1500,
                         );
                       } catch (err) {
-                        toast.error("Unable to copy link");
+                        toast.error(tr("Unable to copy link"));
                       }
                     }}
                   >
-                    {shareCopied ? "Link Copied!" : "Share"}
+                    {shareCopied ? tr("Link Copied!") : tr("Share")}
                   </Button>
                 )}
 
@@ -1254,7 +1256,7 @@ export function LightboxModal({
                       await onDeleteClicked(selectedMediaToken);
                     }}
                   >
-                    Delete
+                    {tr("Delete")}
                   </Button>
                 )}
               </div>
@@ -1282,7 +1284,7 @@ export function LightboxModal({
           <div className="relative flex items-center justify-center overflow-hidden bg-black">
             <img
               src={addCorsParam(refPreviewUrl) || refPreviewUrl}
-              alt="Reference preview"
+              alt={tr("Reference preview")}
               className="max-w-[72vw] max-h-[70vh] object-contain"
             />
           </div>
@@ -1315,6 +1317,7 @@ function InfoSection({
   mediaHeight,
   createdAt,
 }: InfoSectionProps) {
+  const { t: tr, i18n } = useTranslation();
   const hasAnyInfo =
     !!modelType ||
     !!generationProvider ||
@@ -1331,17 +1334,17 @@ function InfoSection({
     <div className="space-y-2">
       <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
         <InfoIcon />
-        <span>Information</span>
+        <span>{tr("Information")}</span>
       </div>
       <div className="flex flex-col bg-black/20 border border-white/10 overflow-hidden">
         {modelType && (
           <InfoRow
-            label="Model"
+            label={tr("Model")}
             value={
               <>
                 <img
                   src={getCreatorIconPathForModelId(modelType)}
-                  alt="Model creator logo"
+                  alt={tr("Model creator logo")}
                   className="h-4 w-4 invert"
                 />
                 <span>{getModelDisplayName(modelType)}</span>
@@ -1351,7 +1354,7 @@ function InfoSection({
         )}
         {generationProvider && (
           <InfoRow
-            label="Provider"
+            label={tr("Provider")}
             value={
               <>
                 {getProviderIconByName(generationProvider, "h-4 w-4 invert")}
@@ -1362,26 +1365,28 @@ function InfoSection({
         )}
         {aspectRatio && (
           <InfoRow
-            label="Aspect Ratio"
+            label={tr("Aspect Ratio")}
             value={formatAspectRatio(aspectRatio)}
           />
         )}
         {resolution && (
-          <InfoRow label="Resolution" value={formatResolution(resolution)} />
+          <InfoRow label={tr("Resolution")} value={formatResolution(resolution)} />
         )}
         {durationSeconds != null && (
-          <InfoRow label="Duration" value={formatDuration(durationSeconds)} />
+          <InfoRow label={tr("Duration")} value={formatDuration(durationSeconds)} />
         )}
         {generateAudio != null && (
-          <InfoRow label="Audio" value={generateAudio ? "On" : "Off"} />
+          <InfoRow label={tr("Audio")} value={generateAudio ? tr("On") : tr("Off")} />
         )}
         {mediaWidth && mediaHeight && (
-          <InfoRow label="Size" value={`${mediaWidth} × ${mediaHeight}`} />
+          <InfoRow label={tr("Size")} value={`${mediaWidth} × ${mediaHeight}`} />
         )}
         {createdAt && (
           <InfoRow
-            label="Created"
-            value={dayjs(createdAt).format("MMM D, YYYY h:mm:ss A")}
+            label={tr("Created")}
+            value={dayjs(createdAt)
+              .locale(i18n.language === "zh-CN" ? "zh-cn" : "en")
+              .format(i18n.language === "zh-CN" ? "YYYY年M月D日 HH:mm:ss" : "MMM D, YYYY h:mm:ss A")}
           />
         )}
       </div>

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { MinimizeIcon } from "lucide-react";
 import { useMoodboardStore } from "../MoodboardStore";
 import { anyContentVisible } from "../layout/geometry";
@@ -8,6 +10,7 @@ import { anyContentVisible } from "../layout/geometry";
 // board (nothing to recenter on) and whenever any node intersects the
 // visible viewport.
 export const RecenterIndicator = () => {
+  const { t: translateUi } = useUiTranslation();
   const nodes = useMoodboardStore((s) => s.nodes);
   const rootOrder = useMoodboardStore((s) => s.rootOrder);
   const viewport = useMoodboardStore((s) => s.viewport);
@@ -21,11 +24,11 @@ export const RecenterIndicator = () => {
     <button
       type="button"
       onClick={() => fitToContent()}
-      title="Zoom to fit (Shift+1)"
+      title={translateUi("Zoom to fit (Shift+1)")}
       className="pointer-events-auto absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-3 py-2 text-sm text-white/90 shadow-lg backdrop-blur-sm transition-colors hover:bg-black/80"
     >
       <MinimizeIcon />
-      <span>Content off-screen — recenter</span>
+      <span>{translateUi("Content off-screen — recenter")}</span>
     </button>
   );
 };

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState } from "react";
 import { Popover, PopoverContent } from "../../../components/ui/popover";
@@ -58,6 +60,7 @@ export function GraphEditorPopover({
   onCommitValue?: (value: NormalizedCubicBezier) => void;
   onCancelPreview?: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const custom = useCustomPresets();
   const allPresets = [...BUILTIN_PRESETS, ...custom];
@@ -103,7 +106,7 @@ export function GraphEditorPopover({
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {component.label}
+                  {translateUi(component.label)}
                 </button>
               ))}
             </div>
@@ -126,11 +129,9 @@ export function GraphEditorPopover({
         <Tabs variant="underline" defaultValue="presets" className="flex flex-col gap-2">
           <TabsList className="px-3">
             <TabsTrigger value="presets" className="text-xs">
-              Presets
-            </TabsTrigger>
+              {translateUi("Presets")}</TabsTrigger>
             <TabsTrigger value="saved" className="text-xs">
-              Saved
-            </TabsTrigger>
+              {translateUi("Saved")}</TabsTrigger>
           </TabsList>
           <TabsContent value="presets" className="px-3 pb-0">
             <ExpandableGrid
@@ -178,7 +179,7 @@ export function GraphEditorPopover({
                     className="size-3.5 opacity-40"
                   />
                 </div>
-                <span className="text-[10px] leading-tight">Save</span>
+                <span className="text-[10px] leading-tight">{translateUi("Save")}</span>
               </button>
             </div>
           </TabsContent>
@@ -253,6 +254,7 @@ function PresetItem({
   onDelete?: () => void;
   disabled?: boolean;
 }) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <button
       type="button"
@@ -280,7 +282,7 @@ function PresetItem({
           isActive ? "text-primary" : "text-muted-foreground",
         )}
       >
-        {preset.label}
+        {translateUi(preset.label)}
       </span>
       {onDelete && (
         <Button
@@ -308,6 +310,7 @@ function toThumbY({ value }: { value: number }) {
 }
 
 function CurveThumb({ value }: { value: NormalizedCubicBezier }) {
+  const { t: translateUi } = useUiTranslation();
   const points: string[] = [];
   for (let i = 0; i <= THUMB_SEGMENTS; i++) {
     const progress = i / THUMB_SEGMENTS;
@@ -321,7 +324,7 @@ function CurveThumb({ value }: { value: NormalizedCubicBezier }) {
       height={THUMB_HEIGHT}
       viewBox={`0 0 ${THUMB_WIDTH} ${THUMB_HEIGHT}`}
     >
-      <title>Curve preset preview</title>
+      <title>{translateUi("Curve preset preview")}</title>
       <path
         d={`M${points.join("L")}`}
         fill="none"

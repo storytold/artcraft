@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -20,7 +22,6 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
-import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -71,6 +72,7 @@ export const PromptBoxEdit = ({
   onRedo,
   credits,
 }: PromptBoxEditProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [prompt, setPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -103,24 +105,24 @@ export const PromptBoxEdit = ({
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Auto",
+      label: translateUi("Auto"),
       selected: aspectRatio === "auto",
       icon: (
         <MoveIcon  className="h-4 w-4" />
       ),
     },
     {
-      label: "Wide",
+      label: translateUi("Wide"),
       selected: aspectRatio === "wide",
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
       selected: aspectRatio === "tall",
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
       selected: aspectRatio === "square",
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -261,7 +263,7 @@ export const PromptBoxEdit = ({
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
-    if (isOverPromptLimit(prompt.length, maxLen)) {
+    if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -291,12 +293,12 @@ export const PromptBoxEdit = ({
         {
           value: "marker",
           icon: PenIcon,
-          text: "Marker",
+          text: translateUi("Marker"),
         },
         {
           value: "eraser",
           icon: EraserIcon,
-          text: "Eraser",
+          text: translateUi("Eraser"),
         },
       ]
     : supportsMaskedInpainting
@@ -304,24 +306,24 @@ export const PromptBoxEdit = ({
           {
             value: "edit",
             icon: SquarePenIcon,
-            text: "Edit Region",
+            text: translateUi("Edit Region"),
           },
           {
             value: "eraser",
             icon: EraserIcon,
-            text: "Eraser",
+            text: translateUi("Eraser"),
           },
         ]
       : [
           {
             value: "edit",
             icon: SquarePenIcon,
-            text: "Edit Region",
+            text: translateUi("Edit Region"),
           },
           {
             value: "select",
             icon: MousePointerIcon,
-            text: "Select",
+            text: translateUi("Select"),
           },
         ];
 
@@ -428,7 +430,7 @@ export const PromptBoxEdit = ({
                 <textarea
                   ref={textareaRef}
                   rows={1}
-                  placeholder="Write what you want to change in your image and click generate..."
+                  placeholder={translateUi("Write what you want to change in your image and click generate...")}
                   className={`promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
@@ -438,7 +440,11 @@ export const PromptBoxEdit = ({
                   onBlur={() => setIsFocused(false)}
                 />
                 <PromptFullscreenButton onClick={openFullscreen} />
-                <PromptLengthCounter prompt={prompt} maxLen={maxLen} idleClassName="text-white/40" />
+                <span
+                  className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
+                >
+                  {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
+                </span>
               </div>
             </div>
             <div className="mt-3.5 flex items-center justify-between gap-2">
@@ -507,8 +513,7 @@ export const PromptBoxEdit = ({
                       onClick={onFitPressed}
                     >
                       <FrameIcon  className="h-4 w-4" />
-                      Fit
-                    </Button>
+                      {translateUi("Fit")}</Button>
                   </Tooltip>
                 )}
                 <GenerationCountPicker
@@ -531,8 +536,7 @@ export const PromptBoxEdit = ({
                   loading={isEnqueueing ?? internalEnqueueing}
                   credits={credits}
                 >
-                  Generate
-                </GenerateButton>
+                  {translateUi("Generate")}</GenerateButton>
               </div>
             </div>
           </div>
@@ -586,7 +590,7 @@ export const PromptBoxEdit = ({
         }
       >
         <textarea
-          placeholder="Write what you want to change in your image and click generate..."
+          placeholder={translateUi("Write what you want to change in your image and click generate...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

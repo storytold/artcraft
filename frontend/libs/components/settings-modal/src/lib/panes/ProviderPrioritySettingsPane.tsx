@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useState, ReactNode } from "react";
 import {
   DndContext,
@@ -115,6 +116,7 @@ const getProviderIcon = (provider: Provider): ReactNode => {
 };
 
 export const ProviderPrioritySettingsPane = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ProviderItem[]>([]);
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -139,7 +141,7 @@ export const ProviderPrioritySettingsPane = () => {
 
       setItems(items);
     };
-    void fetchData();
+    fetchData();
   }, []);
 
   const sensors = useSensors(
@@ -178,7 +180,7 @@ export const ProviderPrioritySettingsPane = () => {
         const newOrder = arrayMove(prevItems, oldIndex, newIndex);
 
         // Send update to backend
-        void updateProviderPriorityOnBackend(newOrder);
+        updateProviderPriorityOnBackend(newOrder);
 
         return newOrder;
       });
@@ -189,9 +191,7 @@ export const ProviderPrioritySettingsPane = () => {
     <div className="space-y-4 pt-3">
       <div>
         <p className="text-xs text-base-fg/70 mb-4">
-          Drag and drop to reorder model provider priority. Higher items will be
-          tried first. You can use this to control favorite services and
-          spending.
+          {t("Drag and drop to reorder model provider priority. Higher items will be tried first. You can use this to control favorite services and spending.")}
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export const ProviderPrioritySettingsPane = () => {
       {isUpdating && (
         <div className="mt-4 flex animate-pulse items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/70">
           <LoaderCircleIcon className="animate-spin" />
-          Updating...
+          {t("Updating...")}
         </div>
       )}
     </div>

@@ -151,7 +151,7 @@ export class ModalTransformController {
       }
     }
     this.target.position.copy(this.startPos).add(delta);
-    void this.editor.renderScene();
+    this.editor.renderScene();
   }
 
   private axisVector(axis: "x" | "y" | "z"): THREE.Vector3 {
@@ -190,7 +190,7 @@ export class ModalTransformController {
 
   private cancel() {
     if (this.target) this.target.position.copy(this.startPos);
-    void this.editor.renderScene();
+    this.editor.renderScene();
     this.cleanup();
   }
 

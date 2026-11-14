@@ -21,7 +21,7 @@ export function useFontAtlas({ open }: { open: boolean }) {
     if (!open || atlas) return;
 
     setStatus("loading");
-    void loadFontAtlas().then((data) => {
+    loadFontAtlas().then((data) => {
       if (data) {
         setAtlas(data);
         setStatus("idle");
@@ -34,7 +34,7 @@ export function useFontAtlas({ open }: { open: boolean }) {
   const retry = useCallback(() => {
     clearFontAtlasCache();
     setStatus("loading");
-    void loadFontAtlas().then((data) => {
+    loadFontAtlas().then((data) => {
       if (data) {
         setAtlas(data);
         setStatus("idle");
@@ -46,9 +46,7 @@ export function useFontAtlas({ open }: { open: boolean }) {
 
   const fontNames = useMemo(() => {
     if (!atlas) return [];
-    return [...Object.keys(atlas.fonts), ...SYSTEM_FONTS].sort((a, b) =>
-      a.localeCompare(b),
-    );
+    return [...Object.keys(atlas.fonts), ...SYSTEM_FONTS].sort();
   }, [atlas]);
 
   return { atlas, status, fontNames, retry };

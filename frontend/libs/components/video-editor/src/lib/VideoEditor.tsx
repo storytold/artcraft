@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { EditorProvider } from "./EditorProvider";
 import type { VideoEditorAdapters } from "./adapters";
@@ -93,19 +95,20 @@ export function VideoEditor({
 }
 
 function DegradedRendererBanner() {
+  const { t: translateUi } = useUiTranslation();
   const isDegraded = useEditor((e) => e.renderer.isDegraded);
   const [dismissed, setDismissed] = useState(false);
   if (!isDegraded || dismissed) return null;
 
   return (
     <div className="bg-accent border-b h-9 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-      <span>For the best experience, open this editor in Chrome.</span>
+      <span>{translateUi("For the best experience, open this editor in Chrome.")}</span>
       <Button
         variant="text"
         size="icon"
         className="p-0 w-auto [&_svg]:size-3.5"
         onClick={() => setDismissed(true)}
-        aria-label="Dismiss"
+        aria-label={translateUi("Dismiss")}
       >
         <HugeiconsIcon icon={Cancel01Icon} />
       </Button>

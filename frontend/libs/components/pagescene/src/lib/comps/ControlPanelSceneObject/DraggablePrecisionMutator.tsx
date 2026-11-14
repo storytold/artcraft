@@ -93,7 +93,7 @@ export const DraggablePrecisionMutator = ({
   }, [handleMouseMove, handleMouseUp, precisions]);
 
   return (
-    <div role="presentation" className={classes} ref={divRef} onMouseDown={handleMouseDown}>
+    <div className={classes} ref={divRef} onMouseDown={handleMouseDown}>
       {children}
     </div>
   )

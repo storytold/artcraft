@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
@@ -15,6 +17,7 @@ import { deleteBoardEverywhere } from "./persistence/moodboardSync";
 // the canvas via the bridge), and hosts New/Delete. Rename stays on the grid
 // toolbar's inline title.
 export const BoardPicker = () => {
+  const { t: translateUi } = useUiTranslation();
   const { boards, boardOrder, activeBoardId } = useBoardLibraryStore(
     useShallow((s) => ({
       boards: s.boards,
@@ -70,8 +73,8 @@ export const BoardPicker = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        title="Switch board"
-        aria-label="Switch board"
+        title={translateUi("Switch board")}
+        aria-label={translateUi("Switch board")}
         className="flex max-w-[180px] items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/70 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <span className="truncate">{activeBoard?.name ?? "Boards"}</span>
@@ -116,8 +119,7 @@ export const BoardPicker = () => {
             className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-base-fg/70 transition-colors hover:bg-base-fg/10 hover:text-base-fg focus:outline-none"
           >
             <PlusIcon  className="h-3 w-3" />
-            New board
-          </button>
+            {translateUi("New board")}</button>
         </div>
       )}
     </div>

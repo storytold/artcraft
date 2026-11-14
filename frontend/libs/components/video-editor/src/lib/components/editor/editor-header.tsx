@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useRef, useState, type ReactNode } from "react";
 import {
@@ -46,6 +48,7 @@ export function EditorHeader({ endSlot, exitTo = "/projects" }: EditorHeaderProp
 }
 
 function ProjectDropdown({ exitTo }: { exitTo: string }) {
+  const { t: translateUi } = useUiTranslation();
   const [openDialog, setOpenDialog] = useState<
     "delete" | "rename" | "shortcuts" | null
   >(null);
@@ -81,7 +84,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
           name: newName.trim(),
         });
       } catch (error) {
-        toast.error("Failed to rename project", {
+        toast.error(translateUi("Failed to rename project"), {
           description:
             error instanceof Error ? error.message : "Please try again",
         });
@@ -99,7 +102,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
         });
         navigate(exitTo);
       } catch (error) {
-        toast.error("Failed to delete project", {
+        toast.error(translateUi("Failed to delete project"), {
           description:
             error instanceof Error ? error.message : "Please try again",
         });
@@ -115,7 +118,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="p-1 rounded-sm size-8">
             <div
-              aria-label="Project menu"
+              aria-label={translateUi("Project menu")}
               className="size-5 rounded-sm bg-foreground/80"
             />
           </Button>
@@ -126,15 +129,13 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
             disabled={isExiting}
             icon={<HugeiconsIcon icon={Logout05Icon} />}
           >
-            Exit project
-          </DropdownMenuItem>
+            {translateUi("Exit project")}</DropdownMenuItem>
 
           <DropdownMenuItem
             onClick={() => setOpenDialog("shortcuts")}
             icon={<HugeiconsIcon icon={CommandIcon} />}
           >
-            Shortcuts
-          </DropdownMenuItem>
+            {translateUi("Shortcuts")}</DropdownMenuItem>
 
           <DropdownMenuSeparator />
         </DropdownMenuContent>
@@ -160,6 +161,7 @@ function ProjectDropdown({ exitTo }: { exitTo: string }) {
 }
 
 function EditableProjectName() {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const activeProject = useEditor((e) => e.project.getActive());
   const [isEditing, setIsEditing] = useState(false);
@@ -196,7 +198,7 @@ function EditableProjectName() {
           name: newName,
         });
       } catch (error) {
-        toast.error("Failed to rename project", {
+        toast.error(translateUi("Failed to rename project"), {
           description:
             error instanceof Error ? error.message : "Please try again",
         });

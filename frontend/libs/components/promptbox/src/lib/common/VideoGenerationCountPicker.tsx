@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { CopyIcon } from "lucide-react";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -14,6 +15,7 @@ export const VideoGenerationCountPicker = ({
   currentCount,
   handleCountChange,
 }: VideoGenerationCountPickerProps) => {
+  const { t } = useTranslation();
   const options: PopoverItem[] = counts.map((count) => ({
     label: String(count),
     selected: count === currentCount,
@@ -28,7 +30,7 @@ export const VideoGenerationCountPicker = ({
 
   return (
     <Tooltip
-      content="Number of generations"
+      content={t("Number of generations")}
       position="top"
       className="z-50"
       closeOnClick={true}
@@ -38,7 +40,7 @@ export const VideoGenerationCountPicker = ({
         items={options}
         onSelect={onSelect}
         mode="toggle"
-        panelTitle="No. of videos"
+        panelTitle={t("No. of videos")}
         triggerIcon={<CopyIcon  className="h-4 w-4" />}
         buttonClassName={PROMPT_TOOLBAR_ICON_BUTTON_CLASSES}
       />

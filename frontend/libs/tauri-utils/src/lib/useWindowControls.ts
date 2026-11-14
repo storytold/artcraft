@@ -16,7 +16,7 @@ export function useTauriWindowControls() {
     let unlistenUnmax: (() => void) | undefined;
     let unlistenResize: (() => void) | undefined;
 
-    void (async () => {
+    (async () => {
       try {
         const win = await getCurrentWindowSafe();
         setIsMaximized(await win.isMaximized());

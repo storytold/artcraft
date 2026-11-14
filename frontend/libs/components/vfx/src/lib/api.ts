@@ -1,5 +1,4 @@
 import { StorytellerApiHostStore } from "@storyteller/api";
-import { v4 as uuidv4 } from "uuid";
 
 export type SubmitVFXJobRequest = {
   source_video_media_token: string;
@@ -65,5 +64,8 @@ export async function submitVFXJob(
 }
 
 export function newIdempotencyToken(): string {
-  return uuidv4();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }

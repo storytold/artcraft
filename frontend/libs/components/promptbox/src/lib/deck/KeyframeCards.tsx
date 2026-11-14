@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ArrowLeftRightIcon, PlusIcon } from "lucide-react";
@@ -40,6 +42,7 @@ export const KeyframeCards = ({
   onSwap,
   className,
 }: KeyframeCardsProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [previewItem, setPreviewItem] = useState<DeckItem | null>(null);
 
   return (
@@ -53,7 +56,7 @@ export const KeyframeCards = ({
 
       <DeckSlotCard
         item={firstFrame}
-        label="First frame"
+        label={translateUi("First frame")}
         tiltClass={showLastFrame ? "-rotate-6" : ""}
         addActions={onFirstAddActions}
         onRemove={onRemoveFirst}
@@ -67,7 +70,7 @@ export const KeyframeCards = ({
               <button
                 type="button"
                 onClick={onSwap}
-                title="Swap frames"
+                title={translateUi("Swap frames")}
                 className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-black/60 text-[10px] text-white shadow backdrop-blur-md transition-all hover:scale-110 hover:bg-black/80"
               >
                 <ArrowLeftRightIcon />
@@ -81,7 +84,7 @@ export const KeyframeCards = ({
 
           <DeckSlotCard
             item={lastFrame}
-            label="Last frame"
+            label={translateUi("Last frame")}
             tiltClass="rotate-6"
             addActions={onLastAddActions}
             onRemove={onRemoveLast}

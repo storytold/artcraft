@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { type UploadMediaFn } from "@storyteller/api";
@@ -68,7 +70,7 @@ const randomId = () => Math.random().toString(36).substring(7);
 
 // A non-finite duration cap means "no limit" — leave it out of the message.
 const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
-  Number.isFinite(maxTotalSec)
+  isFinite(maxTotalSec)
     ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
     : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
 
@@ -141,6 +143,7 @@ export function useDeckMedia<
   uploadAudio,
   ownGalleryModal,
 }: UseDeckMediaOptions<TImage, TVideo, TAudio>) {
+  const { t: translateUi } = useUiTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
@@ -409,7 +412,7 @@ export function useDeckMedia<
             ) {
               URL.revokeObjectURL(entry.previewUrl);
               setUploadingVideo(null);
-              toast.error("Failed to upload video. Please upload an MP4 file.");
+              toast.error(translateUi("Failed to upload video. Please upload an MP4 file."));
             }
           },
         });
@@ -516,8 +519,8 @@ export function useDeckMedia<
     );
 
     if (images.length > 0) processImageFiles(images, "start");
-    if (videos.length > 0 && setReferenceVideos) void processVideoFiles(videos);
-    if (audios.length > 0 && setReferenceAudios) void processAudioFiles(audios);
+    if (videos.length > 0 && setReferenceVideos) processVideoFiles(videos);
+    if (audios.length > 0 && setReferenceAudios) processAudioFiles(audios);
   };
 
   // maxImages of 0 means the page's model takes no image refs at all.

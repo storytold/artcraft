@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PlusIcon, Trash2Icon } from "lucide-react";
@@ -86,6 +88,7 @@ export const ReferenceDeck = ({
   maxCollapsed = 3,
   className,
 }: ReferenceDeckProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [hovered, setHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -291,7 +294,7 @@ export const ReferenceDeck = ({
       {onClearAll && items.length > 1 && (
         <div className="mb-1.5 flex items-center justify-between px-0.5">
           <span className="text-[11px] font-medium text-base-fg/60">
-            {items.length} reference{items.length !== 1 ? "s" : ""}
+            {items.length} {" "}{translateUi("reference")}{items.length !== 1 ? "s" : ""}
           </span>
           <button
             type="button"
@@ -299,8 +302,7 @@ export const ReferenceDeck = ({
             className="flex items-center gap-1 rounded-[3px] px-1 py-0.5 text-[11px] text-base-fg/60 transition-colors hover:text-red-400"
           >
             <Trash2Icon className="h-2.5 w-2.5" />
-            Clear all
-          </button>
+            {translateUi("Clear all")}</button>
         </div>
       )}
       {/* Rows are 56px cards + 8px gap; cap at three rows in the fullscreen

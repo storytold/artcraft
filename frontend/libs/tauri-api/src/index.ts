@@ -54,5 +54,3 @@ export * from "./lib/models/modelsStore.js";
 export * from "./lib/common/commandErrorMessage.js";
 
 export * from "./lib/generate/GenerateOmni.js";
-
-export * from "./lib/system/Updates.js";

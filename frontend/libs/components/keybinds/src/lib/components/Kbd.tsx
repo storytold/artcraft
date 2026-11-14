@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Binding } from "../types";
 import { formatBindingTokens } from "../format";
 
@@ -21,8 +22,9 @@ export function Kbd({ binding }: { binding: Binding }) {
 // A list of alternative bindings for one action, e.g. "Del / ⌫". Renders a muted
 // "Unbound" when empty.
 export function KbdBindings({ bindings }: { bindings: Binding[] }) {
+  const { t } = useTranslation();
   if (!bindings.length) {
-    return <span className="text-[11px] italic text-base-fg/40">Unbound</span>;
+    return <span className="text-[11px] italic text-base-fg/40">{t("Unbound")}</span>;
   }
   return (
     <span className="inline-flex items-center gap-1.5">

@@ -104,7 +104,7 @@ export const InputVector = ({
       } as Record<string, string>;
 
       const newValue =
-        Number.parseFloat(newVector[ref.current?.name ?? ""]) + direction * increment;
+        parseFloat(newVector[ref.current?.name ?? ""]) + direction * increment;
 
       newVector[ref.current?.name ?? ""] = (
         Math.round(newValue * 1000) / 1000

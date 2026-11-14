@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Fragment, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { DoNotShow } from "~/constants";
@@ -29,6 +31,7 @@ export const ConfirmationModal = ({
   cancelText = "Cancel",
   canHide,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const handleOk = useCallback(() => {
     const element = document.getElementById("hide-dialog");
     if (element) {
@@ -75,7 +78,7 @@ export const ConfirmationModal = ({
               <div className="mt-2 text-sm leading-relaxed text-white/70">{text}</div>
               {canHide && (
                 <div className="mt-2">
-                  <Checkbox id="hide-dialog" label="Do not show this again" />
+                  <Checkbox id="hide-dialog" label={translateUi("Do not show this again")} />
                 </div>
               )}
 

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { twMerge } from "tailwind-merge";
 import type { VFXSubTab } from "./types";
 
@@ -16,7 +18,7 @@ export const SubTabStrip = ({
   activeTab,
   onChange,
   className,
-}: SubTabStripProps) => (
+}: SubTabStripProps) => { const { t: translateUi } = useUiTranslation(); return (
   <div
     className={twMerge(
       "flex shrink-0 items-center justify-center gap-1 border-b border-white/10 bg-white/[0.04] px-6 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
@@ -34,8 +36,8 @@ export const SubTabStrip = ({
             : "text-white/50 hover:bg-white/5 hover:text-white/80",
         )}
       >
-        {t.label}
+        {translateUi(t.label)}
       </button>
     ))}
   </div>
-);
+); };

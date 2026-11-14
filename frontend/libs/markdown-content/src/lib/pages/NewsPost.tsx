@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Link, useParams } from "react-router-dom";
 import { getNewsPostBySlug } from "../data/content";
 import { markdownToHtml } from "../utils/markdown";
@@ -10,6 +12,7 @@ interface NewsPostProps {
 }
 
 export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
+  const { t: translateUi } = useUiTranslation();
   const { slug: paramSlug } = useParams();
   const slug = propSlug || paramSlug;
   const post = slug ? getNewsPostBySlug(slug) : null;
@@ -20,14 +23,13 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
     return (
       <div className="relative min-h-screen text-white">
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-8 pt-28 sm:pt-36 pb-12">
-          <h1 className="text-3xl font-bold">Not found</h1>
-          <p className="text-white/70">We couldn't find this article.</p>
+          <h1 className="text-3xl font-bold">{translateUi("Not found")}</h1>
+          <p className="text-white/70">{translateUi("We couldn't find this article.")}</p>
           <Link
             to={basePath}
             className="text-blue-400 mt-4 inline-block hover:underline"
           >
-            Return to News
-          </Link>
+            {translateUi("Return to News")}</Link>
         </div>
       </div>
     );
@@ -46,8 +48,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
             className="rounded-lg px-4 py-2 text-sm border border-white/10 bg-white/5 hover:bg-white/10 inline-flex items-center gap-2 transition-colors"
           >
             <ChevronLeftIcon />
-            Back to News
-          </Link>
+            {translateUi("Back to News")}</Link>
           {post.date && (
             <span className="text-white/50 font-mono text-sm">{post.date}</span>
           )}
@@ -92,7 +93,7 @@ export const NewsPost = ({ slug: propSlug, basePath }: NewsPostProps) => {
           .article-content code { background: rgba(255,255,255,0.1); padding: 0.2em 0.4em; border-radius: 0.25em; font-family: monospace; font-size: 0.9em; }
           .article-content pre { background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1.5rem 0; border: 1px solid rgba(255,255,255,0.1); }
           .article-content pre code { background: transparent; padding: 0; color: inherit; }
-          
+
           /* Video embed styles */
           .article-content .video-embed { position: relative; width: 100%; margin: 2rem 0; border-radius: 0.75rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #000; }
           .article-content .youtube-embed { padding-bottom: 56.25%; /* 16:9 aspect ratio */ height: 0; }

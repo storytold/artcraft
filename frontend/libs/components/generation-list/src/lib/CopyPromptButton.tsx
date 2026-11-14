@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -14,6 +16,7 @@ export function CopyPromptButton({
   text: string;
   onCopyResult?: (success: boolean) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(
@@ -36,7 +39,7 @@ export function CopyPromptButton({
       <button
         type="button"
         onClick={handleCopy}
-        aria-label="Copy prompt"
+        aria-label={translateUi("Copy prompt")}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-white/40 transition-colors hover:bg-white/10 hover:text-white"
       >
         <DynamicIcon icon={copied ? CheckIcon : CopyIcon} className="text-sm" />

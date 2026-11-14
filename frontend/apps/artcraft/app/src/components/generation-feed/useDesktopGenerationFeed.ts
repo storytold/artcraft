@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -66,6 +68,7 @@ const FAILURE_REASON_LABEL: Record<string, string> = {
 export function useDesktopGenerationFeed(options: {
   mediaType: "image" | "video";
 }) {
+  const { t: translateUi } = useUiTranslation();
   const { mediaType } = options;
   const mediaApiRef = useRef(new MediaFilesApi());
 
@@ -170,7 +173,7 @@ export function useDesktopGenerationFeed(options: {
     addCompletedItems(
       event.generated_images.map((img) => ({
         id: img.media_token,
-        label: "Image Generation",
+        label: translateUi("Image Generation"),
         thumbnail:
           getThumbnailUrl(img.maybe_thumbnail_template, {
             width: THUMBNAIL_SIZES.LARGE,
@@ -189,7 +192,7 @@ export function useDesktopGenerationFeed(options: {
     addCompletedItems([
       {
         id: video.media_token,
-        label: "Video Generation",
+        label: translateUi("Video Generation"),
         thumbnail:
           getThumbnailUrl(video.maybe_thumbnail_template, {
             width: THUMBNAIL_SIZES.LARGE,
@@ -295,8 +298,8 @@ export function useDesktopGenerationFeed(options: {
       cancelled = true;
       clearInterval(intervalId);
       window.removeEventListener("task-queue-update", handleTaskUpdate);
-      void unlistenComplete.then((f) => f());
-      void unlistenFailed.then((f) => f());
+      unlistenComplete.then((f) => f());
+      unlistenFailed.then((f) => f());
     };
   }, [load]);
 

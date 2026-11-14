@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useKeybindsStore } from "../keybinds-store";
@@ -49,6 +50,7 @@ export function KeybindsSettings({
 }: {
   onOpenVideoEditorShortcuts?: () => void;
 }) {
+  const { t } = useTranslation();
   const selectedPreset = useKeybindsStore((s) => s.selectedPreset);
   const overrides = useKeybindsStore((s) => s.overrides);
   const setPreset = useKeybindsStore((s) => s.setPreset);
@@ -99,12 +101,12 @@ export function KeybindsSettings({
     const matchAction = (a: ActionDef) =>
       searchMode === "key"
         ? !keyQuery || forAction(a.id).some((b) => bindingsEqual(b, keyQuery))
-        : actionMatchesQuery(a, forAction(a.id), query);
+        : actionMatchesQuery(a, forAction(a.id), query, [t(a.label), t(a.group)]);
     return surfaces.map((surface) => {
       const actions = ACTIONS_BY_SURFACE[surface].filter(matchAction);
       return { surface, groups: groupActions(actions), count: actions.length };
     });
-  }, [surfaces, searchMode, query, keyQuery, forAction]);
+  }, [surfaces, searchMode, query, keyQuery, forAction, t]);
 
   const totalMatches = filtered.reduce((n, s) => n + s.count, 0);
   const overriddenCount = Object.keys(overrides).length;
@@ -167,7 +169,7 @@ export function KeybindsSettings({
     <div className="flex flex-col gap-8">
       {/* ── Preset + layering explainer ────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
-        <Eyebrow>Preset</Eyebrow>
+        <Eyebrow>{t("Preset")}</Eyebrow>
         <PresetDropdown value={selectedPreset} onChange={setPreset} />
         <LayeringNote preset={selectedPreset} />
       </section>
@@ -204,10 +206,10 @@ export function KeybindsSettings({
       <div className="-my-2 flex items-center justify-between px-1 text-xs tracking-wide text-base-fg/40">
         <span className="tabular-nums">
           {searchActive
-            ? `${totalMatches} ${totalMatches === 1 ? "match" : "matches"}`
+            ? t("shortcutMatches", { count: totalMatches })
             : overriddenCount > 0
-              ? `${overriddenCount} customized`
-              : "Default bindings"}
+              ? t("{{count}} customized", { count: overriddenCount })
+              : t("Default bindings")}
         </span>
         {!searchActive && (
           <button
@@ -215,7 +217,7 @@ export function KeybindsSettings({
             onClick={toggleAll}
             className="font-medium text-base-fg/50 transition-colors hover:text-base-fg/80"
           >
-            {allOpen ? "Collapse all" : "Expand all"}
+            {allOpen ? t("Collapse all") : t("Expand all")}
           </button>
         )}
       </div>
@@ -232,8 +234,8 @@ export function KeybindsSettings({
             return (
               <CollapsibleSurface
                 key={surface}
-                title={SURFACE_TITLES[surface]}
-                hint={SURFACE_HINTS[surface]}
+                title={t(SURFACE_TITLES[surface])}
+                hint={t(SURFACE_HINTS[surface])}
                 count={count}
                 overriddenCount={overriddenBySurface[surface] ?? 0}
                 open={open}
@@ -245,7 +247,7 @@ export function KeybindsSettings({
               >
                 {groups.map(({ group, actions }) => (
                   <div key={group}>
-                    <GroupLabel>{group}</GroupLabel>
+                    <GroupLabel>{t(group)}</GroupLabel>
                     {actions.map((action) => (
                       <ActionRow
                         key={action.id}
@@ -276,18 +278,16 @@ export function KeybindsSettings({
         <div className="flex items-center justify-between gap-4 rounded-none bg-red/[0.04] p-4 ring-1 ring-red/20">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[13px] font-medium text-base-fg/90">
-              Reset all customizations
+              {t("Reset all customizations")}
             </span>
             <span className="text-xs leading-relaxed text-base-fg/50">
-              Removes {overriddenCount === 1 ? "your 1 custom binding" : `all ${overriddenCount} custom bindings`}{" "}
-              on every surface. Your preset stays selected. This can’t be
-              undone.
+              {t("Removes all {{count}} custom bindings on every surface. Your preset stays selected. This can’t be undone.", { count: overriddenCount })}
             </span>
           </div>
           <ConfirmResetButton
-            idleLabel="Reset all"
-            confirmLabel={`Confirm — reset ${overriddenCount}`}
-            title={`Reset all ${overriddenCount} customized bindings to the preset defaults`}
+            idleLabel={t("Reset all")}
+            confirmLabel={t("Confirm — reset {{count}}", { count: overriddenCount })}
+            title={t("Reset all {{count}} customized bindings to the preset defaults", { count: overriddenCount })}
             prominent
             confirmDelayMs={2000}
             onConfirm={resetAll}
@@ -299,7 +299,7 @@ export function KeybindsSettings({
       <div className="flex items-start gap-3 rounded-none bg-white/[0.02] p-4 text-[13px] leading-relaxed text-base-fg/55 ring-1 ring-white/15">
         <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-base-fg/35" />
         <span>
-          Video editor shortcuts are managed in the video editor itself
+          {t("Video editor shortcuts are managed in the video editor itself")}
           {onOpenVideoEditorShortcuts ? (
             <>
               {" — "}
@@ -308,12 +308,12 @@ export function KeybindsSettings({
                 onClick={onOpenVideoEditorShortcuts}
                 className="font-medium text-primary underline-offset-2 hover:underline"
               >
-                open shortcut settings
+                {t("open shortcut settings")}
               </button>
               .
             </>
           ) : (
-            " (Video editor → Settings → Shortcuts)."
+            t(" (Video editor → Settings → Shortcuts).")
           )}
         </span>
       </div>
@@ -330,6 +330,7 @@ function PresetDropdown({
   value: PresetId;
   onChange: (id: PresetId) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const def = PRESETS[value];
@@ -363,9 +364,9 @@ function PresetDropdown({
         )}
       >
         <div className="flex min-w-0 grow flex-col gap-0.5 px-3 py-1.5">
-          <span className="text-sm font-medium text-base-fg">{def.label}</span>
+          <span className="text-sm font-medium text-base-fg">{t(def.label)}</span>
           <span className="text-[12px] leading-relaxed text-base-fg/60">
-            {def.description}
+            {t(def.description)}
           </span>
         </div>
         <ChevronIcon
@@ -379,7 +380,7 @@ function PresetDropdown({
 
       <div
         role="listbox"
-        aria-label="Preset"
+        aria-label={t("Preset")}
         className={twMerge(
           "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-none bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
           EASE,
@@ -417,10 +418,10 @@ function PresetDropdown({
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-sm font-medium text-base-fg">
-                  {p.label}
+                  {t(p.label)}
                 </span>
                 <span className="text-[12px] leading-relaxed text-base-fg/55">
-                  {p.description}
+                  {t(p.description)}
                 </span>
               </div>
             </button>
@@ -432,17 +433,19 @@ function PresetDropdown({
 }
 
 function LayeringNote({ preset }: { preset: PresetId }) {
+  const { t } = useTranslation();
   return (
     <p className="text-[13px] leading-relaxed text-base-fg/55">
-      Every shortcut starts from the{" "}
-      <span className="font-medium text-base-fg/80">
-        {PRESETS[preset].label}
-      </span>{" "}
-      preset. Any key you change is saved as your own{" "}
-      <span className="font-medium text-base-fg/80">override</span> on top —
-      these sit beside the dimmed preset default
-      <span className="mx-1 inline-block h-1.5 w-1.5 translate-y-px rounded-full bg-primary align-middle" />
-      and revert with ↺.
+      <Trans
+        t={t}
+        i18nKey="Every shortcut starts from the <preset>{{preset}}</preset> preset. Changes are saved as your own <override>override</override>, beside the dimmed preset default <dot></dot>, and revert with ↺."
+        values={{ preset: t(PRESETS[preset].label) }}
+        components={{
+          preset: <span className="font-medium text-base-fg/80" />,
+          override: <span className="font-medium text-base-fg/80" />,
+          dot: <span className="mx-1 inline-block h-1.5 w-1.5 translate-y-px rounded-full bg-primary align-middle" />,
+        }}
+      />
     </p>
   );
 }
@@ -456,11 +459,12 @@ function ModeToggle({
   mode: SearchMode;
   onChange: (mode: SearchMode) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex shrink-0 items-center gap-0.5 rounded-[3px] bg-ui-modal/60 p-0.5">
       {(["name", "key"] as SearchMode[]).map((m) => (
         <button
-          key={m}
+          key={t(m === "name" ? "Name" : "Key")}
           type="button"
           onClick={() => onChange(m)}
           aria-pressed={mode === m}
@@ -472,7 +476,7 @@ function ModeToggle({
               : "text-base-fg/50 hover:text-base-fg/80",
           )}
         >
-          {m}
+          {t(m === "name" ? "Name" : "Key")}
         </button>
       ))}
     </div>
@@ -486,6 +490,7 @@ function NameSearchField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={twMerge(
@@ -499,14 +504,14 @@ function NameSearchField({
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search by name — “rotate”, “camera up”…"
+        placeholder={t("Search by name — “rotate”, “camera up”…")}
         className="h-10 w-full bg-transparent px-3 text-sm text-base-fg placeholder:text-base-fg/35 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange("")}
-          aria-label="Clear search"
+          aria-label={t("Clear search")}
           className={twMerge(
             "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
@@ -530,6 +535,7 @@ function KeySearchField({
   onArm: () => void;
   onClear: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={twMerge(
@@ -551,16 +557,16 @@ function KeySearchField({
         />
         {listening ? (
           <span className="animate-pulse text-[13px] font-medium text-primary">
-            Listening… press a shortcut
+            {t("Listening… press a shortcut")}
           </span>
         ) : binding ? (
           <span className="flex items-center gap-2 text-[13px] text-base-fg/60">
             <KbdBindings bindings={[binding]} />
-            <span className="text-base-fg/35">— filtering by this key</span>
+            <span className="text-base-fg/35">{t("— filtering by this key")}</span>
           </span>
         ) : (
           <span className="text-sm text-base-fg/35">
-            Click, then press a shortcut to filter…
+            {t("Click, then press a shortcut to filter…")}
           </span>
         )}
       </button>
@@ -568,7 +574,7 @@ function KeySearchField({
         <button
           type="button"
           onClick={onClear}
-          aria-label="Clear key filter"
+          aria-label={t("Clear key filter")}
           className={twMerge(
             "mr-1.5 grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
@@ -604,6 +610,7 @@ function CollapsibleSurface({
   onReset: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-none bg-white/[0.04] ring-1 ring-white/15">
       <div className="overflow-hidden rounded-[3px] bg-ui-modal/40">
@@ -639,11 +646,9 @@ function CollapsibleSurface({
           </button>
           {overriddenCount > 0 && (
             <ConfirmResetButton
-              idleLabel={`Reset ${overriddenCount}`}
-              confirmLabel="Confirm?"
-              title={`Reset ${title}'s ${overriddenCount} customized ${
-                overriddenCount === 1 ? "binding" : "bindings"
-              } to the preset defaults`}
+              idleLabel={t("Reset {{count}}", { count: overriddenCount })}
+              confirmLabel={t("Confirm?")}
+              title={t("Reset {{title}}'s {{count}} customized bindings to the preset defaults", { title, count: overriddenCount })}
               onConfirm={onReset}
             />
           )}
@@ -695,6 +700,7 @@ function ConfirmResetButton({
   confirmDelayMs?: number;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const [armed, setArmed] = useState(false);
   const [ready, setReady] = useState(false); // lockout elapsed, click confirms
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -736,7 +742,7 @@ function ConfirmResetButton({
         }
       }}
       title={title}
-      aria-label={armed ? `${title} — click again to confirm` : title}
+      aria-label={armed ? t("{{title}} — click again to confirm", { title }) : title}
       className={twMerge(
         "relative shrink-0 overflow-hidden whitespace-nowrap rounded-[3px] font-medium transition-all active:scale-[0.97]",
         EASE,
@@ -824,6 +830,7 @@ function ActionRow({
   onCapture: (binding: Binding) => void;
   onReset: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={twMerge(
@@ -837,17 +844,17 @@ function ActionRow({
           "h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-opacity duration-300",
           overridden ? "opacity-100" : "opacity-0",
         )}
-        title={overridden ? "Customized" : undefined}
+        title={overridden ? t("Customized") : undefined}
       />
       <span className="grow truncate text-[13px] text-base-fg/90">
-        {action.label}
+        {t(action.label)}
       </span>
 
       {/* Layering made literal: dimmed preset default → revert → live override. */}
       {overridden && (
         <span
           className="hidden items-center gap-1.5 text-xs text-base-fg/35 opacity-70 sm:inline-flex"
-          title="Preset default"
+          title={t("Preset default")}
         >
           <KbdBindings bindings={defaultBindings} />
         </span>
@@ -856,8 +863,8 @@ function ActionRow({
         <button
           type="button"
           onClick={onReset}
-          title="Revert to preset default"
-          aria-label="Revert to preset default"
+          title={t("Revert to preset default")}
+          aria-label={t("Revert to preset default")}
           className={twMerge(
             "grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-base-fg/40 transition-all hover:bg-white/10 hover:text-base-fg active:scale-90",
             EASE,
@@ -884,17 +891,19 @@ function ConflictAlert({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       role="alert"
       className="flex flex-col gap-2.5 rounded-none bg-red/[0.08] p-3.5 text-[13px] ring-1 ring-red/30"
     >
       <span className="leading-relaxed text-base-fg/80">
-        <KbdBindings bindings={[pending.binding]} /> is already used by{" "}
-        <strong className="font-medium text-base-fg">
-          {pending.conflicts.map((c) => ACTIONS[c]?.label).join(", ")}
-        </strong>
-        .
+        <Trans
+          t={t}
+          i18nKey="<binding></binding> is already used by <actions>{{actions}}</actions>."
+          values={{ actions: pending.conflicts.map((id) => t(ACTIONS[id]?.label ?? id)).join(", ") }}
+          components={{ binding: <KbdBindings bindings={[pending.binding]} />, actions: <strong className="font-medium text-base-fg" /> }}
+        />
       </span>
       <div className="flex gap-2">
         <button
@@ -905,7 +914,7 @@ function ConflictAlert({
             EASE,
           )}
         >
-          Rebind anyway
+          {t("Rebind anyway")}
         </button>
         <button
           type="button"
@@ -915,7 +924,7 @@ function ConflictAlert({
             EASE,
           )}
         >
-          Cancel
+          {t("Cancel")}
         </button>
       </div>
     </div>
@@ -931,6 +940,7 @@ function EmptyState({
   query: string;
   binding: Binding | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center gap-3 rounded-none bg-white/[0.06] px-6 py-12 text-center ring-1 ring-white/15">
       {mode === "key" ? (
@@ -939,13 +949,11 @@ function EmptyState({
         <SearchIcon className="h-6 w-6 text-base-fg/25" />
       )}
       <p className="flex flex-wrap items-center justify-center gap-1.5 text-sm text-base-fg/60">
-        Nothing is bound to
         {mode === "key" && binding ? (
-          <KbdBindings bindings={[binding]} />
+          <Trans t={t} i18nKey="Nothing is bound to <binding></binding> yet." components={{ binding: <KbdBindings bindings={[binding]} /> }} />
         ) : (
-          <span className="font-medium text-base-fg/90">“{query}”</span>
+          t("No shortcuts match “{{query}}”.", { query })
         )}
-        {mode === "key" ? " yet." : "."}
       </p>
     </div>
   );

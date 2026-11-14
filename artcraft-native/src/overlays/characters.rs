@@ -1,6 +1,7 @@
 //! The characters dialog (`CharactersModal`): pick a saved character to mention it in the prompt,
 //! make a new one from a reference image, rename or re-describe one, or delete it.
 
+use crate::i18n::t as ui_text;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -103,15 +104,15 @@ impl CharactersModal {
     if let Some((token, name)) = self.confirm_delete.clone() {
       let mut choice = None;
       let dismissed = widgets::modal(ctx, Id::new("character-delete"), 420.0, |ui| {
-        ui.label(widgets::heading("Delete character?", 20.0));
+        ui.label(widgets::heading(ui_text("Delete character?"), 20.0));
         ui.add_space(8.0);
-        ui.label(egui::RichText::new(format!("\u{201c}{name}\u{201d} will be removed from your characters.")).color(theme::MUTED));
+        ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("将从角色列表中删除“{name}”。") } else { format!("\u{201c}{name}\u{201d} will be removed from your characters.") })).color(theme::MUTED));
         ui.add_space(16.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::button(ui, None, "Delete", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, None, ui_text("Delete"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
             choice = Some(true);
           }
-          if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
             choice = Some(false);
           }
         });
@@ -128,12 +129,12 @@ impl CharactersModal {
 
   fn header(&mut self, ui: &mut Ui, title: &str, back: bool, actions: &mut Vec<CharactersAction>) {
     ui.horizontal(|ui| {
-      if back && widgets::ghost(ui, Icon::ChevronLeft, None, "Back", false).clicked() {
+      if back && widgets::ghost(ui, Icon::ChevronLeft, None, ui_text("Back"), false).clicked() {
         self.view = View::List;
       }
       ui.label(widgets::heading(title, 22.0));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
           actions.push(CharactersAction::Close);
         }
       });
@@ -186,13 +187,13 @@ impl CharactersModal {
           ui.painter().rect_filled(tools, theme::RADIUS, Color32::from_black_alpha(160));
           let mut child = ui.new_child(egui::UiBuilder::new().max_rect(tools.shrink(1.0)).layout(egui::Layout::left_to_right(egui::Align::Center)));
           child.spacing_mut().item_spacing.x = 0.0;
-          if widgets::overlay_icon(&mut child, Icon::Pencil, "Edit character").clicked() {
+          if widgets::overlay_icon(&mut child, Icon::Pencil, ui_text("Edit character")).clicked() {
             self.name = c.name.clone();
             self.description = c.maybe_description.clone().unwrap_or_default();
             self.view = View::Edit(c.token.clone());
             clicked_tool = true;
           }
-          if widgets::overlay_icon(&mut child, Icon::Trash, "Delete character").clicked() {
+          if widgets::overlay_icon(&mut child, Icon::Trash, ui_text("Delete character")).clicked() {
             self.confirm_delete = Some((c.token.clone(), c.name.clone()));
             clicked_tool = true;
           }
@@ -211,7 +212,7 @@ impl CharactersModal {
         let (r, _) = ui.allocate_exact_size(vec2(240.0, 240.0), Sense::hover());
         thumbnail(ui, r, c.full_url().or_else(|| c.avatar_url()).as_deref(), cache);
         if let Some(url) = c.full_url() {
-          if ui.add(egui::Button::new(egui::RichText::new("View full size").size(12.0).color(theme::ACCENT_INK)).frame(false)).clicked() {
+          if ui.add(egui::Button::new(egui::RichText::new(ui_text("View full size")).size(12.0).color(theme::ACCENT_INK)).frame(false)).clicked() {
             actions.push(CharactersAction::Preview(url));
           }
         }
@@ -221,7 +222,7 @@ impl CharactersModal {
         fields(ui, &mut self.name, &mut self.description);
         ui.add_space(16.0);
         ui.horizontal(|ui| {
-          if widgets::button(ui, None, "Save", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, None, ui_text("Save"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
             if self.name.trim().is_empty() {
               actions.push(CharactersAction::Toast("Name cannot be empty".to_owned()));
             } else {
@@ -229,7 +230,7 @@ impl CharactersModal {
               self.view = View::List;
             }
           }
-          if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
             self.view = View::List;
           }
         });
@@ -241,7 +242,7 @@ impl CharactersModal {
     self.header(ui, "New Character", true, actions);
     ui.horizontal_top(|ui| {
       ui.vertical(|ui| {
-        widgets::hud(ui, "Reference", theme::FAINT);
+        widgets::hud(ui, ui_text("Reference"), theme::FAINT);
         ui.add_space(6.0);
         let (r, resp) = ui.allocate_exact_size(vec2(240.0, 240.0), Sense::click());
         match &self.image {
@@ -281,7 +282,7 @@ impl CharactersModal {
         ui.add_space(16.0);
         let uploading = self.image.as_ref().is_some_and(|i| i.status == RefStatus::Uploading);
         ui.horizontal(|ui| {
-          if ui.add_enabled_ui(!uploading, |ui| widgets::button(ui, Some(Icon::Sparkles), "Create", widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
+          if ui.add_enabled_ui(!uploading, |ui| widgets::button(ui, Some(Icon::Sparkles), ui_text("Create"), widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
             match (self.name.trim(), self.image.as_ref().and_then(|i| i.token.clone())) {
               ("", _) => actions.push(CharactersAction::Toast("Please enter a character name".to_owned())),
               (_, None) => actions.push(CharactersAction::Toast("Please upload a reference image".to_owned())),
@@ -292,7 +293,7 @@ impl CharactersModal {
               },
             }
           }
-          if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
             self.view = View::List;
           }
         });
@@ -303,13 +304,13 @@ impl CharactersModal {
 
 /// The name and description inputs shared by create and edit.
 fn fields(ui: &mut Ui, name: &mut String, description: &mut String) {
-  widgets::hud(ui, "Character name", theme::FAINT);
+  widgets::hud(ui, ui_text("Character name"), theme::FAINT);
   ui.add_space(4.0);
-  input_frame(ui, |ui| ui.add(egui::TextEdit::singleline(name).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new("Character name").color(theme::FAINT))));
+  input_frame(ui, |ui| ui.add(egui::TextEdit::singleline(name).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new(ui_text("Character name")).color(theme::FAINT))));
   ui.add_space(10.0);
-  widgets::hud(ui, "Description", theme::FAINT);
+  widgets::hud(ui, ui_text("Description"), theme::FAINT);
   ui.add_space(4.0);
-  input_frame(ui, |ui| ui.add(egui::TextEdit::multiline(description).frame(egui::Frame::NONE).desired_width(f32::INFINITY).desired_rows(4).hint_text(egui::RichText::new("Description...").color(theme::FAINT))));
+  input_frame(ui, |ui| ui.add(egui::TextEdit::multiline(description).frame(egui::Frame::NONE).desired_width(f32::INFINITY).desired_rows(4).hint_text(egui::RichText::new(ui_text("Description...")).color(theme::FAINT))));
 }
 
 fn input_frame(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> egui::Response) {

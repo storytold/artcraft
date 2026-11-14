@@ -170,7 +170,7 @@ export class VideoCache {
 
     try {
       while (true) {
-        if (sinkData.prefetching && sinkData.prefetchPromise !== null) {
+        if (sinkData.prefetching && sinkData.prefetchPromise) {
           await sinkData.prefetchPromise;
         }
 
@@ -215,7 +215,7 @@ export class VideoCache {
     time: number;
   }): Promise<WrappedCanvas | null> {
     try {
-      if (sinkData.prefetching && sinkData.prefetchPromise !== null) {
+      if (sinkData.prefetching && sinkData.prefetchPromise) {
         await sinkData.prefetchPromise;
       }
 

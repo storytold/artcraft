@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Button } from "../../components/ui/button";
 import {
   Dialog,
@@ -22,6 +24,7 @@ export function DeleteProjectDialog({
   onConfirm: () => void;
   projectNames: string[];
 }) {
+  const { t: translateUi } = useUiTranslation();
   const count = projectNames.length;
   const isSingle = count === 1;
   const singleName = isSingle ? projectNames[0] : null;
@@ -36,32 +39,23 @@ export function DeleteProjectDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {singleName ? (
-              <>
-                {"Delete '"}
-                <span className="inline-block max-w-[300px] truncate align-bottom">
-                  {singleName}
-                </span>
-                {"'?"}
-              </>
-            ) : (
-              `Delete ${count} projects?`
-            )}
+            {singleName
+              ? translateUi("Delete project {{name}}?", { name: singleName })
+              : translateUi("Delete {{count}} projects?", { count })}
           </DialogTitle>
         </DialogHeader>
         <DialogBody>
           <Alert variant="destructive">
-            <AlertTitle>Warning</AlertTitle>
+            <AlertTitle>{translateUi("Warning")}</AlertTitle>
             <AlertDescription>
-              This will permanently delete{" "}
-              {singleName ? `"${singleName}"` : `${count} projects`} and all
-              associated files.
+              {singleName
+                ? translateUi("Permanently delete {{name}} and all associated files.", { name: singleName })
+                : translateUi("Permanently delete {{count}} projects and all associated files.", { count })}
             </AlertDescription>
           </Alert>
           <div className="flex flex-col gap-3">
             <Label className="text-xs font-semibold text-slate-500">
-              Type "DELETE" to confirm
-            </Label>
+              {translateUi("Type \"DELETE\" to confirm")}</Label>
             <Input
               type="text"
               placeholder="DELETE"
@@ -72,11 +66,9 @@ export function DeleteProjectDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+            {translateUi("Cancel")}</Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete project
-          </Button>
+            {translateUi("Delete project")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

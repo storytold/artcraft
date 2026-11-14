@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { XIcon } from "lucide-react";
 
@@ -14,6 +16,7 @@ export interface PreviewBoxProps {
 }
 
 export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [dismissed, setDismissed] = useState(false);
 
   if (!imageUrl || dismissed) return null;
@@ -24,19 +27,18 @@ export const PreviewBox = ({ imageUrl }: PreviewBoxProps) => {
         type="button"
         onClick={() => setDismissed(true)}
         className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
-        aria-label="Hide preview"
+        aria-label={translateUi("Hide preview")}
       >
         <XIcon  className="text-xs" />
       </button>
       <img
         src={imageUrl}
         crossOrigin="anonymous"
-        alt="Author's generation"
+        alt={translateUi("Author's generation")}
         className="rounded-md"
       />
       <span className="text-center text-[11px] text-white/60">
-        Author's generation
-      </span>
+        {translateUi("Author's generation")}</span>
     </div>
   );
 };

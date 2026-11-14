@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useEffect, useRef, useCallback } from "react";
 import { PanelView } from "../../panels/assets/views/base-panel";
@@ -10,10 +12,11 @@ import { buildEffectElement } from "../../timeline/element-utils";
 import type { EffectDefinition } from "../types";
 
 export function EffectsView() {
+  const { t: translateUi } = useUiTranslation();
   const effects = effectsRegistry.getAll();
 
   return (
-    <PanelView title="Effects">
+    <PanelView title={translateUi("Effects")}>
       <EffectsGrid effects={effects} />
     </PanelView>
   );

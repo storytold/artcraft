@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ItemElement } from "./ItemElement";
 import type { MediaItem } from "../../../models/assets";
 import { LoadingDots } from "@storyteller/ui-loading";
@@ -22,6 +24,7 @@ export const ItemElements = ({
   onLoadMore,
   hasMore,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const GRID_GAP = 12;
   const ASPECT_RATIO = 16 / 12;
   const TEXT_HEIGHT = 32;
@@ -92,10 +95,10 @@ export const ItemElements = ({
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-center">
         <CircleSlashIcon
-          
+
           className="mb-4 text-4xl opacity-30" />
-        <h4>You do not have anything here.</h4>
-        <p className="text-sm opacity-75">Please upload some assets.</p>
+        <h4>{translateUi("You do not have anything here.")}</h4>
+        <p className="text-sm opacity-75">{translateUi("Please upload some assets.")}</p>
       </div>
     );
   }

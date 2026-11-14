@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRightIcon, BookIcon, ChevronLeftIcon, CircleHelpIcon, NewspaperIcon, RefreshCwIcon } from "lucide-react";
 import { DiscordIcon, GithubIcon, YoutubeIcon } from "@storyteller/icons";
@@ -21,6 +23,7 @@ export type HelpMenuButtonProps = {
 
 // Internal News Component
 const NewsView = ({ onBack }: { onBack: () => void }) => {
+  const { t: translateUi } = useUiTranslation();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const bundledItems = useMemo(() => getNewsPosts(), []);
@@ -65,8 +68,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
           onClick={() => setSelectedSlug(null)}
           className="self-start mb-4 text-sm flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
-          <ChevronLeftIcon /> Back to News
-        </button>
+          <ChevronLeftIcon /> {" "}{translateUi("Back to News")}</button>
 
         <div className="article-content">
           <h1 className="font-display text-2xl font-bold mb-2">{selectedPost.title}</h1>
@@ -97,7 +99,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
           .article-content img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 0; border: 1px solid rgba(255,255,255,0.15); margin: 1rem 0; }
           .article-content a { color: #74aaff; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
           .article-content a:hover { border-bottom-color: #74aaff; }
-          
+
           /* Video embed styles */
           .article-content .video-embed { position: relative; width: 100%; margin: 1.5rem 0; border-radius: 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); background: #000; }
           .article-content .youtube-embed { padding-bottom: 56.25%; /* 16:9 aspect ratio */ height: 0; }
@@ -123,7 +125,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
             <h3 className="text-lg font-semibold group-hover:text-white transition-colors flex items-center gap-2">
               {item.title}
               <ArrowRightIcon
-                
+
                 size="xs"
                 className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-white" />
             </h3>
@@ -139,7 +141,7 @@ const NewsView = ({ onBack }: { onBack: () => void }) => {
         </div>
       ))}
       {items.length === 0 && (
-        <div className="text-center text-white/40 py-10">No news yet.</div>
+        <div className="text-center text-white/40 py-10">{translateUi("No news yet.")}</div>
       )}
     </div>
   );
@@ -151,6 +153,7 @@ export function HelpMenuButton({
   className,
   onOpenChange,
 }: HelpMenuButtonProps) {
+  const { t: translateUi } = useUiTranslation();
   const [open, setOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const tutorials = useMemo(() => items ?? defaultTutorials, [items]);
@@ -185,13 +188,13 @@ export function HelpMenuButton({
   const menuItems: PopoverItem[] = [
     { label: "Check for Updates…", selected: false, icon: <RefreshCwIcon className="text-base" />, action: "updates" },
     {
-      label: "Tutorials",
+      label: translateUi("Tutorials"),
       selected: false,
       icon: <BookIcon  className="text-base" />,
       action: "tutorials",
     },
     {
-      label: "News & Updates",
+      label: translateUi("News & Updates"),
       selected: false,
       icon: <NewspaperIcon  className="text-base" />,
       action: "news",
@@ -375,8 +378,7 @@ export function HelpMenuButton({
           <>
             {tutorials.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-white/60">
-                No tutorials yet.
-              </div>
+                {translateUi("No tutorials yet.")}</div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {tutorials.map((item: TutorialItem) => (
@@ -412,10 +414,9 @@ export function HelpMenuButton({
                 variant="action"
                 icon={ChevronLeftIcon}
               >
-                Back
-              </Button>
+                {translateUi("Back")}</Button>
               <div className="font-display text-lg font-bold text-base-fg">
-                Tutorial: {selected.title}
+                {translateUi("Tutorial:")}{" "}{selected.title}
               </div>
             </div>
             <div className="w-full">

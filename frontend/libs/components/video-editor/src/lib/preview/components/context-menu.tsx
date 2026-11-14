@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import {
   ContextMenuCheckboxItem,
@@ -25,6 +27,7 @@ export function PreviewContextMenu({
     isVisible: boolean;
   }) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const viewport = usePreviewViewport();
   const { toast } = useEditorAdapters();
@@ -33,7 +36,7 @@ export function PreviewContextMenu({
     const result = await editor.renderer.copySnapshot();
 
     if (!result.success) {
-      toast.error("Failed to copy snapshot", {
+      toast.error(translateUi("Failed to copy snapshot"), {
         description: result.error ?? "Please try again",
       });
       return;
@@ -44,7 +47,7 @@ export function PreviewContextMenu({
     const result = await editor.renderer.saveSnapshot();
 
     if (!result.success) {
-      toast.error("Failed to save snapshot", {
+      toast.error(translateUi("Failed to save snapshot"), {
         description: result.error ?? "Please try again",
       });
       return;
@@ -54,18 +57,14 @@ export function PreviewContextMenu({
   return (
     <ContextMenuContent className="w-56" container={container}>
       <ContextMenuItem onClick={viewport.fitToScreen} inset>
-        Fit to screen
-      </ContextMenuItem>
+        {translateUi("Fit to screen")}</ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuItem onClick={onToggleFullscreen} inset>
-        Full screen
-      </ContextMenuItem>
+        {translateUi("Full screen")}</ContextMenuItem>
       <ContextMenuItem onClick={handleSaveSnapshot} inset>
-        Save snapshot
-      </ContextMenuItem>
+        {translateUi("Save snapshot")}</ContextMenuItem>
       <ContextMenuItem onClick={handleCopySnapshot} inset>
-        Copy snapshot
-      </ContextMenuItem>
+        {translateUi("Copy snapshot")}</ContextMenuItem>
       {overlayControls.length > 0 ? <ContextMenuSeparator /> : null}
       {overlayControls.map((overlayControl) => (
         <ContextMenuCheckboxItem
@@ -78,7 +77,7 @@ export function PreviewContextMenu({
             })
           }
         >
-          {overlayControl.label}
+          {translateUi(overlayControl.label)}
         </ContextMenuCheckboxItem>
       ))}
     </ContextMenuContent>

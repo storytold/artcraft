@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { LoadingDots } from "@storyteller/ui-loading";
@@ -102,6 +104,7 @@ export function UploadModal3D(props: Props) {
 
 
   const UploaderModalContent = () => {
+  const { t: translateUi } = useUiTranslation();
     switch (uploaderState.status) {
       case UploaderStates.ready:
         return (
@@ -118,7 +121,7 @@ export function UploadModal3D(props: Props) {
                   setIsCharacter(e.target.checked);
                   if (e.target.checked) setIsAnimation(false);
                 }}
-                label="Upload as Character"
+                label={translateUi("Upload as Character")}
               />
               <Checkbox
                 id="upload-as-animation"
@@ -128,7 +131,7 @@ export function UploadModal3D(props: Props) {
                   setIsAnimation(e.target.checked);
                   if (e.target.checked) setIsCharacter(false);
                 }}
-                label="Upload as Animation"
+                label={translateUi("Upload as Animation")}
               />
             </div>
             <UploadFiles3D

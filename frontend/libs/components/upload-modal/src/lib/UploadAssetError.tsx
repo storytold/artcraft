@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { FilterEngineCategories } from "@storyteller/api";
 import { Button } from "@storyteller/ui-button";
 interface Props {
@@ -13,17 +15,16 @@ export const UploadAssetError = ({
   type,
   errorMessage,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   return (
     <>
-      <h3>Error in Uploading {type}</h3>
+      <h3>{translateUi("Error in Uploading")}{" "}{type}</h3>
       <p>{errorMessage ?? "Unknown Error"}</p>
       <div className="mt-6 flex justify-end gap-2">
         <Button onClick={onCancel} variant="secondary">
-          Cancel
-        </Button>
+          {translateUi("Cancel")}</Button>
         <Button onClick={onRetry} variant="primary">
-          Try again
-        </Button>
+          {translateUi("Try again")}</Button>
       </div>
     </>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TagIcon } from "lucide-react";
 import {
@@ -76,6 +77,7 @@ export function TagsSection({
   suggestions,
   onSaved,
 }: TagsSectionProps) {
+  const { t: tr } = useTranslation();
   const tagsApi = useMemo(() => new TagsApi(), []);
 
   // Session: prop wins; otherwise resolve (and cache) it ourselves.
@@ -189,7 +191,7 @@ export function TagsSection({
           if (!pendingRef.current) setTags(res.data.tags);
         }
       } else {
-        toast.error(res.errorMessage || "Failed to save tags.");
+        toast.error(res.errorMessage || tr("Failed to save tags."));
         if (mediaTokenRef.current === token) {
           pendingRef.current = null;
           setTags(lastAckedRef.current);
@@ -238,14 +240,14 @@ export function TagsSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
           <TagIcon />
-          <span>Tags</span>
+          <span>{tr("Tags")}</span>
         </div>
         {isOwner && tags.length >= 2 && (
           <button
             onClick={handleClear}
             className="text-xs text-base-fg/60 hover:text-base-fg transition-colors"
           >
-            Clear
+            {tr("Clear")}
           </button>
         )}
       </div>

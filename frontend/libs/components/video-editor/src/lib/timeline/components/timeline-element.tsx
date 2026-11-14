@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { createContext, useContext } from "react";
 import { useEditor } from "../../editor/use-editor";
@@ -47,6 +49,7 @@ import { mediaSupportsAudio } from "../../media/media-utils";
 import {
   canToggleSourceAudio,
   getSourceAudioActionLabel,
+  isSourceAudioSeparated,
 } from "../audio-separation";
 import { buildWaveformGainSamples, isElementMuted } from "../audio-state";
 import { getTimelinePixelsPerSecond } from "../pixel-utils";
@@ -231,6 +234,7 @@ export function TimelineElement({
   dragView,
   isDropTarget = false,
 }: TimelineElementProps) {
+  const { t: translateUi } = useUiTranslation();
   const mediaAssets = useEditor((e) => e.media.getAssets());
   const { selectedElements } = useElementSelection();
   const requestRevealMedia = useAssetsPanelStore((s) => s.requestRevealMedia);
@@ -345,6 +349,8 @@ export function TimelineElement({
     element.type === "video"
       ? getSourceAudioActionLabel({ element })
       : "Extract audio";
+  const isElementSourceAudioSeparated =
+    element.type === "video" && isSourceAudioSeparated({ element });
   const hasKeyframes = elementKeyframes.length > 0;
   const expansionHeight = getExpansionHeight({ rows: expandedRows });
   const baseTrackHeight = getTrackHeight({ type: track.type });
@@ -426,16 +432,14 @@ export function TimelineElement({
             action="split"
             icon={<HugeiconsIcon icon={ScissorIcon} />}
           >
-            Split
-          </ActionMenuItem>
+            {translateUi("Split")}</ActionMenuItem>
           <CopyMenuItem />
           {selectedElements.length === 1 && (
             <ActionMenuItem
               action="duplicate-selected"
               icon={<HugeiconsIcon icon={Copy01Icon} />}
             >
-              Duplicate
-            </ActionMenuItem>
+              {translateUi("Duplicate")}</ActionMenuItem>
           )}
           {canElementHaveAudio(element) && hasAudio && (
             <MuteMenuItem
@@ -447,7 +451,11 @@ export function TimelineElement({
           {canToggleCurrentSourceAudio && (
             <ContextMenuItem
               icon={
-                <HugeiconsIcon icon={ScissorIcon} />
+                <HugeiconsIcon
+                  icon={
+                    isElementSourceAudioSeparated ? ScissorIcon : ScissorIcon
+                  }
+                />
               }
               onClick={(event: React.MouseEvent) => {
                 event.stopPropagation();
@@ -483,14 +491,12 @@ export function TimelineElement({
                   handleRevealInMedia({ event })
                 }
               >
-                Reveal media
-              </ContextMenuItem>
+                {translateUi("Reveal media")}</ContextMenuItem>
               <ContextMenuItem
                 icon={<HugeiconsIcon icon={Exchange01Icon} />}
                 disabled
               >
-                Replace media
-              </ContextMenuItem>
+                {translateUi("Replace media")}</ContextMenuItem>
             </>
           )}
           <ContextMenuSeparator />
@@ -680,6 +686,7 @@ function KeyframeIndicators({
     elementLeft: number;
   }) => number;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const { isKeyframeSelected } = useKeyframeSelection();
   const orderedKeyframes = indicators.flatMap(
     (indicator) => indicator.keyframes,
@@ -717,7 +724,7 @@ function KeyframeIndicators({
             indicatorTime: indicator.time,
           })
         }
-        aria-label="Select keyframe"
+        aria-label={translateUi("Select keyframe")}
       >
         <HugeiconsIcon
           icon={KeyframeIcon}
@@ -783,6 +790,7 @@ function ExpandedKeyframeLanes({
     elementLeft: number;
   }) => number;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const { isKeyframeSelected } = useKeyframeSelection();
 
   const orderedKeyframes = useMemo(
@@ -870,7 +878,7 @@ function ExpandedKeyframeLanes({
                       indicatorTime: kf.time,
                     });
                   }}
-                  aria-label="Select keyframe"
+                  aria-label={translateUi("Select keyframe")}
                 >
                   <HugeiconsIcon
                     icon={KeyframeIcon}
@@ -1175,13 +1183,13 @@ function ElementContent({ element, track }: ElementContentProps) {
 }
 
 function CopyMenuItem() {
+  const { t: translateUi } = useUiTranslation();
   return (
     <ActionMenuItem
       action="copy-selected"
       icon={<HugeiconsIcon icon={Copy01Icon} />}
     >
-      Copy
-    </ActionMenuItem>
+      {translateUi("Copy")}</ActionMenuItem>
   );
 }
 

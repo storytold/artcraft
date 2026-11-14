@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 // Dev-only floating control for tuning the drop-in entrance animation timing
 // without re-editing constants. Mounted only under import.meta.env.DEV in
 // Stage3DBody. Sets the shared `entranceDebugSettings.durationScale`, which the
@@ -15,6 +17,7 @@ import {
 const DEFAULT_SCALE = 1;
 
 export function EntranceDebugPanel() {
+  const { t: translateUi } = useUiTranslation();
   const [scale, setScale] = useState(DEFAULT_SCALE);
 
   // Keep the shared knob in sync with this panel's lifetime (dev only).
@@ -36,7 +39,7 @@ export function EntranceDebugPanel() {
   return (
     <div className="pointer-events-auto absolute right-2 top-16 z-50 w-56 rounded-lg border border-white/10 bg-black/70 p-3 text-xs text-white/80 backdrop-blur-md">
       <div className="mb-2 flex items-center justify-between font-medium text-white/90">
-        <span>Entrance speed</span>
+        <span>{translateUi("Entrance speed")}</span>
         <span className="tabular-nums">{scale.toFixed(2)}×</span>
       </div>
       <input
@@ -49,16 +52,15 @@ export function EntranceDebugPanel() {
         className="w-full accent-primary"
       />
       <div className="mt-2 flex justify-between tabular-nums text-white/50">
-        <span>mesh {meshSec}s</span>
-        <span>splat {splatSec}s</span>
+        <span>{translateUi("mesh")}{" "}{meshSec}s</span>
+        <span>{translateUi("splat")}{" "}{splatSec}s</span>
       </div>
       <button
         type="button"
         onClick={() => apply(1)}
         className="mt-2 w-full rounded border border-white/10 py-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white/90"
       >
-        Reset to 1× (real timing)
-      </button>
+        {translateUi("Reset to 1× (real timing)")}</button>
     </div>
   );
 }

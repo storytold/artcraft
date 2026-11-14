@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, { useCallback, useContext, useState } from "react";
 import { FileIcon, KeyboardIcon, SquareCheckIcon, SquareIcon } from "lucide-react";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
@@ -20,6 +22,7 @@ import { TOOLBAR_BUTTON_CLASS_NAME } from "../toolbarStyles";
 const isNumberString = (s: string): boolean => /^\d+$/.test(s);
 
 export const ControlsTopButtons = () => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const cheatsheetPinned = useCheatsheetPin((s) => s.pinned);
   const toggleCheatsheet = useCheatsheetPin((s) => s.togglePinned);
@@ -205,16 +208,16 @@ export const ControlsTopButtons = () => {
     content: (
       <Input
         value={sceneTitleInput}
-        label="Please enter a name for your scene"
+        label={translateUi("Please enter a name for your scene")}
         onChange={handleChangeSceneTitleInput}
       />
     ),
     confirmButtonProps: {
-      label: "Save",
+      label: translateUi("Save"),
       disabled: sceneTitleInput === "",
       onClick: handleButtonSaveAsCopy,
     },
-    closeButtonProps: { label: "Cancel" },
+    closeButtonProps: { label: translateUi("Cancel") },
     showClose: true,
   };
 
@@ -222,20 +225,20 @@ export const ControlsTopButtons = () => {
   // Same input as the copy dialog, but the confirm performs the
   // in-place save under sceneMeta.token (undefined → create new).
   const saveWithNameDialogProps = {
-    title: "Save Scene",
+    title: translateUi("Save Scene"),
     content: (
       <Input
         value={sceneTitleInput}
-        label="Please enter a name for your scene"
+        label={translateUi("Please enter a name for your scene")}
         onChange={handleChangeSceneTitleInput}
       />
     ),
     confirmButtonProps: {
-      label: "Save",
+      label: translateUi("Save"),
       disabled: sceneTitleInput.trim() === "",
       onClick: handleButtonSaveWithName,
     },
-    closeButtonProps: { label: "Cancel" },
+    closeButtonProps: { label: translateUi("Cancel") },
     showClose: true,
   };
 
@@ -243,12 +246,12 @@ export const ControlsTopButtons = () => {
     <div className="flex flex-col gap-2 pl-3 pt-3">
       <div className="flex items-center gap-1.5">
         <ButtonDropdown
-          label="File"
+          label={translateUi("File")}
           icon={FileIcon}
           className={TOOLBAR_BUTTON_CLASS_NAME}
           options={[
             {
-              label: "New scene",
+              label: translateUi("New scene"),
               description: "Ctrl+N",
               // Hosts that own a New-Scene chooser (e.g. the webapp's
               // splash modal) wire `onRequestNewSceneSelector` and take
@@ -260,15 +263,13 @@ export const ControlsTopButtons = () => {
                   }
                 : {
                     dialogProps: {
-                      title: "Create New Scene",
+                      title: translateUi("Create New Scene"),
                       content: (
                         <h4>
-                          Make sure you&apos;ve saved your scene. Unsaved
-                          changes will be lost. Continue?
-                        </h4>
+                          {translateUi("Make sure you've saved your scene. Unsaved changes will be lost. Continue?")}</h4>
                       ),
                       confirmButtonProps: {
-                        label: "Create new scene",
+                        label: translateUi("Create new scene"),
                         onClick: async () => {
                           handleResetScene();
                           const defaultTitle = "Untitled New Scene";
@@ -276,27 +277,27 @@ export const ControlsTopButtons = () => {
                           await editor?.newScene(defaultTitle);
                         },
                       },
-                      closeButtonProps: { label: "Cancel" },
+                      closeButtonProps: { label: translateUi("Cancel") },
                       showClose: true,
                     },
                   }),
             },
             {
-              label: "Load my scene",
+              label: translateUi("Load my scene"),
               description: "Ctrl+O",
               ...(currentUserToken
                 ? {
                     dialogProps: {
-                      title: "Load a Saved Scene",
+                      title: translateUi("Load a Saved Scene"),
                       content: (
                         <LoadUserScenes onSceneSelect={handleSceneSelection} />
                       ),
                       confirmButtonProps: {
-                        label: "Load",
+                        label: translateUi("Load"),
                         disabled: sceneTokenSelected === "",
                         onClick: handleButtonLoadScene,
                       },
-                      closeButtonProps: { label: "Cancel" },
+                      closeButtonProps: { label: translateUi("Cancel") },
                       showClose: true,
                       className: "max-w-5xl",
                     },
@@ -337,7 +338,7 @@ export const ControlsTopButtons = () => {
               : [
                   {
                     disabled: !currentUserToken || !sceneMeta.token,
-                    label: "Save scene as copy",
+                    label: translateUi("Save scene as copy"),
                     onDialogOpen: bumpCopyCountInTitle,
                     dialogProps: saveAsCopyDialogProps,
                   },
@@ -350,27 +351,24 @@ export const ControlsTopButtons = () => {
             ...(sceneMeta.token && editor?.adapter.resetToOriginal
               ? [
                   {
-                    label: "Reset to original",
+                    label: translateUi("Reset to original"),
                     className:
                       "text-error-400 hover:bg-error-500/15 focus:bg-error-500/15",
                     divider: true,
                     dialogProps: {
-                      title: "Reset scene to original?",
+                      title: translateUi("Reset scene to original?"),
                       content: (
                         <p>
-                          This will discard every change you&apos;ve made in
-                          this session and restore the scene to the version the
-                          author shared. This cannot be undone.
-                        </p>
+                          {translateUi("This will discard every change you've made in this session and restore the scene to the version the author shared. This cannot be undone.")}</p>
                       ),
                       confirmButtonProps: {
-                        label: "Reset",
+                        label: translateUi("Reset"),
                         variant: "destructive" as const,
                         onClick: async () => {
                           await editor.adapter.resetToOriginal?.();
                         },
                       },
-                      closeButtonProps: { label: "Cancel" },
+                      closeButtonProps: { label: translateUi("Cancel") },
                       showClose: true,
                     },
                   },
@@ -389,8 +387,7 @@ export const ControlsTopButtons = () => {
           variant="secondary"
           onClick={handleShowOutliner}
         >
-          Outliner
-        </Button>
+          {translateUi("Outliner")}</Button>
 
         {/* Pins the live keybinds cheatsheet (rendered by Stage3DBody) open
             until Esc / click outside / this button again. data-cheatsheet-toggle
@@ -407,8 +404,7 @@ export const ControlsTopButtons = () => {
           onClick={toggleCheatsheet}
           data-cheatsheet-toggle
         >
-          Shortcuts
-        </Button>
+          {translateUi("Shortcuts")}</Button>
       </div>
     </div>
   );

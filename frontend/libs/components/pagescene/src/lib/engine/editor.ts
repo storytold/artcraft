@@ -31,6 +31,7 @@ import { ModalTransformController } from "./editor/ModalTransformController";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { usePageSceneStore } from "../PageSceneStore";
+import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
 import {
@@ -186,6 +187,11 @@ class Editor {
     this.adapter = adapter;
     this.can_initialize = true;
     this.stats = new Stats();
+    // Ammo.js WASM is a global side-effect script the physics path
+    // depends on. The singleton ensures it's appended to document.body
+    // exactly once, even across Editor re-construction.
+    ensureAmmoLoaded();
+
     // Version and name.
     this.version = 2.0;
     // Clock, scene and camera essentials.
@@ -661,9 +667,9 @@ class Editor {
     };
 
     if (!this.utils.isEmpty(cacheJson)) {
-      void this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
+      this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
     } else if (!this.utils.isEmpty(sceneToken)) {
-      void this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
+      this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
     } else {
       this.adapter.onSceneTitleChange?.({
         title: "Untitled New Scene",
@@ -1059,7 +1065,7 @@ class Editor {
     }
 
     this.lastFrameTime = frameTime;
-    void this.renderSingleFrame();
+    this.renderSingleFrame();
   }
 
   startRenderLoop() {

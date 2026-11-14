@@ -26,15 +26,15 @@ export const useGenerationEnqueueFailureEvent = () => {
       });
 
       if (isUnmounted) {
-        void unlisten.then(f => f()); // Unsubscribe if unmounted early.
+        unlisten.then(f => f()); // Unsubscribe if unmounted early.
       }
     };
 
-    void setup();
+    setup();
     
     return () => {
       isUnmounted = true;
-      void unlisten.then(f => f());
+      unlisten.then(f => f());
     };
 
   }, []);

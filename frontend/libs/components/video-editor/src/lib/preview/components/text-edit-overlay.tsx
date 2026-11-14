@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useCallback, useEffect, useRef } from "react";
 import { usePreviewViewport } from "./preview-viewport";
@@ -27,6 +29,7 @@ export function TextEditOverlay({
   element: TextElement;
   onCommit: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const viewport = usePreviewViewport();
   const divRef = useRef<HTMLDivElement>(null);
@@ -122,7 +125,7 @@ export function TextEditOverlay({
         suppressContentEditableWarning
         tabIndex={0}
         role="textbox"
-        aria-label="Edit text"
+        aria-label={translateUi("Edit text")}
         className="cursor-text select-text outline-none whitespace-pre"
         style={{
           fontSize: resolvedTextLayout.scaledFontSize,

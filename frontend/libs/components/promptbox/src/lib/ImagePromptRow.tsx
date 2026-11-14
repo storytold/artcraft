@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import {
   useCallback,
   useEffect,
@@ -183,6 +185,7 @@ export const ImagePromptRow = ({
   maxAudioRefDuration = 15,
   uploadAudio,
 }: ImagePromptRowProps) => {
+  const { t: translateUi } = useUiTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
@@ -253,6 +256,7 @@ export const ImagePromptRow = ({
     image: RefImage;
     index: number;
   }) => {
+  const { t: translateUi } = useUiTranslation();
     const {
       attributes,
       listeners,
@@ -287,7 +291,7 @@ export const ImagePromptRow = ({
       >
         <img
           src={image.url}
-          alt="Reference"
+          alt={translateUi("Reference")}
           className="h-full w-full object-cover"
         />
         {isReferenceMode && (
@@ -476,7 +480,7 @@ export const ImagePromptRow = ({
               newState.status === UploaderStates.imageCreateError
             ) {
               setUploadingVideo(null);
-              toast.error("Failed to upload video. Please upload an MP4 file.");
+              toast.error(translateUi("Failed to upload video. Please upload an MP4 file."));
             }
           },
         });
@@ -943,7 +947,7 @@ export const ImagePromptRow = ({
                       >
                         <img
                           src={image.url}
-                          alt="Reference"
+                          alt={translateUi("Reference")}
                           className="h-full w-full object-cover"
                         />
                         {isReferenceMode && (
@@ -959,7 +963,7 @@ export const ImagePromptRow = ({
                           className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
                           <XIcon
-                            
+
                             className="h-2.5 w-2.5" />
                         </button>
                       </div>
@@ -979,7 +983,7 @@ export const ImagePromptRow = ({
                         <div className="absolute inset-0">
                           <img
                             src={previewUrl}
-                            alt="Uploading preview"
+                            alt={translateUi("Uploading preview")}
                             className="h-full w-full object-cover blur-sm"
                           />
                         </div>
@@ -1008,8 +1012,7 @@ export const ImagePromptRow = ({
                             icon={PlusIcon}
                             className="w-full"
                           >
-                            Upload
-                          </Button>
+                            {translateUi("Upload")}</Button>
                         )}
                         <Button
                           variant="action"
@@ -1020,8 +1023,7 @@ export const ImagePromptRow = ({
                           icon={ImagesIcon}
                           className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                         >
-                          Pick from library
-                        </Button>
+                          {translateUi("Pick from library")}</Button>
                       </div>
                     }
                   >
@@ -1037,7 +1039,7 @@ export const ImagePromptRow = ({
                       }}
                     >
                       <PlusIcon
-                        
+
                         className="text-2xl opacity-80 text-base-fg" />
                     </Button>
                   </Tooltip>
@@ -1052,15 +1054,13 @@ export const ImagePromptRow = ({
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
                       <ImageIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
-                        End Frame{" "}
+                        {translateUi("End Frame")}{" "}
                         <span className="text-base-fg/60 text-xs">
-                          (optional)
-                        </span>
+                          {translateUi("(optional)")}</span>
                       </span>
                     </div>
                     <span className="text-[13px] text-base-fg/60">
-                      How video ends
-                    </span>
+                      {translateUi("How video ends")}</span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -1074,7 +1074,7 @@ export const ImagePromptRow = ({
                     >
                       <img
                         src={endFrameImage.url}
-                        alt="Ending Frame"
+                        alt={translateUi("Ending Frame")}
                         className="h-full w-full object-cover"
                       />
                       <button
@@ -1085,7 +1085,7 @@ export const ImagePromptRow = ({
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
                         <XIcon
-                          
+
                           className="h-2.5 w-2.5" />
                       </button>
                     </div>
@@ -1095,7 +1095,7 @@ export const ImagePromptRow = ({
                         <div className="absolute inset-0">
                           <img
                             src={uploadingEnd.previewUrl}
-                            alt="Uploading preview"
+                            alt={translateUi("Uploading preview")}
                             className="h-full w-full object-cover blur-sm"
                           />
                         </div>
@@ -1122,8 +1122,7 @@ export const ImagePromptRow = ({
                               icon={PlusIcon}
                               className="w-full"
                             >
-                              Upload
-                            </Button>
+                              {translateUi("Upload")}</Button>
                           )}
                           <Button
                             variant="action"
@@ -1134,8 +1133,7 @@ export const ImagePromptRow = ({
                             icon={ImagesIcon}
                             className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                           >
-                            Pick from library
-                          </Button>
+                            {translateUi("Pick from library")}</Button>
                         </div>
                       }
                     >
@@ -1151,7 +1149,7 @@ export const ImagePromptRow = ({
                         }}
                       >
                         <PlusIcon
-                          
+
                           className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     </Tooltip>
@@ -1168,15 +1166,14 @@ export const ImagePromptRow = ({
                   <div className="flex items-center gap-2 opacity-90 text-base-fg">
                     <VideoIcon  className="h-3.5 w-3.5" />
                     <span className="text-sm font-medium flex items-center gap-1.5">
-                      Video Ref{" "}
+                      {translateUi("Video Ref")}{" "}
                       <span className="text-base-fg/60 font-semibold">
                         ({referenceVideos.length}/{maxVideoCount})
                       </span>
                     </span>
                   </div>
                   <span className="text-[13px] text-base-fg/60">
-                    {totalVideoDuration}s / {maxVideoRefDuration}s max
-                  </span>
+                    {totalVideoDuration}s / {maxVideoRefDuration}{translateUi("s max")}</span>
                 </div>
                 <div className="flex gap-2 items-center">
                   {referenceVideos.map((video) => (
@@ -1201,7 +1198,7 @@ export const ImagePromptRow = ({
                         className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                       >
                         <XIcon
-                          
+
                           className="h-2.5 w-2.5" />
                       </button>
                     </div>
@@ -1218,7 +1215,7 @@ export const ImagePromptRow = ({
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                         <LoaderCircleIcon
-                          
+
                           className="h-6 w-6 animate-spin text-white" />
                       </div>
                     </div>
@@ -1239,8 +1236,7 @@ export const ImagePromptRow = ({
                               icon={PlusIcon}
                               className="w-full"
                             >
-                              Upload
-                            </Button>
+                              {translateUi("Upload")}</Button>
                             <Button
                               variant="action"
                               onClick={() => {
@@ -1250,8 +1246,7 @@ export const ImagePromptRow = ({
                               icon={ImagesIcon}
                               className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                             >
-                              Pick from library
-                            </Button>
+                              {translateUi("Pick from library")}</Button>
                           </div>
                         }
                       >
@@ -1261,7 +1256,7 @@ export const ImagePromptRow = ({
                           onClick={handleUploadClickVideo}
                         >
                           <PlusIcon
-                            
+
                             className="text-2xl opacity-80 text-base-fg" />
                         </Button>
                       </Tooltip>
@@ -1276,15 +1271,14 @@ export const ImagePromptRow = ({
                     <div className="flex items-center gap-2 opacity-90 text-base-fg">
                       <MusicIcon  className="h-3.5 w-3.5" />
                       <span className="text-sm font-medium flex items-center gap-1.5">
-                        Audio Ref{" "}
+                        {translateUi("Audio Ref")}{" "}
                         <span className="text-base-fg/60 font-semibold">
                           ({referenceAudios.length}/{maxAudioCount})
                         </span>
                       </span>
                     </div>
                     <span className="text-[13px] text-base-fg/60">
-                      {totalAudioDuration}s / {maxAudioRefDuration}s max
-                    </span>
+                      {totalAudioDuration}s / {maxAudioRefDuration}{translateUi("s max")}</span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -1299,7 +1293,7 @@ export const ImagePromptRow = ({
                   {uploadingAudio && (
                     <div className="glass relative aspect-square overflow-hidden rounded-[3px] w-14 border-2 border-white/30 flex items-center justify-center">
                       <LoaderCircleIcon
-                        
+
                         className="h-6 w-6 animate-spin text-white" />
                     </div>
                   )}
@@ -1311,7 +1305,7 @@ export const ImagePromptRow = ({
                         onClick={handleUploadClickAudio}
                       >
                         <PlusIcon
-                          
+
                           className="text-2xl opacity-80 text-base-fg" />
                       </Button>
                     )}

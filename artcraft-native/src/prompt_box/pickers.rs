@@ -1,6 +1,7 @@
 //! Toolbar pickers: a pill (or quiet icon button) that opens a popover above it with a titled
 //! option list, the duration slider, and on/off toggles.
 
+use crate::i18n::t as ui_text;
 use egui::{Popup, PopupCloseBehavior};
 use egui::{Id, RectAlign, Response, Ui};
 
@@ -104,7 +105,7 @@ pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) ->
   let mut value = current;
   popover_pill(ui, id, Leading::Icon(Icon::Clock), &format!("{current}s"), "Duration", |ui| {
     ui.set_width(240.0);
-    widgets::menu_header(ui, "Duration");
+    widgets::menu_header(ui, ui_text("Duration"));
     ui.add_space(4.0);
     ui.horizontal(|ui| {
       ui.add_space(8.0);

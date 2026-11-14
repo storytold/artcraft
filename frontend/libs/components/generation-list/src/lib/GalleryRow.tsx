@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, useCallback, type ReactNode } from "react";
 import {
   BoxIcon,
@@ -52,6 +54,7 @@ export const GalleryRow = memo(function GalleryRow({
   onToggleSelect,
   lastViewed = false,
 }: GalleryRowProps) {
+  const { t: translateUi } = useUiTranslation();
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
@@ -142,8 +145,7 @@ export const GalleryRow = memo(function GalleryRow({
         {lastViewed && (
           <div className="pointer-events-none absolute left-1 top-1 z-10 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
             <EyeIcon />
-            Last viewed
-          </div>
+            {translateUi("Last viewed")}</div>
         )}
       </div>
 

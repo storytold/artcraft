@@ -1,3 +1,4 @@
+import "@storyteller/i18n";
 import { StrictMode, useEffect } from "react";
 import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import { BrowserRouter } from "react-router-dom";
@@ -26,12 +27,12 @@ const ENV = {
 const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   console.log("GlobalSettingsManager()");
 
-  void SyncStorytellerApiConfig();
+  SyncStorytellerApiConfig();
 
   useSignals();
 
   useSignalEffect(() => {
-    void persistLogin();
+    persistLogin();
   });
 
   /// Initizations that depends on ENV vars ///

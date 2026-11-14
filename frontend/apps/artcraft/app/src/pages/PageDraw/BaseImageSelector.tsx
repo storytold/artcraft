@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ImagesIcon, MaximizeIcon, PencilIcon } from "lucide-react";
 import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -11,7 +13,6 @@ import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 import { BlankCanvasModal, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
-import { v4 as uuidv4 } from "uuid";
 
 const MAX_GALLERY_SELECTIONS = 1;
 
@@ -24,6 +25,7 @@ export const BaseImageSelector = ({
   onImageSelect,
   showLoading = false,
 }: BaseImageSelectorProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +51,7 @@ export const BaseImageSelector = ({
   const handleUseGalleryImages = (selectedItems: GalleryItem[]) => {
     const item = selectedItems[0];
     if (!item || !item.fullImage) {
-      toast.error("No image selected");
+      toast.error(translateUi("No image selected"));
       return;
     }
     const referenceImage: BaseSelectorImage = {
@@ -65,7 +67,7 @@ export const BaseImageSelector = ({
     setIsBlankCanvasModalOpen(false);
     const blankImage: BaseSelectorImage = {
       url: "",
-      mediaToken: `blank_canvas_${width}x${height}_${uuidv4()}`,
+      mediaToken: `blank_canvas_${width}x${height}_${Math.random().toString(36).substring(2, 8)}`,
       isBlankCanvas: true,
       blankCanvasWidth: width,
       blankCanvasHeight: height,
@@ -80,12 +82,12 @@ export const BaseImageSelector = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         uploadImage({
-          title: `reference-image-${uuidv4()}`,
+          title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const mediaToken = newState.data || "";
-              void (async () => {
+              (async () => {
                 let finalUrl = reader.result as string;
                 let thumbnailUrlTemplate = undefined;
                 try {
@@ -111,7 +113,7 @@ export const BaseImageSelector = ({
                   fullImageUrl: finalUrl,
                   thumbnailUrlTemplate,
                 };
-                toast.success("Image uploaded successfully!");
+                toast.success(translateUi("Image uploaded successfully!"));
                 onImageSelect(referenceImage);
                 setIsLoading(false);
               })();
@@ -119,7 +121,7 @@ export const BaseImageSelector = ({
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
             ) {
-              toast.error("Upload failed. Please try again.");
+              toast.error(translateUi("Upload failed. Please try again."));
               setIsLoading(false);
             }
           },
@@ -135,8 +137,8 @@ export const BaseImageSelector = ({
         <div className="aspect-video w-full max-w-5xl bg-ui-background">
           <UploadEntryCard
             icon={PencilIcon}
-            title="Edit Image"
-            description="Click to upload or drag and drop an image here to edit"
+            title={translateUi("Edit Image")}
+            description={translateUi("Click to upload or drag and drop an image here to edit")}
             accentBackgroundClass="bg-blue-500/40"
             accentBorderClass="border-blue-400/30"
             accept="image/*"

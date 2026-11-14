@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import { useResolvedKeybinds } from "../useResolvedKeybinds";
@@ -33,6 +35,7 @@ export function Cheatsheet({
   surface: Surface;
   visible: boolean;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const { forAction, selectedPreset } = useResolvedKeybinds();
   const pinned = useCheatsheetPin((s) => s.pinned);
 
@@ -63,11 +66,9 @@ export function Cheatsheet({
       >
         <div className="mb-3 flex items-center justify-between">
           <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/60">
-            Keyboard shortcuts
-          </span>
+            {translateUi("Keyboard shortcuts")}</span>
           <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
-            {selectedPreset} preset
-          </span>
+            {selectedPreset} {" "}{translateUi("preset")}</span>
         </div>
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
           {GROUP_ORDER.map((group) => {
@@ -95,8 +96,7 @@ export function Cheatsheet({
         </div>
         {pinned && (
           <div className="mt-5 border-t border-white/15 pt-3 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
-            Press Esc or click outside to close
-          </div>
+            {translateUi("Press Esc or click outside to close")}</div>
         )}
       </div>
     </div>

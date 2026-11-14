@@ -1,6 +1,7 @@
 //! The reference widgets left of the prompt: the fanned reference deck (images, videos, audio)
 //! and the tilted first/last keyframe slots.
 
+use crate::i18n::t as ui_text;
 use egui::emath::Rot2;
 use egui::load::SizedTexture;
 use egui::{Align2, Color32, CornerRadius, FontId, Id, Order, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, pos2, vec2};
@@ -170,7 +171,7 @@ pub fn keyframe_cards(ui: &mut Ui, id: Id, refs: &References, show_last: bool, l
         Stroke::new(1.0, theme::fade(Color32::WHITE, if both { 0.2 } else { 0.1 })),
       );
       icons::paint(p, swap.shrink(5.0), Icon::ArrowLeftRight, theme::fade(Color32::WHITE, if both { 1.0 } else { 0.5 }));
-      if both && resp.on_hover_text("Swap frames").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+      if both && resp.on_hover_text(ui_text("Swap frames")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
         actions.push(DeckAction::SwapFrames);
       }
       slot_card(ui, id.with("last"), refs.last_frame.as_ref(), "Last frame", 6.0, ImageSlot::LastFrame, library, cache, &mut actions);
@@ -220,9 +221,9 @@ fn expanded_panel(ui: &mut Ui, id: Id, refs: &References, items: &[&RefMedia], o
   if items.len() > 1 {
     ui.horizontal(|ui| {
       let n = items.len();
-      ui.label(egui::RichText::new(format!("{n} reference{}", if n == 1 { "" } else { "s" })).size(11.0).family(theme::medium()).color(theme::MUTED));
+      ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("{n} 个参考素材") } else { format!("{n} reference{}", if n == 1 { "" } else { "s" }) })).size(11.0).family(theme::medium()).color(theme::MUTED));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let resp = ui.add(egui::Button::new(egui::RichText::new("Clear all").size(11.0)).frame(false));
+        let resp = ui.add(egui::Button::new(egui::RichText::new(ui_text("Clear all")).size(11.0)).frame(false));
         if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
           actions.push(DeckAction::ClearAll);
         }
@@ -357,7 +358,7 @@ fn remove_button(ui: &mut Ui, id: Id, card: Rect, card_hovered: bool) -> bool {
   let fill = if resp.hovered() { theme::fade(theme::DANGER, 0.7) } else { Color32::from_black_alpha(128) };
   ui.painter().circle_filled(rect.center(), 10.0, fill);
   icons::paint(ui.painter(), rect.shrink(5.0), Icon::X, Color32::WHITE);
-  resp.on_hover_text("Remove").on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
+  resp.on_hover_text(ui_text("Remove")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
 
 /// The dashed "+" card that adds a reference (straightens and grows on hover).

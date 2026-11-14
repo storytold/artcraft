@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState } from "react";
 import type { ParamValues } from "../../params";
@@ -34,6 +36,7 @@ export function StandaloneEffectTab({
   element: EffectElement;
   trackId: string;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const { renderElement, previewUpdates, commit } = useElementPreview({
     trackId,
     elementId: element.id,
@@ -56,7 +59,7 @@ export function StandaloneEffectTab({
   return (
     <div className="flex flex-col h-full">
       <div className="border-b px-3.5 h-11 shrink-0 flex items-center">
-        <SectionTitle>Effect</SectionTitle>
+        <SectionTitle>{translateUi("Effect")}</SectionTitle>
       </div>
       <EffectSection
         effect={effect}
@@ -75,6 +78,7 @@ export function ClipEffectsTab({
   element: VisualElement;
   trackId: string;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const editor = useEditor();
@@ -143,7 +147,7 @@ export function ClipEffectsTab({
   return (
     <div className="flex flex-col h-full">
       <div className="border-b px-3.5 h-11 shrink-0 flex items-center">
-        <SectionTitle>Effects</SectionTitle>
+        <SectionTitle>{translateUi("Effects")}</SectionTitle>
       </div>
       {effects.length === 0 ? (
         <EmptyView />
@@ -204,6 +208,7 @@ export function ClipEffectsTab({
 }
 
 function EmptyView() {
+  const { t: translateUi } = useUiTranslation();
   const setActiveTab = useAssetsPanelStore((s) => s.setActiveTab);
 
   return (
@@ -214,18 +219,16 @@ function EmptyView() {
         strokeWidth={1}
       />
       <div className="flex flex-col gap-2">
-        <h3 className="font-medium text-foreground">No effects</h3>
+        <h3 className="font-medium text-foreground">{translateUi("No effects")}</h3>
         <p className="text-muted-foreground text-sm text-balance max-w-44">
-          Add effects to this layer from the Assets panel.
-        </p>
+          {translateUi("Add effects to this layer from the Assets panel.")}</p>
       </div>
       <Button
         variant="default"
         size="sm"
         onClick={() => setActiveTab("effects")}
       >
-        Open effects
-      </Button>
+        {translateUi("Open effects")}</Button>
     </div>
   );
 }

@@ -13,5 +13,8 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
+  },
+  "dependencies": {
+    "@storyteller/i18n": "*"
   }
 }

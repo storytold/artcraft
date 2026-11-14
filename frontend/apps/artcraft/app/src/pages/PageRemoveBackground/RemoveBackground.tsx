@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { DownloadIcon, EyeIcon, ImagesIcon, PlusIcon, UploadIcon, WandSparklesIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
@@ -34,6 +36,7 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 };
 
 export const RemoveBackground = () => {
+  const { t: translateUi } = useUiTranslation();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -139,7 +142,7 @@ export const RemoveBackground = () => {
         });
       } catch (error) {
         console.error("Error processing external image:", error);
-        toast.error("Failed to process image");
+        toast.error(translateUi("Failed to process image"));
         setIsLoadingImage(false);
         setIsProcessing(false);
         setPendingJobId(null);
@@ -162,19 +165,19 @@ export const RemoveBackground = () => {
   const addMenuItems: PopoverItem[] = useMemo(
     () => [
       {
-        label: "Upload Image",
+        label: translateUi("Upload Image"),
         selected: false,
         icon: <UploadIcon  className="h-4 w-4" />,
         action: "upload",
       },
       {
-        label: "Choose from Library",
+        label: translateUi("Choose from Library"),
         selected: false,
         icon: <ImagesIcon  className="h-4 w-4" />,
         action: "library",
       },
     ],
-    [],
+    [translateUi],
   );
 
   const handleAddMenuSelect = useCallback((item: PopoverItem) => {
@@ -266,7 +269,7 @@ export const RemoveBackground = () => {
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
-      toast.success("Saved to Library");
+      toast.success(translateUi("Saved to Library"));
 
       setImageDimensions({
         width: originalImg.naturalWidth,
@@ -279,7 +282,7 @@ export const RemoveBackground = () => {
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
-      toast.success("Saved to Library");
+      toast.success(translateUi("Saved to Library"));
     }
   });
 
@@ -333,7 +336,7 @@ export const RemoveBackground = () => {
         });
       } catch (error) {
         console.error("Error processing image:", error);
-        toast.error("Failed to process image");
+        toast.error(translateUi("Failed to process image"));
         setIsLoadingImage(false);
         setIsProcessing(false);
         setPendingJobId(null);
@@ -346,7 +349,7 @@ export const RemoveBackground = () => {
       setIsProcessing,
       setPendingJobId,
       setImageDimensions,
-    ],
+    , translateUi],
   );
 
   const handleImageSelect = useCallback((id: string) => {
@@ -360,7 +363,7 @@ export const RemoveBackground = () => {
     async (selectedItems: GalleryItem[]) => {
       const item = selectedItems[0];
       if (!item || !item.fullImage) {
-        toast.error("No image selected");
+        toast.error(translateUi("No image selected"));
         return;
       }
 
@@ -405,7 +408,7 @@ export const RemoveBackground = () => {
         });
       } catch (error) {
         console.error("Error processing gallery image:", error);
-        toast.error("Failed to process image");
+        toast.error(translateUi("Failed to process image"));
         setIsLoadingImage(false);
         setIsProcessing(false);
         setPendingJobId(null);
@@ -418,23 +421,23 @@ export const RemoveBackground = () => {
       setIsProcessing,
       setPendingJobId,
       setImageDimensions,
-    ],
+    , translateUi],
   );
 
   const handleDownload = useCallback(async () => {
     const currentActiveImage = getActiveImage();
     if (!currentActiveImage) {
-      toast.error("No image to download");
+      toast.error(translateUi("No image to download"));
       return;
     }
     try {
       await downloadFileFromUrl(currentActiveImage.processedUrl);
-      toast.success("Image saved to Downloads folder");
+      toast.success(translateUi("Image saved to Downloads folder"));
     } catch (error) {
       console.error("Download failed:", error);
-      toast.error("Failed to download image");
+      toast.error(translateUi("Failed to download image"));
     }
-  }, [getActiveImage]);
+  }, [getActiveImage, translateUi]);
 
   const handleCompareMouseDown = useCallback(() => {
     setIsHoldingCompare(true);
@@ -551,8 +554,8 @@ export const RemoveBackground = () => {
                 <div className="relative aspect-video overflow-hidden border border-ui-panel-border bg-ui-background">
                   <UploadEntryCard
                     icon={WandSparklesIcon}
-                    title="Remove Background"
-                    description="Instantly remove backgrounds from your images with AI-powered precision."
+                    title={translateUi("Remove Background")}
+                    description={translateUi("Instantly remove backgrounds from your images with AI-powered precision.")}
                     accentBackgroundClass="bg-violet-500/40"
                     accentBorderClass="border-violet-400/30"
                     accept="image/*"
@@ -603,8 +606,7 @@ export const RemoveBackground = () => {
                           "cursor-not-allowed opacity-50",
                       )}
                     >
-                      Download
-                    </Button>
+                      {translateUi("Download")}</Button>
                   </div>
                 )}
 
@@ -618,7 +620,7 @@ export const RemoveBackground = () => {
                         {currentOriginalUrl && (
                           <img
                             src={currentOriginalUrl}
-                            alt="Processing"
+                            alt={translateUi("Processing")}
                             className="absolute inset-0 h-full w-full object-contain opacity-30"
                           />
                         )}
@@ -626,12 +628,11 @@ export const RemoveBackground = () => {
                           <div className="relative">
                             <div className="h-16 w-16 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                             <WandSparklesIcon
-                              
+
                               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-white" />
                           </div>
                           <span className="font-mono text-sm font-semibold uppercase tracking-[0.12em] text-white">
-                            Removing Background...
-                          </span>
+                            {translateUi("Removing Background...")}</span>
                         </div>
                       </div>
                     )}
@@ -655,7 +656,7 @@ export const RemoveBackground = () => {
 
                         <img
                           src={activeImage.processedUrl}
-                          alt="Background Removed"
+                          alt={translateUi("Background Removed")}
                           className="absolute inset-0 h-full w-full object-contain"
                         />
 
@@ -672,7 +673,7 @@ export const RemoveBackground = () => {
                         >
                           <img
                             src={activeImage.originalUrl}
-                            alt="Original"
+                            alt={translateUi("Original")}
                             className="absolute inset-0 h-full w-full object-contain"
                           />
                         </div>
@@ -732,7 +733,7 @@ export const RemoveBackground = () => {
                     >
                       <img
                         src={img.processedUrl}
-                        alt="Processed"
+                        alt={translateUi("Processed")}
                         className="h-full w-full object-cover"
                       />
                     </button>

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useEffect, useRef, useState } from "react";
 import { CloudUploadIcon, LoaderCircleIcon, RotateCwIcon, TrashIcon, TriangleAlertIcon } from "lucide-react";
 import { EngineContext } from "../../contexts/EngineContext";
@@ -11,6 +13,7 @@ import { usePageSceneStore, type ProducedArtifact } from "../../PageSceneStore";
 type UploadStatus = "idle" | "uploading" | "error";
 
 export const CompletionModal = () => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const artifact = usePageSceneStore((s) => s.producedArtifact);
   const clearProducedArtifact = usePageSceneStore(
@@ -99,7 +102,7 @@ export const CompletionModal = () => {
           ) : (
             <img
               src={artifact.objectUrl}
-              alt="Captured frame"
+              alt={translateUi("Captured frame")}
               className="max-h-[52vh] w-full object-contain"
             />
           )}
@@ -109,15 +112,14 @@ export const CompletionModal = () => {
         {busy && (
           <div className="flex items-center gap-2 text-sm text-base-fg/70">
             <LoaderCircleIcon
-              
+
               className="h-4 w-4 animate-spin" />
-            Uploading to gallery…
-          </div>
+            {translateUi("Uploading to gallery…")}</div>
         )}
         {status === "error" && (
           <div role="alert" className="flex items-center gap-2 text-sm text-red">
             <TriangleAlertIcon
-              
+
               className="h-4 w-4" />
             {errorMessage}
           </div>
@@ -132,8 +134,7 @@ export const CompletionModal = () => {
             className="flex h-9 items-center gap-2 rounded-[3px] px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
           >
             <TrashIcon  className="h-3.5 w-3.5" />
-            Discard
-          </button>
+            {translateUi("Discard")}</button>
 
           {status === "error" ? (
             <button
@@ -142,8 +143,7 @@ export const CompletionModal = () => {
               className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-colors hover:brightness-110"
             >
               <RotateCwIcon  className="h-3.5 w-3.5" />
-              Retry
-            </button>
+              {translateUi("Retry")}</button>
           ) : isVideo && status === "idle" ? (
             <button
               type="button"
@@ -151,8 +151,7 @@ export const CompletionModal = () => {
               className="flex h-9 items-center gap-2 rounded-[3px] bg-brand-primary px-4 text-sm font-medium text-white transition-colors hover:brightness-110"
             >
               <CloudUploadIcon  className="h-3.5 w-3.5" />
-              Upload &amp; continue
-            </button>
+              {translateUi("Upload & continue")}</button>
           ) : null}
         </div>
       </div>

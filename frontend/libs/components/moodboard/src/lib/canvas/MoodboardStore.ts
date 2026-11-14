@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -138,7 +140,7 @@ const fitWithinBox = (w: number, h: number, max: number): { w: number; h: number
   return { w: w * ratio, h: h * ratio };
 };
 
-export const useMoodboardStore = create<MoodboardState>((set, get) => ({
+export const useMoodboardStore = create<MoodboardState>((set, get) => { const { t: translateUi } = useUiTranslation(); return ({
   nodes: {},
   rootOrder: [],
   selectedIds: new Set(),
@@ -251,7 +253,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       height: DEFAULT_TEXT_H,
       rotation: 0,
       zIndex: get().rootOrder.length,
-      text: "Note",
+      text: translateUi("Note"),
       fontSize: DEFAULT_FONT_SIZE,
       color: DEFAULT_TEXT_COLOR,
     };
@@ -656,7 +658,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       },
     });
   },
-}));
+}); });
 
 // ---------- helpers ----------
 

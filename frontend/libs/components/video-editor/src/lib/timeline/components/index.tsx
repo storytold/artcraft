@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { ScrollArea } from "../../components/ui/scroll-area";
 import {
@@ -108,6 +110,7 @@ const TRACK_ICONS: Record<TimelineTrack["type"], ReactNode> = {
 };
 
 export function Timeline() {
+  const { t: translateUi } = useUiTranslation();
   const snappingEnabled = useTimelineStore((s) => s.snappingEnabled);
   const {
     selectedElements,
@@ -427,7 +430,7 @@ export function Timeline() {
         "panel bg-background relative flex h-full flex-col overflow-hidden rounded-lg border border-ui-panel-border"
       }
       {...dragProps}
-      aria-label="Timeline"
+      aria-label={translateUi("Timeline")}
     >
       <TimelineToolbar
         zoomLevel={zoomLevel}
@@ -742,6 +745,7 @@ function TimelineTrackRows({
   isDragOver: boolean;
   dropTarget: DropTarget | null;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const timeline = useEditor((e) => e.timeline);
   const scene = useEditor((e) => e.scenes.getActiveSceneOrNull());
   const tracks = useMemo<TimelineTrack[]>(
@@ -834,8 +838,7 @@ function TimelineTrackRows({
                 invokeAction("paste-copied");
               }}
             >
-              Paste elements
-            </ContextMenuItem>
+              {translateUi("Paste elements")}</ContextMenuItem>
             <ContextMenuItem
               icon={<HugeiconsIcon icon={VolumeHighIcon} />}
               onClick={(event: React.MouseEvent) => {
@@ -867,8 +870,7 @@ function TimelineTrackRows({
                 }}
                 variant="destructive"
               >
-                Delete track
-              </ContextMenuItem>
+                {translateUi("Delete track")}</ContextMenuItem>
             )}
           </ContextMenuContent>
         </ContextMenu>

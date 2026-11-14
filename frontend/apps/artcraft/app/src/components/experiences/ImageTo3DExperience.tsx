@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import { Button, GenerateButton } from "@storyteller/ui-button";
@@ -82,6 +84,7 @@ export const ImageTo3DExperience = ({
   variant,
   backgroundImage,
 }: ImageTo3DExperienceProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [activeMode, setActiveMode] = useState<Mode>("image");
   const selectedWorldModel = useSelectedModel(WORLD_MODEL_PAGE);
   const selectedWorldProvider = useSelectedProviderForModel(
@@ -245,7 +248,7 @@ export const ImageTo3DExperience = ({
 
       setUploadedMediaToken(uploadResult.data);
     } catch (error) {
-      toast.error("Failed to upload image");
+      toast.error(translateUi("Failed to upload image"));
       setUploadedPreview(null);
       setUploadedName(null);
     } finally {
@@ -360,7 +363,7 @@ export const ImageTo3DExperience = ({
 
     const item = selectedItems[0];
     if (!item || !item.fullImage) {
-      toast.error("No image selected");
+      toast.error(translateUi("No image selected"));
       return;
     }
 
@@ -532,16 +535,14 @@ export const ImageTo3DExperience = ({
             onClick={() => fileInputRef.current?.click()}
             className="w-full"
           >
-            Upload image
-          </Button>
+            {translateUi("Upload image")}</Button>
           <Button
             variant="action"
             icon={ImagesIcon}
             onClick={handlePickFromLibrary}
             className="w-full"
           >
-            Pick from library
-          </Button>
+            {translateUi("Pick from library")}</Button>
         </div>
       }
     >
@@ -579,15 +580,14 @@ export const ImageTo3DExperience = ({
         }}
       >
         <PlusIcon
-          
+
           className={twMerge(
             "text-base-fg opacity-80",
             hasResults ? "text-2xl" : "text-4xl",
           )} />
         {!hasResults && (
           <span className="mt-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-            Add Image
-          </span>
+            {translateUi("Add Image")}</span>
         )}
       </div>
     </Tooltip>
@@ -608,7 +608,7 @@ export const ImageTo3DExperience = ({
         >
           <img
             src={uploadedPreview}
-            alt="Reference"
+            alt={translateUi("Reference")}
             className={twMerge(
               "h-full w-full object-cover transition-opacity",
               isUploading && "opacity-50",
@@ -650,7 +650,7 @@ export const ImageTo3DExperience = ({
         rows={1}
         className="text-md max-h-[5.5em] w-full resize-none overflow-y-auto rounded-[3px] bg-transparent pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
         value={prompt}
-        placeholder="Describe any object you want to generate from scratch..."
+        placeholder={translateUi("Describe any object you want to generate from scratch...")}
         onChange={(event) => setPrompt(event.target.value)}
       />
     </div>
@@ -677,16 +677,14 @@ export const ImageTo3DExperience = ({
                     onClick={() => worldFileInputRef.current?.click()}
                     className="w-full"
                   >
-                    Upload images
-                  </Button>
+                    {translateUi("Upload images")}</Button>
                   <Button
                     variant="action"
                     icon={ImagesIcon}
                     onClick={handlePickFromLibrary}
                     className="w-full"
                   >
-                    Pick from library
-                  </Button>
+                    {translateUi("Pick from library")}</Button>
                 </div>
               }
             >
@@ -732,11 +730,10 @@ export const ImageTo3DExperience = ({
                 }}
               >
                 <PlusIcon
-                  
+
                   className="text-3xl text-base-fg opacity-80" />
                 <span className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                  Add Images
-                </span>
+                  {translateUi("Add Images")}</span>
               </div>
             </Tooltip>
           </div>
@@ -746,7 +743,7 @@ export const ImageTo3DExperience = ({
             className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
             style={{ maxHeight: "5em" }}
             value={worldPrompt}
-            placeholder="Describe your 3D world (optional)..."
+            placeholder={translateUi("Describe your 3D world (optional)...")}
             onChange={(e) => setWorldPrompt(e.target.value)}
           />
         </div>
@@ -810,16 +807,14 @@ export const ImageTo3DExperience = ({
               onClick={() => worldFileInputRef.current?.click()}
               className="w-full"
             >
-              Upload images
-            </Button>
+              {translateUi("Upload images")}</Button>
             <Button
               variant="action"
               icon={ImagesIcon}
               onClick={handlePickFromLibrary}
               className="w-full"
             >
-              Pick from library
-            </Button>
+              {translateUi("Pick from library")}</Button>
           </div>
         }
       >
@@ -832,7 +827,7 @@ export const ImageTo3DExperience = ({
           onClick={() => worldFileInputRef.current?.click()}
         >
           <PlusIcon
-            
+
             className={twMerge(
               "text-base-fg opacity-80",
               hasResults ? "text-lg" : "text-2xl",
@@ -844,15 +839,13 @@ export const ImageTo3DExperience = ({
     const imageCountRow = (
       <div className="flex items-center justify-center gap-2 font-mono text-[11px] tabular-nums text-base-fg/40">
         <span>
-          {worldImages.length}/{MAX_WORLD_IMAGES} images
-        </span>
+          {worldImages.length}/{MAX_WORLD_IMAGES} {" "}{translateUi("images")}</span>
         <button
           type="button"
           className="text-base-fg/40 underline transition-colors hover:text-base-fg/70"
           onClick={() => setWorldImages([])}
         >
-          Clear all
-        </button>
+          {translateUi("Clear all")}</button>
       </div>
     );
 
@@ -873,7 +866,7 @@ export const ImageTo3DExperience = ({
               rows={1}
               className="flex-1 resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
               value={worldPrompt}
-              placeholder="Describe world (optional)..."
+              placeholder={translateUi("Describe world (optional)...")}
               onChange={(e) => setWorldPrompt(e.target.value)}
             />
           </div>
@@ -896,7 +889,7 @@ export const ImageTo3DExperience = ({
           className="w-full resize-none overflow-y-auto rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 transition-colors focus:border-white/60 focus:outline-none"
           style={{ maxHeight: "5em" }}
           value={worldPrompt}
-          placeholder="Describe your 3D world (optional)..."
+          placeholder={translateUi("Describe your 3D world (optional)...")}
           onChange={(e) => setWorldPrompt(e.target.value)}
         />
       </div>
@@ -981,15 +974,14 @@ export const ImageTo3DExperience = ({
                         const editor = getActiveEditor();
                         if (editor) {
                           void addObject(editor, mediaItem);
-                          toast.success("Added to 3D scene");
+                          toast.success(translateUi("Added to 3D scene"));
                         } else {
-                          toast.error("3D editor isn't ready yet");
+                          toast.error(translateUi("3D editor isn't ready yet"));
                         }
                       }, 500);
                     }}
                   >
-                    Open in 3D Editor
-                  </Button>
+                    {translateUi("Open in 3D Editor")}</Button>
                   <Button
                     variant="action"
                     icon={BoxIcon}
@@ -1014,15 +1006,13 @@ export const ImageTo3DExperience = ({
             <div className="flex h-full flex-col overflow-hidden border border-ui-panel-border bg-ui-panel">
               <div className="flex items-center justify-between border-b border-ui-panel-border px-4 py-3">
                 <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                  History
-                </h3>
+                  {translateUi("History")}</h3>
                 {results.length > 0 && (
                   <button
                     onClick={resetResults}
                     className="rounded-[3px] border border-red/40 bg-red/10 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/20"
                   >
-                    Clear Session
-                  </button>
+                    {translateUi("Clear Session")}</button>
                 )}
               </div>
               <div className="flex-1 overflow-y-auto p-3">
@@ -1045,7 +1035,7 @@ export const ImageTo3DExperience = ({
                           {result.previewUrl ? (
                             <img
                               src={result.previewUrl}
-                              alt="thumb"
+                              alt={translateUi("thumb")}
                               className={twMerge(
                                 "h-full w-full object-cover transition-opacity",
                                 isPending && "opacity-40",
@@ -1054,7 +1044,7 @@ export const ImageTo3DExperience = ({
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-base-fg/25">
                               <BoxIcon
-                                
+
                                 className="text-lg" />
                             </div>
                           )}
@@ -1071,8 +1061,7 @@ export const ImageTo3DExperience = ({
                           <div className="mt-1 flex items-center gap-1.5 text-xs">
                             {isPending ? (
                               <span className="text-base-fg/55">
-                                Generating…
-                              </span>
+                                {translateUi("Generating…")}</span>
                             ) : (
                               <span className="font-mono tabular-nums text-base-fg/45">
                                 {formatTime(result.timestamp)}
@@ -1219,7 +1208,7 @@ export const ImageTo3DExperience = ({
           </button>
           <img
             src={previewImage}
-            alt="Preview"
+            alt={translateUi("Preview")}
             className="max-h-[80vh] max-w-[80vw] border border-white/15 object-contain"
             onClick={(e) => e.stopPropagation()}
           />

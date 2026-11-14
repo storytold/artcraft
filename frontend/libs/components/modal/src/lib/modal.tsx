@@ -541,7 +541,6 @@ export const Modal = ({
             return cloneElement(typedChild, {
               children: (
                 <div
-                  role="presentation"
                   style={{ cursor: "move", userSelect: "none" }}
                   onMouseDown={handleDragStart}
                 >
@@ -562,7 +561,6 @@ export const Modal = ({
             return cloneElement(typedChildren, {
               children: (
                 <div
-                  role="presentation"
                   style={{ cursor: "move", userSelect: "none" }}
                   onMouseDown={handleDragStart}
                 >
@@ -628,8 +626,8 @@ export const Modal = ({
       let minHeight = 240;
       try {
         const cs = window.getComputedStyle(modalRef.current);
-        const parsedMinW = Number.parseFloat(cs.minWidth || "0");
-        const parsedMinH = Number.parseFloat(cs.minHeight || "0");
+        const parsedMinW = parseFloat(cs.minWidth || "0");
+        const parsedMinH = parseFloat(cs.minHeight || "0");
         if (!Number.isNaN(parsedMinW) && parsedMinW > 0)
           minWidth = Math.max(minWidth, parsedMinW);
         if (!Number.isNaN(parsedMinH) && parsedMinH > 0)
@@ -745,7 +743,6 @@ export const Modal = ({
 
     return handles.map((h) => (
       <div
-        role="presentation"
         key={h.dir}
         className={`${baseClass} ${h.className}`}
         style={{ cursor: cursorMap[h.dir] }}

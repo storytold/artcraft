@@ -2,6 +2,7 @@
 //! the model's options (style, instrumental, lyrics, loop, beat & key, tuning), audio or image
 //! references, the cost, and the audio feed.
 
+use crate::i18n::t as ui_text;
 use std::ops::RangeInclusive;
 use std::path::PathBuf;
 
@@ -418,14 +419,14 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   let label = if parts.is_empty() { "Beat".to_owned() } else { parts.join(" \u{b7} ") };
   pickers::popover_pill(ui, Id::new("audio-beat"), Leading::Icon(Icon::Drum), &label, "Beat & Key", |ui| {
     ui.set_width(POPOVER_WIDTH);
-    widgets::menu_header(ui, "Beat & Key");
+    widgets::menu_header(ui, ui_text("Beat & Key"));
     padded(ui, |ui| {
       if caps.bpm {
         ui.horizontal(|ui| {
           setting_name(ui, "BPM");
           ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             setting_value(ui, &s.bpm.map_or_else(|| "Auto".to_owned(), |b| b.to_string()));
-            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new("Auto").size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new(ui_text("Auto")).size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
               s.bpm = None;
             }
           });
@@ -463,7 +464,7 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
 fn tuning(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   pickers::popover_pill(ui, Id::new("audio-tuning"), Leading::Icon(Icon::SlidersHorizontal), "Tuning", "Tuning", |ui| {
     ui.set_width(POPOVER_WIDTH);
-    widgets::menu_header(ui, "Tuning");
+    widgets::menu_header(ui, ui_text("Tuning"));
     padded(ui, |ui| {
       if !caps.sample_rates.is_empty() {
         setting_name(ui, "Sample rate");
@@ -502,30 +503,30 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
     ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
     if m.audio_refs_max > 0 {
       icons::icon(ui, Icon::Music, 14.0, theme::MUTED);
-      ui.label(egui::RichText::new(format!("Audio Track ({}/{})", refs.audios.len(), m.audio_refs_max)).size(12.5).color(theme::MUTED));
+      ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("音轨（{}/{}）", refs.audios.len(), m.audio_refs_max) } else { format!("Audio Track ({}/{})", refs.audios.len(), m.audio_refs_max) })).size(12.5).color(theme::MUTED));
       if m.audio.requires_audio_ref && refs.audios.is_empty() {
-        ui.label(egui::RichText::new("required").size(12.5).color(theme::BAD));
+        ui.label(egui::RichText::new(ui_text("required")).size(12.5).color(theme::BAD));
       }
       for (i, r) in refs.audios.iter().enumerate() {
         audio_tile(ui, i, r, playing == Some(r.id), actions);
       }
       if refs.audios.len() < m.audio_refs_max {
         let uploading = refs.audios.iter().any(|r| r.status == RefStatus::Uploading);
-        if ui.add_enabled_ui(!uploading, |ui| widgets::pill(ui, Leading::Icon(Icon::Upload), if uploading { "Uploading\u{2026}" } else { "Add audio" }, false)).inner.clicked() {
+        if ui.add_enabled_ui(!uploading, |ui| widgets::pill(ui, Leading::Icon(Icon::Upload), if uploading { ui_text("Uploading\u{2026}") } else { ui_text("Add audio") }, false)).inner.clicked() {
           actions.push(RowAction::AddAudio);
         }
-        if widgets::pill(ui, Leading::Icon(Icon::Folder), "From library", false).clicked() {
+        if widgets::pill(ui, Leading::Icon(Icon::Folder), ui_text("From library"), false).clicked() {
           actions.push(RowAction::AudioFromLibrary);
         }
       }
     }
     if m.image_refs_max > 0 {
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("Image").size(12.5).color(theme::MUTED));
+      ui.label(egui::RichText::new(ui_text("Image")).size(12.5).color(theme::MUTED));
       match refs.images.first() {
         Some(r) => image_tile(ui, r, image, actions),
         None => {
-          if widgets::pill(ui, Leading::Icon(Icon::Image), "Add image", false).clicked() {
+          if widgets::pill(ui, Leading::Icon(Icon::Image), ui_text("Add image"), false).clicked() {
             actions.push(RowAction::AddImage);
           }
         },

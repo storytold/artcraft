@@ -12,7 +12,7 @@ export const withProtectionRoute = <P extends object>(
   function ProtectionRoute(rest: P) {
     useSignals();
     useSignalEffect(() => {
-      void persistLogin();
+      persistLogin();
     });
 
     // const { status, userInfo } = authentication;

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { twMerge } from "tailwind-merge";
@@ -75,6 +77,7 @@ export function MentionChipMenu({
   onRemove,
   onClose,
 }: MentionChipMenuProps) {
+  const { t: translateUi } = useUiTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const openedAt = useRef(performance.now());
   // Anchor rect the placement actually uses — re-measured from anchorNode
@@ -208,7 +211,7 @@ export function MentionChipMenu({
             <button
               type="button"
               onClick={onPreview}
-              title="View full size"
+              title={translateUi("View full size")}
               aria-label={`View ${currentName}`}
               className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-[3px]"
             >
@@ -226,19 +229,19 @@ export function MentionChipMenu({
                 {currentName}
               </div>
               <div className="text-[11px] text-base-fg/50">
-                {TYPE_COPY[currentType].title}
+                {translateUi(TYPE_COPY[currentType].title)}
               </div>
             </div>
           </div>
           <div className="my-1 border-t border-ui-panel-border" />
           <button type="button" className={MENU_ROW} onClick={() => setView("replace")}>
             <RefreshCwIcon  className="h-3.5 w-3.5 opacity-60" />
-            <span className="flex-1 text-left">Replace</span>
+            <span className="flex-1 text-left">{translateUi("Replace")}</span>
             <span className="text-xs text-base-fg/40">{replaceItems.length}</span>
           </button>
           <button type="button" className={MENU_ROW} onClick={onPreview}>
             <EyeIcon  className="h-3.5 w-3.5 opacity-60" />
-            <span className="flex-1 text-left">Preview</span>
+            <span className="flex-1 text-left">{translateUi("Preview")}</span>
           </button>
           <div className="my-1 border-t border-ui-panel-border" />
           <button
@@ -247,7 +250,7 @@ export function MentionChipMenu({
             onClick={onRemove}
           >
             <Trash2Icon  className="h-3.5 w-3.5 opacity-60" />
-            <span className="flex-1 text-left">Remove</span>
+            <span className="flex-1 text-left">{translateUi("Remove")}</span>
           </button>
         </>
       ) : (
@@ -257,14 +260,14 @@ export function MentionChipMenu({
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded-[3px] text-base-fg/60 transition-colors hover:bg-ui-controls/60 hover:text-base-fg"
               onClick={() => setView("menu")}
-              aria-label="Back"
+              aria-label={translateUi("Back")}
             >
               <ChevronLeftIcon  className="h-3 w-3" />
             </button>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-base-fg">Replace</div>
+              <div className="text-sm font-medium text-base-fg">{translateUi("Replace")}</div>
               <div className="truncate text-[11px] text-base-fg/50">
-                Currently {currentName}
+                {translateUi("Currently")}{" "}{currentName}
               </div>
             </div>
           </div>

@@ -20,7 +20,7 @@ fi
 
 pushd "${frontend_path}" || exit
 
-npm install --ignore-scripts --verbose
+npm install --verbose
 
 export VITE_ENVIRONMENT_TYPE="production"
 

@@ -4,6 +4,6 @@ export function objectMismatch(
 ) {
   return Object.keys(inputObj).some(
     (currentKey: string) =>
-      Number.parseFloat(inputObj[currentKey]) !== refObj[currentKey],
+      parseFloat(inputObj[currentKey]) !== refObj[currentKey],
   );
 }

@@ -1501,7 +1501,7 @@ export const PaintSurface = ({
 
   // Load the checkboard image for transparency background
   useEffect(() => {
-    void loadImageFromUrl(checkerboard).then(setCheckerImage);
+    loadImageFromUrl(checkerboard).then(setCheckerImage);
   }, []);
 
   // Separate function to render transformers on their own layer

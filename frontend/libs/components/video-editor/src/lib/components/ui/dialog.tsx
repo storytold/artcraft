@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
@@ -48,7 +50,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => { const { t: translateUi } = useUiTranslation(); return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -66,11 +68,11 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-6 right-6 cursor-pointer opacity-70 hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
         <X className="size-5 text-muted-foreground" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">{translateUi("Close")}</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+); });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({

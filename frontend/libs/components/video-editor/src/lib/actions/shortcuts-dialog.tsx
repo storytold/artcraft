@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useEffect, useState } from "react";
 import {
@@ -24,6 +26,7 @@ export function ShortcutsDialog({
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [recordingShortcut, setRecordingShortcut] =
     useState<KeyboardShortcut | null>(null);
   const { toast } = useEditorAdapters();
@@ -112,7 +115,7 @@ export function ShortcutsDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col p-0">
         <DialogHeader>
-          <DialogTitle>Keyboard shortcuts</DialogTitle>
+          <DialogTitle>{translateUi("Keyboard shortcuts")}</DialogTitle>
         </DialogHeader>
 
         <DialogBody className="scrollbar-thin grow overflow-y-auto">
@@ -142,8 +145,7 @@ export function ShortcutsDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="destructive" onClick={resetToDefaults}>
-            Reset to default
-          </Button>
+            {translateUi("Reset to default")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -159,6 +161,7 @@ function ShortcutItem({
   isRecording: boolean;
   onStartRecording: (params: { shortcut: KeyboardShortcut }) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const displayKeys = shortcut.keys.filter((key: string) => {
     if (
       key.includes("Cmd") &&
@@ -175,7 +178,7 @@ function ShortcutItem({
         {shortcut.icon && (
           <div className="text-muted-foreground">{shortcut.icon}</div>
         )}
-        <span className="text-sm">{shortcut.description}</span>
+        <span className="text-sm">{translateUi(shortcut.description)}</span>
       </div>
       <div className="flex items-center gap-2">
         {displayKeys.map((key: string, index: number) => (
@@ -195,7 +198,7 @@ function ShortcutItem({
               })}
             </div>
             {index < displayKeys.length - 1 && (
-              <span className="text-muted-foreground text-xs">or</span>
+              <span className="text-muted-foreground text-xs">{translateUi("or")}</span>
             )}
           </div>
         ))}

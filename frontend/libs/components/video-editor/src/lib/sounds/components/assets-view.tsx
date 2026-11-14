@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
@@ -42,13 +44,14 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export function SoundsView() {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div className="flex h-full flex-col">
       <Tabs defaultValue="sound-effects" className="flex h-full flex-col">
         <div className="px-3 pt-4 pb-0">
           <TabsList>
-            <TabsTrigger value="sound-effects">Sound effects</TabsTrigger>
-            <TabsTrigger value="saved">Saved</TabsTrigger>
+            <TabsTrigger value="sound-effects">{translateUi("Sound effects")}</TabsTrigger>
+            <TabsTrigger value="saved">{translateUi("Saved")}</TabsTrigger>
           </TabsList>
         </div>
         <Separator className="my-4" />
@@ -70,6 +73,7 @@ export function SoundsView() {
 }
 
 function SoundEffectsView() {
+  const { t: translateUi } = useUiTranslation();
   const {
     topSoundEffects,
     isLoading,
@@ -230,7 +234,7 @@ function SoundEffectsView() {
     <div className="mt-1 flex h-full flex-col gap-5">
       <div className="flex items-center gap-3">
         <Input
-          placeholder="Search sound effects"
+          placeholder={translateUi("Search sound effects")}
           className="w-full"
           containerClassName="w-full"
           value={searchQuery}
@@ -255,8 +259,7 @@ function SoundEffectsView() {
               checked={showCommercialOnly}
               onCheckedChange={() => toggleCommercialFilter()}
             >
-              Show only commercially licensed
-            </DropdownMenuCheckboxItem>
+              {translateUi("Show only commercially licensed")}</DropdownMenuCheckboxItem>
             <div className="text-muted-foreground px-2 py-1.5 text-xs">
               {showCommercialOnly
                 ? "Only showing sounds licensed for commercial use"
@@ -275,11 +278,10 @@ function SoundEffectsView() {
           <div className="flex flex-col gap-4">
             {isLoading && !searchQuery && (
               <div className="text-muted-foreground text-sm">
-                Loading sounds...
-              </div>
+                {translateUi("Loading sounds...")}</div>
             )}
             {isSearching && searchQuery && (
-              <div className="text-muted-foreground text-sm">Searching...</div>
+              <div className="text-muted-foreground text-sm">{translateUi("Searching...")}</div>
             )}
             {displayedSounds.map((sound) => (
               <AudioItem
@@ -296,8 +298,7 @@ function SoundEffectsView() {
             )}
             {isLoadingMore && (
               <div className="text-muted-foreground py-4 text-center text-sm">
-                Loading more sounds...
-              </div>
+                {translateUi("Loading more sounds...")}</div>
             )}
           </div>
         </ScrollArea>
@@ -307,6 +308,7 @@ function SoundEffectsView() {
 }
 
 function SavedSoundsView() {
+  const { t: translateUi } = useUiTranslation();
   const {
     savedSounds,
     isLoadingSavedSounds,
@@ -384,8 +386,7 @@ function SavedSoundsView() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-muted-foreground text-sm">
-          Loading saved sounds...
-        </div>
+          {translateUi("Loading saved sounds...")}</div>
       </div>
     );
   }
@@ -394,7 +395,7 @@ function SavedSoundsView() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-destructive text-sm">
-          Error: {savedSoundsError}
+          {translateUi("Error:")}{" "}{savedSoundsError}
         </div>
       </div>
     );
@@ -408,10 +409,9 @@ function SavedSoundsView() {
           className="text-muted-foreground size-10"
         />
         <div className="flex flex-col gap-2 text-center">
-          <p className="text-lg font-medium">No saved sounds</p>
+          <p className="text-lg font-medium">{translateUi("No saved sounds")}</p>
           <p className="text-muted-foreground text-sm text-balance">
-            Click the heart icon on any sound to save it here
-          </p>
+            {translateUi("Click the heart icon on any sound to save it here")}</p>
         </div>
       </div>
     );
@@ -421,7 +421,7 @@ function SavedSoundsView() {
     <div className="mt-1 flex h-full flex-col gap-5">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
-          {savedSounds.length} saved{" "}
+          {savedSounds.length} {" "}{translateUi("saved")}{" "}
           {savedSounds.length === 1 ? "sound" : "sounds"}
         </p>
         <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
@@ -431,21 +431,17 @@ function SavedSoundsView() {
               size="sm"
               className="text-muted-foreground hover:text-destructive h-auto !opacity-100"
             >
-              Clear all
-            </Button>
+              {translateUi("Clear all")}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Clear all saved sounds?</DialogTitle>
+              <DialogTitle>{translateUi("Clear all saved sounds?")}</DialogTitle>
               <DialogDescription>
-                This will permanently remove all {savedSounds.length} saved
-                sounds from your collection. This action cannot be undone.
-              </DialogDescription>
+                {translateUi("This will permanently remove all")}{" "}{savedSounds.length} {" "}{translateUi("saved sounds from your collection. This action cannot be undone.")}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="text" onClick={() => setShowClearDialog(false)}>
-                Cancel
-              </Button>
+                {translateUi("Cancel")}</Button>
               <Button
                 variant="destructive"
                 onClick={async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -454,8 +450,7 @@ function SavedSoundsView() {
                   setShowClearDialog(false);
                 }}
               >
-                Clear all sounds
-              </Button>
+                {translateUi("Clear all sounds")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -486,6 +481,7 @@ interface AudioItemProps {
 }
 
 function AudioItem({ sound, isPlaying, onPlay }: AudioItemProps) {
+  const { t: translateUi } = useUiTranslation();
   const { addSoundToTimeline, isSoundSaved, toggleSavedSound } =
     useSoundsStore();
   const isSaved = isSoundSaved({ soundId: sound.id });
@@ -536,7 +532,7 @@ function AudioItem({ sound, isPlaying, onPlay }: AudioItemProps) {
           size="icon"
           className="text-muted-foreground hover:text-foreground w-auto !opacity-100"
           onClick={handleAddToTimeline}
-          title="Add to timeline"
+          title={translateUi("Add to timeline")}
         >
           <HugeiconsIcon icon={PlusSignIcon} />
         </Button>

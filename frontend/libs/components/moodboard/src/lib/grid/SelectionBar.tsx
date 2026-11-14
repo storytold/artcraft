@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { LayersIcon, PlusIcon, Trash2Icon, WandSparklesIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -28,6 +30,7 @@ export const SelectionBar = ({
   onDelete,
   onClear,
 }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   if (count === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center">
@@ -35,13 +38,10 @@ export const SelectionBar = ({
           control buttons, red delete, round clear. */}
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
         <span className="px-1 text-sm font-medium text-white/80">
-          {count} selected
-        </span>
+          {count} {" "}{translateUi("selected")}</span>
         {/* Triage shortcut discoverability — these keys act on the selection. */}
         <span className="hidden items-center gap-1 text-[11px] text-white/40 sm:flex">
-          <Kbd>1–5</Kbd> rate
-          <Kbd>0</Kbd> clear
-        </span>
+          <Kbd>1–5</Kbd> {" "}{translateUi("rate")}<Kbd>0</Kbd> {" "}{translateUi("clear")}</span>
         <MoveToMenu
           sections={sections}
           onAssignToSection={onAssignToSection}
@@ -54,8 +54,7 @@ export const SelectionBar = ({
             className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <WandSparklesIcon  className="text-xs" />
-            Use as reference
-          </button>
+            {translateUi("Use as reference")}</button>
         )}
         <button
           type="button"
@@ -63,11 +62,10 @@ export const SelectionBar = ({
           className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
         >
           <Trash2Icon  className="text-xs" />
-          Delete
-        </button>
+          {translateUi("Delete")}</button>
         <button
           type="button"
-          aria-label="Clear selection"
+          aria-label={translateUi("Clear selection")}
           onClick={onClear}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
@@ -87,6 +85,7 @@ const MoveToMenu = ({
   onAssignToSection: (sectionId: string | null) => void;
   onCreateSectionWithSelection: () => void;
 }) => {
+  const { t: translateUi } = useUiTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -121,8 +120,7 @@ const MoveToMenu = ({
         className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <LayersIcon  className="text-xs" />
-        Move to
-      </button>
+        {translateUi("Move to")}</button>
 
       {open && (
         <div
@@ -130,7 +128,7 @@ const MoveToMenu = ({
           className="absolute bottom-[calc(100%+8px)] left-1/2 z-40 max-h-72 w-52 -translate-x-1/2 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl"
         >
           <MenuItem
-            label="Ungrouped"
+            label={translateUi("Ungrouped")}
             muted
             onClick={() => pick(() => onAssignToSection(null))}
           />
@@ -146,7 +144,7 @@ const MoveToMenu = ({
           ))}
           <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
           <MenuItem
-            label="New section"
+            label={translateUi("New section")}
             icon={PlusIcon}
             accent
             onClick={() => pick(onCreateSectionWithSelection)}

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
@@ -27,6 +29,7 @@ import { HappyIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export function StickersView() {
+  const { t: translateUi } = useUiTranslation();
   const {
     browseContent,
     browseStickers,
@@ -50,7 +53,7 @@ export function StickersView() {
         <Input
           size="sm"
           variant="default"
-          placeholder="Search..."
+          placeholder={translateUi("Search...")}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery({ query: e.target.value });
@@ -74,7 +77,7 @@ export function StickersView() {
         variant="underline"
         className="mt-2 flex min-h-0 flex-1 flex-col"
       >
-        <TabsList aria-label="Sticker categories">
+        <TabsList aria-label={translateUi("Sticker categories")}>
           {Object.entries(STICKER_CATEGORIES).map(([key, label]) => (
             <TabsTrigger key={key} value={key}>
               {label}
@@ -90,13 +93,14 @@ export function StickersView() {
 }
 
 function InlineSpinner({ className }: { className?: string }) {
+  const { t: translateUi } = useUiTranslation();
   // The OpenCut Classic shell ships a dedicated Spinner component
   // backed by HugeIcons. The lib doesn't ship a primitive of its own,
   // so we inline a minimal pure-SVG ring that matches the visual.
   return (
     <svg
       role="status"
-      aria-label="Loading"
+      aria-label={translateUi("Loading")}
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -160,6 +164,7 @@ function StickerRow({ items }: { items: StickerData[] }) {
 }
 
 function EmptyView({ message }: { message: string }) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <div className="bg-background flex h-full flex-col items-center justify-center gap-3 p-4">
       <HugeiconsIcon
@@ -167,7 +172,7 @@ function EmptyView({ message }: { message: string }) {
         className="text-muted-foreground size-10"
       />
       <div className="flex flex-col gap-2 text-center">
-        <p className="text-lg font-medium">No stickers found</p>
+        <p className="text-lg font-medium">{translateUi("No stickers found")}</p>
         <p className="text-muted-foreground text-sm text-balance">{message}</p>
       </div>
     </div>
@@ -175,6 +180,7 @@ function EmptyView({ message }: { message: string }) {
 }
 
 function StickersContentView() {
+  const { t: translateUi } = useUiTranslation();
   const {
     browseContent,
     clearRecentStickers,
@@ -201,8 +207,7 @@ function StickersContentView() {
         <div className="flex flex-col gap-3 pb-4">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground text-sm">
-              {searchResults.total} results
-            </span>
+              {searchResults.total} {" "}{translateUi("results")}</span>
           </div>
           <StickerGrid items={searchResults.items} />
         </div>
@@ -263,6 +268,7 @@ function StickerSection({
   onClearRecent: () => void;
   onSeeAll: (category: StickerCategory) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const hasHeader =
     Boolean(section.title) || section.id === "recent" || section.action;
 
@@ -284,8 +290,7 @@ function StickerSection({
                 size="sm"
                 className="h-auto gap-1 p-0 text-xs text-muted-foreground"
               >
-                Clear
-              </Button>
+                {translateUi("Clear")}</Button>
             )}
 
             {section.action?.type === "see-all" && section.action.category && (
@@ -297,8 +302,7 @@ function StickerSection({
                   onSeeAll(section.action?.category as StickerCategory);
                 }}
               >
-                See all
-              </Button>
+                {translateUi("See all")}</Button>
             )}
           </div>
         </div>
@@ -324,6 +328,7 @@ function StickerItem({
   shouldCapSize = false,
   containerClassName,
 }: StickerItemProps) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const { toast } = useEditorAdapters();
   const { addToRecentStickers } = useStickersStore();
@@ -377,7 +382,7 @@ function StickerItem({
       addToRecentStickers({ stickerId: item.id });
     } catch (error) {
       console.error("Failed to add sticker:", error);
-      toast.error("Failed to add sticker to timeline");
+      toast.error(translateUi("Failed to add sticker to timeline"));
     } finally {
       setIsAdding(false);
     }
