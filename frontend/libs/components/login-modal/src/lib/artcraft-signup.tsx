@@ -91,8 +91,9 @@ export const ArtCraftSignUp = ({
       {isSignUp ? (
         <>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>{t("Username")}</label>
+            <label htmlFor="signup-username" className={FIELD_LABEL}>t("Username")</label>
             <Input
+              id="signup-username"
               name="username"
               placeholder={t("Username")}
               required
@@ -101,8 +102,9 @@ export const ArtCraftSignUp = ({
             />
           </div>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>{t("Email")}</label>
+            <label htmlFor="signup-email" className={FIELD_LABEL}>t("Email")</label>
             <Input
+              id="signup-email"
               name="email"
               type="email"
               placeholder="you@example.com"
@@ -114,8 +116,9 @@ export const ArtCraftSignUp = ({
         </>
       ) : (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>{t("Email or Username")}</label>
+          <label htmlFor="signup-username-or-email" className={FIELD_LABEL}>t("Email or Username")</label>
           <Input
+            id="signup-username-or-email"
             name="usernameOrEmail"
             placeholder={t("you@example.com or username")}
             required
@@ -126,9 +129,10 @@ export const ArtCraftSignUp = ({
       )}
 
       <div className="space-y-2">
-        <label className={FIELD_LABEL}>{t("Password")}</label>
+        <label htmlFor="signup-password" className={FIELD_LABEL}>t("Password")</label>
         <div className="relative">
           <Input
+            id="signup-password"
             name="password"
             type={showPassword ? "text" : "password"}
             placeholder={t("Min. 8 characters")}
@@ -150,9 +154,10 @@ export const ArtCraftSignUp = ({
 
       {isSignUp && (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>{t("Confirm Password")}</label>
+          <label htmlFor="signup-confirm-password" className={FIELD_LABEL}>t("Confirm Password")</label>
           <div className="relative">
             <Input
+              id="signup-confirm-password"
               name="confirmPassword"
               type={showConfirm ? "text" : "password"}
               placeholder={t("Re-enter password")}

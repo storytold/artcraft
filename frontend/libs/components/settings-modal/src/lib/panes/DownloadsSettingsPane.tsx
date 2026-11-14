@@ -219,7 +219,7 @@ export const DownloadsSettingsPane = () => {
               if (value === "custom") {
                 setFilenameMode("custom");
               } else {
-                saveFilenamePreference("artcraft_convention");
+                void saveFilenamePreference("artcraft_convention");
               }
             }}
           />

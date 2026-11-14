@@ -250,7 +250,7 @@ export function SettingsView() {
                   Math.round(frameRateToFloat(activeProject.settings.fps)),
                 )}
                 onValueChange={(value) => {
-                  const fps = floatToFrameRate(parseFloat(value));
+                  const fps = floatToFrameRate(Number.parseFloat(value));
                   editor.project.updateSettings({ settings: { fps } });
                 }}
               >

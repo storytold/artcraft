@@ -151,7 +151,7 @@ export const RemoveBackground = () => {
       }
     };
 
-    processExternalUrl();
+    void processExternalUrl();
   }, [
     pendingExternalUrl,
     setPendingExternalUrl,

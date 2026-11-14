@@ -168,7 +168,7 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
         aria-label={tr("Copy prompt")}
         onClick={(e) => {
           e.stopPropagation();
-          navigator.clipboard.writeText(prompt);
+          void navigator.clipboard.writeText(prompt);
           setCopied(true);
           setTimeout(() => setCopied(false), 3000);
         }}
@@ -522,7 +522,7 @@ export const TaskQueue = () => {
   const [failed, setFailed] = useState<FailedTask[]>([]);
   const [lastReadAt, setLastReadAt] = useState<number>(() => {
     const stored = localStorage.getItem("taskQueueLastReadAt");
-    return stored ? parseInt(stored, 10) : 0;
+    return stored ? Number.parseInt(stored, 10) : 0;
   });
 
   // remove unread state; unread tracking handled via IDs below
@@ -861,7 +861,7 @@ export const TaskQueue = () => {
     };
 
     cleanupOldEntries();
-    load();
+    void load();
     const id = setInterval(load, 5000);
 
     // Listen for cover image uploads to refresh and show new thumbnails
@@ -875,17 +875,17 @@ export const TaskQueue = () => {
 
     let unlistenComplete: Promise<UnlistenFn> | null = null;
     let unlistenFailed: Promise<UnlistenFn> | null = null;
-    (async () => {
+    void (async () => {
       // Update immediately when Tauri signals a generation completion
       unlistenComplete = listen("generation-complete-event", () => {
         if (!cancelled) {
-          load();
+          void load();
         }
       });
       // Also update immediately when a generation fails
       unlistenFailed = listen("generation-failed-event", () => {
         if (!cancelled) {
-          load();
+          void load();
           // Refunded credits may take a moment to settle in the database
           setTimeout(() => {
             useCreditsState.getState().fetchFromServer();
@@ -898,10 +898,10 @@ export const TaskQueue = () => {
       clearInterval(id);
       window.removeEventListener("cover-image-uploaded", handleCoverUploaded);
       if (unlistenComplete) {
-        unlistenComplete.then((f) => f());
+        void unlistenComplete.then((f) => f());
       }
       if (unlistenFailed) {
-        unlistenFailed.then((f) => f());
+        void unlistenFailed.then((f) => f());
       }
     };
   }, [

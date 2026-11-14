@@ -29,7 +29,7 @@ export default function ProfileDropdown() {
       label: translateUi("Logout"),
       icon: LogOutIcon,
       onClick: () => {
-        logout();
+        void logout();
       },
     },
   ];
