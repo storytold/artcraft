@@ -14,8 +14,8 @@ vi.mock("@storyteller/tauri-api", () => ({ GenerateVideo: vi.fn().mockResolvedVa
 vi.mock("@storyteller/api", () => ({ CharactersApi: vi.fn() }));
 vi.mock("@storyteller/google-analytics", () => ({ gtagEvent: vi.fn() }));
 vi.mock("@storyteller/ui-toaster", () => ({ toast: { error: vi.fn() } }));
-vi.mock("@storyteller/ui-popover", () => ({ PopoverMenu: ({ panelTitle, items = [] }: { panelTitle: string; items?: { label: string }[] }) => (
-  <select aria-label={panelTitle}>{items.map((item) => <option key={item.label}>{item.label}</option>)}</select>
+vi.mock("@storyteller/ui-popover", () => ({ PopoverMenu: ({ panelTitle, items = [], onSelect }: { panelTitle: string; items?: { label: string }[]; onSelect?: (item: { label: string }) => void }) => (
+  <select aria-label={panelTitle} onChange={(event) => onSelect?.(items.find((item) => item.label === event.target.value)!)}>{items.map((item) => <option key={item.label}>{item.label}</option>)}</select>
 ) }));
 vi.mock("@storyteller/ui-sliderv2", () => ({ SliderV2: () => null }));
 vi.mock("@storyteller/ui-tooltip", () => ({ Tooltip: ({ children }: { children: ReactNode }) => children }));
@@ -133,6 +133,20 @@ it("rejects an image upload that finishes after switching to Extend video", asyn
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Generate" })); });
   expect(GenerateVideo).not.toHaveBeenCalled();
   expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("reference images"));
+});
+
+it("keeps only the first reference image when switching back to Keyframe", () => {
+  usePromptVideoStore.setState({
+    inputMode: "reference",
+    referenceImages: [
+      { id: "first", mediaToken: "mf_first", url: "https://example.com/first.png", file: new File([], "first.png") },
+      { id: "second", mediaToken: "mf_second", url: "https://example.com/second.png", file: new File([], "second.png") },
+    ],
+  });
+  const model = VIDEO_MODELS.find((entry) => entry.tauriId === "seedance_2p0")!;
+  render(<PromptBoxVideo useJobContext={vi.fn()} selectedModel={model} selectedProvider={GenerationProvider.WaveSpeed} />);
+  fireEvent.change(screen.getByRole("combobox", { name: "Input Mode" }), { target: { value: "Keyframe" } });
+  expect(usePromptVideoStore.getState().referenceImages.map((image) => image.id)).toEqual(["first"]);
 });
 
 it("keeps the labelled WaveSpeed mode control keyboard-focusable with a visible focus style", async () => {

@@ -481,6 +481,7 @@ export const PromptBoxVideo = ({
     if (mode === "reference") {
       setEndFrameImage(undefined);
     } else {
+      setReferenceImages(referenceImages.slice(0, 1));
       setReferenceVideos([]);
       setReferenceAudios([]);
     }
