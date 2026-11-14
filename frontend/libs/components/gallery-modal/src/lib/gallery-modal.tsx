@@ -83,9 +83,11 @@ import {
 } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import {
+  mergeLocalGalleryItems,
   useMediaPromptTokens,
   usePrompts,
 } from "@storyteller/ui-generation-list";
+import { isLocalGeneration } from "@storyteller/common";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -280,6 +282,9 @@ interface GalleryModalProps {
    *  (e.g. open the login modal on desktop, navigate to /login on web) instead
    *  of a Retry link. */
   onLoginClick?: () => void;
+  /** Images kept on this computer (made without an account), listed with the library's items,
+   *  or on their own when nobody is signed in. */
+  localItems?: GalleryItem[];
   onDownloadClicked?: (url: string, mediaClass?: string, model?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
@@ -584,6 +589,7 @@ export const GalleryModal = React.memo(
     onUseSelected,
     useSelectedLoading,
     onLoginClick,
+    localItems,
     onDownloadClicked,
     onAddToSceneClicked,
     isOpen,
@@ -602,7 +608,9 @@ export const GalleryModal = React.memo(
     // Separate state for pagination spinner (bottom of list) — not shared with background refresh
     const [paginationLoading, setPaginationLoading] = useState(false);
     // Ref-based lock to prevent re-entrant loadItems calls
-    const isLoadingRef = useRef(false);
+    const activeLoadRef = useRef<{ scope: string } | null>(null);
+    const loadEpochRef = useRef(0);
+    const verifiedUsernameRef = useRef("");
     // Lightbox state is now handled via signals
     const lightboxImageSignal = galleryModalLightboxImage;
     const lightboxVisibleSignal = galleryModalLightboxVisible;
@@ -649,9 +657,20 @@ export const GalleryModal = React.memo(
         // ignore
       }
     }, [showUploads]);
-    const [allItems, setAllItems] = useState<GalleryItem[]>([]);
+    const [remoteItems, setRemoteItems] = useState<GalleryItem[]>([]);
+    const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    // The library's items plus the local images the active filter takes, newest first.
+    const allItems = useMemo(
+      () =>
+        mergeLocalGalleryItems(
+          remoteItems,
+          localItems?.filter((item) => !deletedItemIds.has(item.id) && (activeFilter === "all" || item.mediaClass === activeFilter)),
+          { remoteComplete: !hasMore },
+        ),
+      [remoteItems, localItems, activeFilter, hasMore, deletedItemIds],
+    );
 
     // Track whether this is the very first load (no cache, no items yet)
     const [initialLoading, setInitialLoading] = useState(false);
@@ -947,12 +966,24 @@ export const GalleryModal = React.memo(
       // freshly-opened modal would render hidden (contentHidden) and the user
       // couldn't see it — making the library button appear broken.
       galleryModalDraggingUnder.value = false;
+      loadEpochRef.current += 1;
+      activeLoadRef.current = null;
+      verifiedUsernameRef.current = "";
+      setRemoteItems([]);
+      setInitialLoading(true);
       let cancelled = false;
       void (async () => {
         setUsernameError(false);
         const name = await fetchCurrentUsername();
         if (cancelled) return;
+        verifiedUsernameRef.current = name ?? "";
+        setLoading(false);
+        setPaginationLoading(false);
         if (!name) {
+          usernameRef.current = "";
+          setUsername("");
+          setRemoteItems([]);
+          setHasMore(false);
           setUsernameError(true);
           setInitialLoading(false);
           return;
@@ -962,10 +993,11 @@ export const GalleryModal = React.memo(
           // session. setUsername will trigger the filter/username effect
           // below, which calls refreshGallery with the new identity.
           galleryCacheMap.clear();
-          setAllItems([]);
+          setRemoteItems([]);
           setPageIndex(0);
           setHasMore(true);
           setInitialLoading(true);
+          usernameRef.current = name;
           setUsername(name);
         } else {
           // Same user reopening — just refresh (shows cache + background refetch).
@@ -974,12 +1006,15 @@ export const GalleryModal = React.memo(
       })();
       return () => {
         cancelled = true;
+        loadEpochRef.current += 1;
+        verifiedUsernameRef.current = "";
+        activeLoadRef.current = null;
       };
     }, [mode, galleryModalVisibleViewMode.value, isOpen, usernameRetryCount]);
 
     // Helper to build the cache key for the current filter
     const getCacheKey = useCallback(
-      () => `gallery_${activeFilterRef.current}`,
+      () => `gallery_${usernameRef.current}_${activeFilterRef.current}`,
       [],
     );
 
@@ -1064,10 +1099,14 @@ export const GalleryModal = React.memo(
       async (reset = false) => {
         const currentUsername = usernameRef.current;
         const currentFilter = activeFilterRef.current;
-        if (!currentUsername) return;
-        // Ref-based lock prevents concurrent/re-entrant calls
-        if (isLoadingRef.current) return;
-        isLoadingRef.current = true;
+        if (!currentUsername || currentUsername !== verifiedUsernameRef.current) return;
+        const epoch = loadEpochRef.current;
+        const scope = `${epoch}:${currentUsername}:${currentFilter}`;
+        if (activeLoadRef.current?.scope === scope) return;
+        const request = { scope };
+        activeLoadRef.current = request;
+        const isCurrent = () => epoch === loadEpochRef.current && currentUsername === verifiedUsernameRef.current && currentFilter === activeFilterRef.current;
+        const cacheKey = getCacheKey();
         setLoading(true);
         if (!reset) setPaginationLoading(true);
         try {
@@ -1087,15 +1126,16 @@ export const GalleryModal = React.memo(
                     cursor,
                     page_size: PAGE_SIZE,
                   });
+            if (!isCurrent()) return;
 
             if (response.success && response.data) {
               setItemsLoadError(null);
               const newItems = response.data.map(mapApiItem);
 
               if (reset) {
-                setAllItems(newItems);
+                setRemoteItems(newItems);
               } else {
-                setAllItems((prev) => [...prev, ...newItems]);
+                setRemoteItems((prev) => isCurrent() ? [...prev, ...newItems] : prev);
               }
 
               const nextCursor = response.pagination?.maybe_next ?? undefined;
@@ -1104,8 +1144,8 @@ export const GalleryModal = React.memo(
               setPageIndex(0);
               setHasMore(more);
 
-              const cacheKey = getCacheKey();
-              setAllItems((latest) => {
+              setRemoteItems((latest) => {
+                if (!isCurrent()) return latest;
                 galleryCacheMap.set(cacheKey, {
                   items: latest,
                   pageIndex: 0,
@@ -1121,10 +1161,6 @@ export const GalleryModal = React.memo(
               );
             }
 
-            setLoading(false);
-            setPaginationLoading(false);
-            setInitialLoading(false);
-            isLoadingRef.current = false;
             return;
           }
 
@@ -1143,6 +1179,7 @@ export const GalleryModal = React.memo(
             page_size: PAGE_SIZE,
           };
           const response = await api.listUserMediaFiles(query);
+          if (!isCurrent()) return;
 
           if (response.success && response.data) {
             setItemsLoadError(null);
@@ -1169,7 +1206,8 @@ export const GalleryModal = React.memo(
               // NB: we can't blindly drop items missing from `newItems` —
               // that would evict everything loaded by infinite scroll.
               // Deletions are handled live via `media_file_deleted_event`.
-              setAllItems((prev) => {
+              setRemoteItems((prev) => {
+                if (!isCurrent()) return prev;
                 if (prev.length === 0) return newItems;
                 if (newItems.length === 0) return prev;
                 const existingIds = new Set(prev.map((it) => it.id));
@@ -1202,7 +1240,7 @@ export const GalleryModal = React.memo(
                 return [...brandNew, ...updated];
               });
             } else {
-              setAllItems((prev) => [...prev, ...newItems]);
+              setRemoteItems((prev) => isCurrent() ? [...prev, ...newItems] : prev);
             }
 
             // Pagination logic
@@ -1212,8 +1250,8 @@ export const GalleryModal = React.memo(
             setHasMore(current + 1 < total);
 
             // Update cache
-            const cacheKey = getCacheKey();
-            setAllItems((latest) => {
+            setRemoteItems((latest) => {
+              if (!isCurrent()) return latest;
               galleryCacheMap.set(cacheKey, {
                 items: latest,
                 pageIndex: current + 1,
@@ -1228,14 +1266,20 @@ export const GalleryModal = React.memo(
             );
           }
         } catch (error) {
+          if (!isCurrent()) return;
           const msg = error instanceof Error ? error.message : String(error);
           console.error("Failed to fetch library items:", msg);
           setItemsLoadError(msg);
+        } finally {
+          if (activeLoadRef.current === request) {
+            activeLoadRef.current = null;
+            if (isCurrent()) {
+              setLoading(false);
+              setPaginationLoading(false);
+              setInitialLoading(false);
+            }
+          }
         }
-        setLoading(false);
-        setPaginationLoading(false);
-        setInitialLoading(false);
-        isLoadingRef.current = false;
       },
       [api, mediaFilesApi, mapApiItem, getCacheKey],
     );
@@ -1244,12 +1288,12 @@ export const GalleryModal = React.memo(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const refreshGallery = useCallback(() => {
       setItemsLoadError(null);
-      const cacheKey = `gallery_${activeFilterRef.current}`;
+      const cacheKey = getCacheKey();
       const cached = galleryCacheMap.get(cacheKey);
 
       if (cached && cached.items.length > 0) {
         // Instantly show cached items — no loading indicator
-        setAllItems(cached.items);
+        setRemoteItems(cached.items);
         setPageIndex(cached.pageIndex);
         setHasMore(cached.hasMore);
         byClassCursorRef.current[activeFilterRef.current] = cached.cursor;
@@ -1258,13 +1302,13 @@ export const GalleryModal = React.memo(
         loadItems(true);
       } else {
         // No cache — show skeleton, then load
-        setAllItems([]);
+        setRemoteItems([]);
         setPageIndex(0);
         setHasMore(true);
         setInitialLoading(true);
         loadItems(true);
       }
-    }, [loadItems]);
+    }, [loadItems, getCacheKey]);
 
     // Keep the ref pointed at the latest refreshGallery so the session-fetch
     // effect can call it without taking it as a dep (avoids tearing).
@@ -1315,7 +1359,8 @@ export const GalleryModal = React.memo(
         },
         onMediaDeleted: (token) => {
           if (!token) return;
-          setAllItems((prev) => prev.filter((it) => it.id !== token));
+          setDeletedItemIds((prev) => new Set([...prev, token]));
+          setRemoteItems((prev) => prev.filter((it) => it.id !== token));
           setBulkSelectedIds((prev) => {
             if (!prev.has(token)) return prev;
             const next = new Set(prev);
@@ -1559,7 +1604,7 @@ export const GalleryModal = React.memo(
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
-          if (disabledItemIds.includes(item.id)) return;
+          if (disabledItemIds.includes(item.id) || isLocalGeneration(item.id)) return;
           onSelectItem(item.id);
         } else if (bulkSelectionMode) {
           toggleBulkSelect(item.id);
@@ -1607,13 +1652,14 @@ export const GalleryModal = React.memo(
       }
       const selectedItems = selectedItemIds
         .map((id: string) => itemsById.get(id))
-        .filter((item): item is GalleryItem => item !== undefined);
+        .filter((item): item is GalleryItem => item !== undefined && !isLocalGeneration(item.id));
       onUseSelected?.(selectedItems);
     }, [groupedItems, folderGroupedItems, selectedItemIds, onUseSelected]);
 
     const handleItemDeleted = useCallback((id: string) => {
+      setDeletedItemIds((prev) => new Set([...prev, id]));
       // Drop from local state (functional setter — must stay pure).
-      setAllItems((prev) => prev.filter((it) => it.id !== id));
+      setRemoteItems((prev) => prev.filter((it) => it.id !== id));
       setBulkSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -1657,22 +1703,32 @@ export const GalleryModal = React.memo(
         onPrimaryAction: async () => {
           try {
             const ids = Array.from(bulkSelectedIds);
-            await Promise.allSettled(ids.map((id) => onDeleteMedia(id)));
-            const idSet = new Set(ids);
-            setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
+            const results = await Promise.allSettled(ids.map((id) => onDeleteMedia(id)));
+            const idSet = new Set(ids.filter((id, index) => {
+              const result = results[index];
+              return result.status === "fulfilled" &&
+                !(result.value && typeof result.value === "object" && "status" in result.value && result.value.status !== "success");
+            }));
+            const failedCount = ids.length - idSet.size;
+            if (failedCount > 0) {
+              toast.error(`Failed to delete ${failedCount} item${failedCount === 1 ? "" : "s"}.`);
+            }
+            setDeletedItemIds((prev) => new Set([...prev, ...idSet]));
+            setRemoteItems((prev) => prev.filter((it) => !idSet.has(it.id)));
             for (const [key, entry] of galleryCacheMap.entries()) {
               galleryCacheMap.set(key, {
                 ...entry,
                 items: entry.items.filter((it) => !idSet.has(it.id)),
               });
             }
-            clearBulkSelection();
+            setBulkSelectedIds((previous) => new Set([...previous].filter((id) => !idSet.has(id))));
+            setBulkFolderPopoverOpen(false);
           } finally {
             isActionReminderOpen.value = false;
           }
         },
       });
-    }, [bulkSelectedIds, clearBulkSelection, onDeleteMedia]);
+    }, [bulkSelectedIds, onDeleteMedia]);
 
     // Load the full folder tree (paginated, newest first).
     const loadFolders = useCallback(async () => {
@@ -2147,7 +2203,9 @@ export const GalleryModal = React.memo(
 
     // Add media files to a folder. Optimistic cache + cover, then persist.
     const handleAddToFolder = useCallback(
-      async (itemIds: string[], folderId: string) => {
+      async (selectedIds: string[], folderId: string) => {
+        // Images kept on this computer can't go in library folders.
+        const itemIds = selectedIds.filter((id) => !isLocalGeneration(id));
         if (itemIds.length === 0) return;
         const addedItems = resolveItems(itemIds);
         setFolderMediaItems((prev) => {
@@ -2498,7 +2556,7 @@ export const GalleryModal = React.memo(
         } else if (
           galleryTabRef.current !== "folders" &&
           hasMore &&
-          !isLoadingRef.current
+          !activeLoadRef.current
         ) {
           loadItems();
         }
@@ -3560,6 +3618,7 @@ export const GalleryModal = React.memo(
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Add to folder */}
+                  {bulkSelectedItems.every((item) => !isLocalGeneration(item.id)) && (
                   <div className="relative">
                     <Button
                       variant="action"
@@ -3622,6 +3681,7 @@ export const GalleryModal = React.memo(
                       </>
                     )}
                   </div>
+                  )}
                   {onDeleteMedia && (
                     <Button
                       variant="destructive"

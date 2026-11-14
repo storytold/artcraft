@@ -6,6 +6,9 @@ use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMi
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
+use artcraft_router::errors::provider_error::ProviderError;
+use wavespeed_client::WaveSpeedClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
@@ -17,7 +20,7 @@ use tokens::tokens::prompts::PromptToken;
 
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
-use crate::core::commands::enqueue::generate_error::GenerateError;
+use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use artcraft_router::generate::generate_image::router_image_request_to_artcraft_prompt::router_image_request_to_artcraft_prompt;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::convert_enums_to_router::{convert_aspect_ratio, convert_quality, convert_resolution};
@@ -25,29 +28,52 @@ use crate::core::commands::generate::generate_image::providers::artcraft_router:
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::data_dir::app_data_root::AppDataRoot;
+use crate::core::utils::provider_image_context::ProviderImageContext;
+use crate::core::utils::provider_submission::ProviderSubmission;
+use crate::core::utils::local_generations::is_local_token;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 /// Handle image generation for providers that authenticate via API key.
-pub async fn handle_api_key_provider(
-  request: &TauriGenerateImageRequest,
-  provider: GenerationProvider,
-  api_key: &str,
-  app_env_configs: &AppEnvConfigs,
-  storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
+pub async fn handle_api_key_provider(request: &TauriGenerateImageRequest, provider: GenerationProvider, api_key: &str, app_env_configs: &AppEnvConfigs, storyteller_creds_manager: &StorytellerCredentialManager, app_data_root: &AppDataRoot) -> Result<TaskEnqueueSuccess, GenerateError> {
   match provider {
-    GenerationProvider::Fal => {
-      handle_fal(request, api_key, app_env_configs, storyteller_creds_manager).await
-    }
-    _ => {
-      Err(GenerateError::NotYetImplemented(
-        format!("API key provider {:?} is not yet supported via the router path", provider),
-      ))
-    }
+    GenerationProvider::WaveSpeed => handle_wavespeed(request, api_key, app_env_configs, storyteller_creds_manager, app_data_root).await,
+    GenerationProvider::Fal => handle_fal(request, api_key, app_env_configs, storyteller_creds_manager).await,
+    _ => Err(GenerateError::NotYetImplemented(format!("API key provider {:?} is not yet supported via the router path", provider))),
   }
 }
 
 // ── FAL ──
+
+/// Submit validated image options once, preserving uncertain acceptance in a durable receipt.
+async fn handle_wavespeed(request: &TauriGenerateImageRequest, api_key: &str, app_env_configs: &AppEnvConfigs, storyteller_creds_manager: &StorytellerCredentialManager, app_data_root: &AppDataRoot) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let signed_in = storyteller_creds_manager.get_signed_in_credentials()?.is_some();
+  validate_wavespeed_references(request, signed_in)?;
+  if request.canvas_image_raw_bytes.is_some() || request.scene_image_raw_bytes.is_some() || request.inpainting_mask_image_raw_bytes.is_some() || request.inpainting_mask_image_media_token.is_some() {
+    return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("WaveSpeed requires uploaded image references and does not support inpainting masks".into())));
+  }
+  let batch_size = request.batch_size.unwrap_or(1);
+  if !(1..=4).contains(&batch_size) {
+    return Err(GenerateError::BadInput(BadInputReason::InvalidNumberOfRequestedImages { requested: batch_size, min: 1, max: 4 }));
+  }
+  let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
+  let model = tauri_image_model_to_router_model(tauri_model).ok_or_else(|| GenerateError::NotYetImplemented(format!("Unsupported WaveSpeed model: {tauri_model:?}")))?;
+  let client = WaveSpeedClient::new(api_key).map_err(ProviderError::WaveSpeed).map_err(ArtcraftRouterError::from)?;
+  let router_request = GenerateImageRequestBuilder { model, provider: RouterProvider::WaveSpeed, prompt: request.prompt.clone(), image_inputs: resolve_image_inputs(request, &app_env_configs.storyteller_host).await?, resolution: request.resolution.map(convert_resolution), aspect_ratio: request.aspect_ratio.map(convert_aspect_ratio), quality: request.quality.map(convert_quality), image_batch_count: Some(batch_size as u16), horizontal_angle: request.adjust_horizontal_angle, vertical_angle: request.adjust_vertical_angle, zoom: request.adjust_zoom, request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut, generation_mode_mismatch_strategy: None, idempotency_token: None };
+  let ImageGenerationDraftOrRequest::Request(generation_request) = router_request.clone().build2()? else {
+    return Err(GenerateError::NotYetImplemented("WaveSpeed cannot send a draft request".into()));
+  };
+  let maybe_prompt_token = create_prompt_record(&router_request, &app_env_configs.storyteller_host, storyteller_creds_manager).await;
+  let context = ProviderImageContext { prompt: request.prompt.clone().unwrap_or_default(), model_id: serde_json::to_value(tauri_image_model_to_generation_model(tauri_model)).map_err(anyhow::Error::from)?.as_str().unwrap_or("unknown").to_owned(), local_only: !signed_in };
+  let mut receipt = ProviderSubmission::begin(app_data_root, context, TaskType::ImageGeneration, app_env_configs.storyteller_host.to_api_hostname_and_scheme(), request.frontend_caller, request.frontend_subscriber_id.clone(), request.frontend_subscriber_payload.clone())?;
+  let response = receipt.handle_submission_result(app_data_root, generation_request.send_request(&RouterClient::WaveSpeed(client)).await)?;
+  let GenerateImageResponse::WaveSpeed(payload) = response else {
+    return Err(GenerateError::ResponseHadNoJobTokens);
+  };
+  let success = TaskEnqueueSuccess { task_type: TaskType::ImageGeneration, model: Some(tauri_image_model_to_generation_model(tauri_model)), provider: GenerationProvider::WaveSpeed, provider_job_id: Some(payload.prediction_id), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token };
+  receipt.accept(app_data_root, &success)?;
+  Ok(success)
+}
 
 async fn handle_fal(
   request: &TauriGenerateImageRequest,
@@ -122,10 +148,8 @@ async fn handle_fal(
 
 // ── Helpers ──
 
-async fn resolve_image_inputs(
-  request: &TauriGenerateImageRequest,
-  api_host: &ApiHost,
-) -> Result<Option<ImageListRef>, GenerateError> {
+/// Resolve ordered cloud image references to CDN URLs for router providers.
+async fn resolve_image_inputs(request: &TauriGenerateImageRequest, api_host: &ApiHost) -> Result<Option<ImageListRef>, GenerateError> {
   let mut tokens: Vec<MediaFileToken> = Vec::new();
 
   if let Some(canvas_token) = &request.canvas_image_media_token {
@@ -144,6 +168,10 @@ async fn resolve_image_inputs(
     return Ok(None);
   }
 
+  if tokens.iter().any(|token| is_local_token(token.as_str())) {
+    return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Local images must be uploaded while signed in before using them as references".into())));
+  }
+
   let urls = map_media_file_tokens_to_cdn_urls(&tokens, api_host).await?;
   Ok(Some(ImageListRef::Urls(urls)))
 }
@@ -155,7 +183,7 @@ async fn create_prompt_record(
   api_host: &ApiHost,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Option<PromptToken> {
-  let creds = match storyteller_creds_manager.get_credentials() {
+  let creds = match storyteller_creds_manager.get_signed_in_credentials() {
     Ok(Some(creds)) => creds,
     _ => {
       warn!("[FalRouter] No Storyteller credentials available, skipping prompt creation");
@@ -175,6 +203,14 @@ async fn create_prompt_record(
       None
     }
   }
+}
+
+/// Reject local or signed-out cloud references before a paid WaveSpeed image submission.
+fn validate_wavespeed_references(request: &TauriGenerateImageRequest, signed_in: bool) -> Result<(), GenerateError> {
+  if !signed_in && (request.canvas_image_media_token.is_some() || request.scene_image_media_token.is_some() || request.image_media_tokens.as_ref().is_some_and(|tokens| !tokens.is_empty())) {
+    return Err(GenerateError::BadInput(BadInputReason::WrongImageArguments("Sign in to use uploaded image references with WaveSpeed".into())));
+  }
+  Ok(())
 }
 
 fn build_task_enqueue_success(
@@ -200,4 +236,24 @@ fn build_task_enqueue_success(
     maybe_queue_response_url: fal_payload.maybe_response_url,
     maybe_prompt_token,
   })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn signed_out_references_are_rejected_before_resolving_or_billing() {
+    let request: TauriGenerateImageRequest = serde_json::from_value(serde_json::json!({
+      "provider": "wavespeed", "model": "nano_banana_pro", "image_media_tokens": ["mf_reference"]
+    }))
+    .unwrap();
+    assert!(validate_wavespeed_references(&request, false).is_err());
+    assert!(validate_wavespeed_references(&request, true).is_ok());
+    let request: TauriGenerateImageRequest = serde_json::from_value(serde_json::json!({
+      "provider": "wavespeed", "model": "nano_banana_pro", "prompt": "a bird"
+    }))
+    .unwrap();
+    assert!(validate_wavespeed_references(&request, false).is_ok());
+  }
 }

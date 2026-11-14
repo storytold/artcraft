@@ -22,6 +22,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
+wavespeed_client.workspace = true
 craft-update = { git = "https://github.com/storytold/craft-libs", rev = "2a24c10817173d26d0ea4689acbbade36f91b5dc" }
 toml.workspace = true
 browser_emulation.workspace = true
@@ -63,6 +64,7 @@ futures = "0.3"
 image = "0.25.5"
 indexmap.workspace = true
 log.workspace = true
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust", "vendored"] }
 once_cell.workspace = true
 os_info = { version = "3.12.0", default-features = false }
 rand.workspace = true
@@ -92,6 +94,7 @@ tauri-plugin-opener = "2"
 
 [dev-dependencies]
 serial_test = "3.2.0"
+tauri = { workspace = true, features = ["test"] }
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

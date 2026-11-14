@@ -2,6 +2,7 @@
 export enum GenerationServiceProvider {
   Sora = "sora",
   Fal = "fal",
+  WaveSpeed = "wavespeed",
 }
 
 export enum GenerationModel {

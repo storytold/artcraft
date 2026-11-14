@@ -14,6 +14,7 @@ use log::debug;
 use reqwest::multipart::{Form, Part};
 use serde_derive::{Deserialize, Serialize};
 use std::path::Path;
+use std::time::Duration;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -66,6 +67,9 @@ pub async fn upload_image_media_file_from_file_with_idempotency_token<P: AsRef<P
   //let mut file = File::open(path)?;
 
   let client = storyteller_client_builder(args.api_host)
+      .connect_timeout(Duration::from_secs(10))
+      .timeout(Duration::from_secs(600))
+      .retry(reqwest::retry::never())
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 

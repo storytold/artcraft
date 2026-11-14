@@ -11,6 +11,7 @@ use tauri::State;
 /// All known credential keys. Add new ones here as providers are added.
 const ALL_KEYS: &[ProviderCredentialKey] = &[
   ProviderCredentialKey::FalApiKey,
+  ProviderCredentialKey::WaveSpeedApiKey,
   ProviderCredentialKey::ReplicateApiKey,
   ProviderCredentialKey::GrokWebLogin,
   ProviderCredentialKey::HiggsfieldWebLogin,
@@ -47,6 +48,7 @@ pub struct ProviderCredentialDetails {
   pub maybe_username: Option<String>,
 }
 
+/// Report configured providers while withholding the complete WaveSpeed API key from the webview.
 #[tauri::command]
 pub async fn provider_list_command(
   credential_cache: State<'_, ProviderCredentialLoadingCache>,
@@ -70,7 +72,7 @@ pub async fn provider_list_command(
       ProviderCredentialPayload::ApiKey(data) => {
         ProviderCredentialDetails {
           maybe_key_start: Some(redact_key(data.as_str())),
-          maybe_full_key: Some(data.as_str().to_string()),
+          maybe_full_key: (key != ProviderCredentialKey::WaveSpeedApiKey).then(|| data.as_str().to_string()),
           maybe_email_address: None,
           maybe_username: None,
         }
@@ -96,11 +98,12 @@ pub async fn provider_list_command(
   Ok(ProviderListResponse { providers }.into())
 }
 
+/// Produce a short credential preview without slicing inside UTF-8 code points.
 fn redact_key(key: &str) -> String {
   if key.len() <= REDACTED_KEY_VISIBLE_CHARS {
     "********".to_string()
   } else {
-    let visible = &key[..REDACTED_KEY_VISIBLE_CHARS];
+    let visible: String = key.chars().take(REDACTED_KEY_VISIBLE_CHARS).collect();
     format!("{}********", visible)
   }
 }

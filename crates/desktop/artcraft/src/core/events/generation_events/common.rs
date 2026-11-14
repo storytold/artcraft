@@ -1,10 +1,12 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationServiceProvider {
   Artcraft,
   Fal,
+  #[serde(rename = "wavespeed")]
+  WaveSpeed,
   Grok,
   Midjourney,
   Sora,
@@ -19,7 +21,7 @@ pub enum GenerationServiceProvider {
   Runway,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationModel {
   #[serde(rename = "flux_1_dev")]

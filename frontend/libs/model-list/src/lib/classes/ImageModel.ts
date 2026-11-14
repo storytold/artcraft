@@ -189,6 +189,13 @@ export class ImageModel extends Model {
     return this.qualityOptions && this.qualityOptions.length > 0;
   }
 
+  /** Keep supported resolution choices or fall back to the model default; omit the tier when unsupported. */
+  resolveResolution(current?: CommonResolution): CommonResolution | undefined {
+    if (!this.supportsNewResolution()) return undefined;
+    return current && this.resolutions.includes(current)
+      ? current : this.defaultResolution ?? this.resolutions[0];
+  }
+
   // A saved tier from another model may not be supported by this model.
   resolveQuality(current?: CommonQuality): CommonQuality | undefined {
     if (!this.supportsQuality()) return undefined;

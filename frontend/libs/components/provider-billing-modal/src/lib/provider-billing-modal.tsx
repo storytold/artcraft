@@ -10,6 +10,7 @@ interface ProviderBillingModalProps {
   isVideoPage?: boolean;
 }
 
+/** Display Artcraft billing or external-provider guidance in response to native billing events. */
 export function ProviderBillingModal({
   isVideoPage = false,
 }: ProviderBillingModalProps) {
@@ -31,6 +32,7 @@ export function ProviderBillingModal({
 
   switch (provider) {
     case GenerationProvider.Fal:
+    case GenerationProvider.WaveSpeed:
     case GenerationProvider.Grok:
     case GenerationProvider.Midjourney:
     case GenerationProvider.Sora:

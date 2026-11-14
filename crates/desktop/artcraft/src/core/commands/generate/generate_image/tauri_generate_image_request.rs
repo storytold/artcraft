@@ -118,6 +118,8 @@ pub enum TauriGenerateImageErrorType {
   NeedsStorytellerCredentials,
   /// Needs a FAL API key
   NeedsFalApiKey,
+  #[serde(rename = "needs_wavespeed_api_key")]
+  NeedsWaveSpeedApiKey,
   /// Needs Grok credentials
   NeedsGrokCredentials,
   NeedsMidjourneyCredentials,

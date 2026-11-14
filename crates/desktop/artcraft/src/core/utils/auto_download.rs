@@ -3,7 +3,7 @@ use crate::core::state::app_preferences::app_preferences::AppPreferences;
 use crate::core::state::app_preferences::app_preferences_manager::AppPreferencesManager;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
-use crate::core::utils::download_url_to_user_download_dir::{download_url_with_filename, suggested_download_filename};
+use crate::core::utils::download_url_to_user_download_dir::{check_url_file_name_for_downloadability, download_url_with_filename, suggested_download_filename, persist_download};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use anyhow::{anyhow, ensure};
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
@@ -74,7 +74,15 @@ pub async fn auto_download_task_urls(app: &AppHandle, task: &Task, urls: &[Url])
   download_generated_results(&app.state::<AppDataRoot>(), &prefs, task, urls).await
 }
 
-pub fn clear_auto_download_checkpoint(app: &AppHandle, task: &Task) {
+/// Apply download preferences to cached outputs before task completion is persisted.
+pub async fn auto_download_task_files(app: &AppHandle<impl tauri::Runtime>, task: &Task, urls: &[Url], files: &[PathBuf]) -> AnyhowResult<()> {
+  ensure!(urls.len() == files.len(), "Cached result count does not match provider output");
+  let prefs = app.state::<AppPreferencesManager>().get_clone()?;
+  download_results(&app.state::<AppDataRoot>(), &prefs, task, urls, Some(files)).await
+}
+
+/// Remove automatic-download progress after terminal task handling.
+pub fn clear_auto_download_checkpoint(app: &AppHandle<impl tauri::Runtime>, task: &Task) {
   let path = checkpoint_path(&app.state::<AppDataRoot>(), task);
   if let Err(err) = std::fs::remove_file(path) {
     if err.kind() != std::io::ErrorKind::NotFound {
@@ -83,12 +91,13 @@ pub fn clear_auto_download_checkpoint(app: &AppHandle, task: &Task) {
   }
 }
 
-async fn download_generated_results(
-  root: &AppDataRoot,
-  prefs: &AppPreferences,
-  task: &Task,
-  urls: &[Url],
-) -> AnyhowResult<()> {
+/// Download result URLs according to preferences using the same durable progress mechanism.
+async fn download_generated_results(root: &AppDataRoot, prefs: &AppPreferences, task: &Task, urls: &[Url]) -> AnyhowResult<()> {
+  download_results(root, prefs, task, urls, None).await
+}
+
+/// Save every requested output before completion, retaining per-URL progress across interruptions.
+async fn download_results(root: &AppDataRoot, prefs: &AppPreferences, task: &Task, urls: &[Url], maybe_files: Option<&[PathBuf]>) -> AnyhowResult<()> {
   if !prefs.auto_download {
     return Ok(());
   }
@@ -96,9 +105,7 @@ async fn download_generated_results(
   let path = checkpoint_path(root, task);
   let mut checkpoint: AutoDownloadCheckpoint = match tokio::fs::read(&path).await {
     Ok(bytes) => serde_json::from_slice(&bytes)?,
-    Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-      AutoDownloadCheckpoint { download_time: Local::now(), saved: BTreeMap::new() }
-    },
+    Err(err) if err.kind() == std::io::ErrorKind::NotFound => AutoDownloadCheckpoint { download_time: Local::now(), saved: BTreeMap::new() },
     Err(err) => return Err(err.into()),
   };
   let directory = prefs.preferred_download_directory.download_directory(root);
@@ -106,14 +113,17 @@ async fn download_generated_results(
     if checkpoint.saved.get(url.as_str()).is_some_and(|path| path.is_file()) {
       continue;
     }
-    let filename = suggested_download_filename(
-      url,
-      prefs,
-      task.model_type.as_ref().map(|model| model.to_str()),
-      (urls.len() > 1).then_some(index + 1),
-      checkpoint.download_time,
-    );
-    let saved = download_url_with_filename(url, &directory, &filename).await?;
+    let filename = suggested_download_filename(url, prefs, task.model_type.as_ref().map(|model| model.to_str()), (urls.len() > 1).then_some(index + 1), checkpoint.download_time);
+    check_url_file_name_for_downloadability(&filename)?;
+    let saved = if let Some(files) = maybe_files {
+      std::fs::create_dir_all(&directory)?;
+      let temporary = NamedTempFile::new_in(&directory)?;
+      std::fs::copy(&files[index], temporary.path())?;
+      temporary.as_file().sync_all()?;
+      persist_download(temporary, &directory, &filename)?
+    } else {
+      download_url_with_filename(url, &directory, &filename).await?
+    };
     checkpoint.saved.insert(url.to_string(), saved);
     let mut file = NamedTempFile::new_in(root.state_dir().path())?;
     file.write_all(&serde_json::to_vec(&checkpoint)?)?;
@@ -154,6 +164,36 @@ mod tests {
     .await
     .unwrap();
     assert!(!dir.path().join("chosen").exists());
+  }
+
+  #[tokio::test]
+  async fn cached_results_reject_executable_filenames_before_creating_downloads() {
+    for extension in ["exe", "EXE", "sh", "ps1", "dll"] {
+      let directory = tempfile::tempdir().unwrap();
+      let root = AppDataRoot::create_existing(directory.path()).unwrap();
+      let source = directory.path().join("cached.bin");
+      std::fs::write(&source, b"untrusted provider output").unwrap();
+      let urls = [Url::parse(&format!("https://example.com/output.{extension}")).unwrap()];
+      assert!(download_results(&root, &preferences(&root), &task(GenerationProvider::WaveSpeed), &urls, Some(&[source])).await.is_err());
+      assert!(!directory.path().join("chosen").exists());
+    }
+  }
+
+  #[tokio::test]
+  async fn cached_results_can_auto_download_when_the_provider_is_unavailable() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let source = directory.path().join("cached.png");
+    std::fs::write(&source, b"cached billed image").unwrap();
+    let urls = [Url::parse("http://127.0.0.1:1/expired.png").unwrap()];
+    let files = [source];
+    let prefs = preferences(&root);
+    let task = task(GenerationProvider::WaveSpeed);
+    download_results(&root, &prefs, &task, &urls, Some(&files)).await.unwrap();
+    download_results(&root, &prefs, &task, &urls, Some(&files)).await.unwrap();
+    let saved = std::fs::read_dir(directory.path().join("chosen")).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+    assert_eq!(saved.len(), 1);
+    assert_eq!(std::fs::read(saved[0].path()).unwrap(), b"cached billed image");
   }
 
   #[tokio::test]

@@ -14,6 +14,9 @@ import { useLoginModalStore } from "./useLoginModalStore";
 const DEFAULT_SHOWCASE_VIDEO =
   "https://frontend-cdn.fakeyou.com/videos/knight-video.mp4";
 const LOGIN_SUCCESS_DURATION_MS = 3000;
+// Set when the user chooses to continue without an account: the modal then only opens when they
+// ask to sign in, not at every launch.
+const CONTINUE_SIGNED_OUT_KEY = "artcraft.continueWithoutAccount";
 const FRAME_CORNERS = [
   "top-0 left-0",
   "top-0 right-0",
@@ -34,6 +37,7 @@ interface LoginModalProps {
   videoSrc3D?: string;
 }
 
+/** Coordinate account authentication and onboarding while allowing an explicit choice to continue signed out. */
 export function LoginModal({
   onClose,
   onOpenChange,
@@ -75,10 +79,12 @@ export function LoginModal({
         setShowSuccess(false);
         setLoggedInUsername(null);
         setIsLoggedInArtCraft(false);
+        if (recheckTrigger === 0 && continuesSignedOut()) return;
         useLoginModalStore.getState().openModal();
       }
     }).catch((error) => {
       if (!active || generation !== authGeneration.current) return;
+      if (recheckTrigger === 0 && continuesSignedOut()) return;
       setErrorMessage(isDesktopLoginError(error) ? error.message : "Unable to check your account. Please sign in again.");
       useLoginModalStore.getState().openModal();
     });
@@ -206,6 +212,18 @@ export function LoginModal({
 
   const inOnboarding = showDiscord || showSuccess;
 
+  /** Invalidate pending authentication callbacks, remember the signed-out choice when storage permits, and close the modal. */
+  const continueSignedOut = () => {
+    if (isLoading) return;
+    authGeneration.current += 1;
+    try {
+      localStorage.setItem(CONTINUE_SIGNED_OUT_KEY, "1");
+    } catch (e) {
+      console.warn("Couldn't remember the choice to continue without an account", e);
+    }
+    closeModal();
+  };
+
   return (
     <Transition appear show={isOpen} afterLeave={() => setLoggedInUsername(null)}>
       <div className="fixed inset-0 z-[100]">
@@ -242,7 +260,7 @@ export function LoginModal({
                   renderOnboarding()
                 ) : (
                   <>
-                    {/* ── Form pane ── (no dismiss control — login is required) */}
+                    {/* ── Form pane ── */}
                     <div className="relative flex w-full flex-col lg:w-1/2">
                       <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 sm:py-12">
                         <div className="w-full">
@@ -287,6 +305,22 @@ export function LoginModal({
                           />}
                         </div>
                       </div>
+
+                      {!isChallengeActive && (
+                        <div className="px-6 pb-4 text-center sm:px-10">
+                          <button
+                            type="button"
+                            onClick={continueSignedOut}
+                            disabled={isLoading}
+                            className="text-sm font-medium text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Continue without an account
+                          </button>
+                          <p className="mt-1 text-xs text-white/40">
+                            Generate images with your own WaveSpeed API key. Images are saved on this computer.
+                          </p>
+                        </div>
+                      )}
 
                       <div className="px-6 pb-6 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-white/25 sm:px-10">
                         &copy; {new Date().getFullYear()} ArtCraft. All rights
@@ -352,3 +386,12 @@ function LoginShowcase({ videoUrl }: { videoUrl: string }) {
 }
 
 export default LoginModal;
+
+/** Read the remembered signed-out choice, treating unavailable browser storage as no saved choice. */
+function continuesSignedOut(): boolean {
+  try {
+    return localStorage.getItem(CONTINUE_SIGNED_OUT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}

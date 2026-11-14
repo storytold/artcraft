@@ -2,6 +2,7 @@ use crate::client::router_midjourney_client::RouterMidjourneyClient;
 use crate::client::multi_router_client::MultiRouterClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
+use crate::client::router_wavespeed_client::RouterWaveSpeedClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
@@ -11,6 +12,7 @@ pub struct MultiRouterClientBuilder {
   midjourney_client: Option<RouterMidjourneyClient>,
   artcraft_client: Option<RouterArtcraftClient>,
   fal_client: Option<RouterFalClient>,
+  maybe_wavespeed_client: Option<RouterWaveSpeedClient>,
   gmicloud_client: Option<RouterGmiCloudClient>,
   grok_api_client: Option<RouterGrokApiClient>,
   kinovi_web_client: Option<RouterKinoviWebClient>,
@@ -23,6 +25,7 @@ impl MultiRouterClientBuilder {
       artcraft_client: None,
       midjourney_client: None,
       fal_client: None,
+      maybe_wavespeed_client: None,
       gmicloud_client: None,
       grok_api_client: None,
       kinovi_web_client: None,
@@ -37,6 +40,11 @@ impl MultiRouterClientBuilder {
 
   pub fn set_fal_client(mut self, client: RouterFalClient) -> Self {
     self.fal_client = Some(client);
+    self
+  }
+
+  pub fn set_wavespeed_client(mut self, client: RouterWaveSpeedClient) -> Self {
+    self.maybe_wavespeed_client = Some(client);
     self
   }
 
@@ -70,6 +78,7 @@ impl MultiRouterClientBuilder {
       artcraft_client: self.artcraft_client,
       midjourney_client: self.midjourney_client,
       fal_client: self.fal_client,
+      maybe_wavespeed_client: self.maybe_wavespeed_client,
       gmicloud_client: self.gmicloud_client,
       grok_api_client: self.grok_api_client,
       kinovi_web_client: self.kinovi_web_client,

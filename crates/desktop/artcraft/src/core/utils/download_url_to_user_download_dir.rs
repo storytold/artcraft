@@ -62,7 +62,7 @@ pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &
   Ok(path)
 }
 
-fn persist_download(mut file: NamedTempFile, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
+pub(crate) fn persist_download(mut file: NamedTempFile, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
   let stem = Path::new(filename).file_stem().and_then(|stem| stem.to_str()).unwrap_or("artcraft");
   let extension = Path::new(filename).extension().and_then(|ext| ext.to_str()).unwrap_or("bin");
   for suffix in 0..10_000 {
@@ -78,7 +78,7 @@ fn persist_download(mut file: NamedTempFile, directory: &Path, filename: &str) -
 }
 
 // TODO: This likely needs more protections.
-fn check_url_file_name_for_downloadability(filename: &str) -> Result<(), ArtcraftError> {
+pub(crate) fn check_url_file_name_for_downloadability(filename: &str) -> Result<(), ArtcraftError> {
   if filename.trim().is_empty() {
     error!("Download filename is empty!");
     return Err(ArtcraftError::BadDownloadFilename { path: "".into() }.into());

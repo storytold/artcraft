@@ -1,12 +1,16 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { ModelPage } from "./model-pages";
 import { ImageModel, Model, VideoModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
+import { defaultModelForPage } from "./defaultModelForPage";
 
 interface ClassyModelSelectorState {
   selectedModels: { [page in ModelPage]?: Model };
+  selectedModelIds: { [page in ModelPage]?: string };
   selectedProviders: { [page in ModelPage]?: { [modelId: string]: GenerationProvider } };
   setSelectedModel: (page: ModelPage, model: Model) => void;
+  restoreSelectedModel: (page: ModelPage, models: Model[]) => void;
   setSelectedProvider: (
     page: ModelPage,
     modelId: string,
@@ -14,9 +18,10 @@ interface ClassyModelSelectorState {
   ) => void;
 }
 
-export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
-  (set) => ({
+export const useClassyModelSelectorStore = create<ClassyModelSelectorState>()(
+  persist((set) => ({
     selectedModels: {},
+    selectedModelIds: {},
     selectedProviders: {},
     setSelectedModel: (page, model) =>
       set((state) => ({
@@ -24,7 +29,22 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
           ...state.selectedModels,
           [page]: model,
         },
+        selectedModelIds: {
+          ...state.selectedModelIds,
+          [page]: model.tauriId,
+        },
       })),
+    restoreSelectedModel: (page, models) =>
+      set((state) => {
+        const current = state.selectedModels[page];
+        const next =
+          models.find((model) => model.tauriId === state.selectedModelIds[page]) ??
+          (current && models.find((model) => model.tauriId === current.tauriId)) ??
+          current ??
+          (models.length > 0 ? defaultModelForPage(models, page) : undefined);
+        if (next === undefined || next === current) return state;
+        return { selectedModels: { ...state.selectedModels, [page]: next } };
+      }),
     setSelectedProvider: (page, modelId, provider) =>
       set((state) => ({
         selectedProviders: {
@@ -35,7 +55,13 @@ export const useClassyModelSelectorStore = create<ClassyModelSelectorState>(
           },
         },
       })),
-  })
+  }), {
+    name: "artcraft-model-selections",
+    partialize: (state) => ({
+      selectedModelIds: state.selectedModelIds,
+      selectedProviders: state.selectedProviders,
+    }),
+  }),
 );
 
 export const getSelectedImageModel = (
@@ -70,14 +96,16 @@ export const getSelectedVideoModel = (
   return maybeModel as VideoModel;
 };
 
+/** Read the saved provider and normalize retired or incompatible choices against the selected model. */
 export const getSelectedProviderForModel = (
   page: ModelPage,
   modelId: string
 ): GenerationProvider | undefined => {
-  const { selectedProviders } = useClassyModelSelectorStore.getState();
+  const { selectedModels, selectedProviders } = useClassyModelSelectorStore.getState();
   const byPage = selectedProviders[page];
   if (!byPage) return undefined;
-  return resolveSelectedProvider(byPage[modelId]);
+  const model = selectedModels[page];
+  return resolveSelectedProvider(byPage[modelId], model?.id === modelId ? model : undefined);
 };
 
 // Reactive hooks for UI subscriptions
@@ -105,24 +133,36 @@ export const useSelectedVideoModel = (
 };
 
 // TODO: This shouldn't be on a per-page basis.
+/** Subscribe to the normalized provider choice for a page/model pair; return undefined without a model ID. */
 export const useSelectedProviderForModel = (
   page: ModelPage,
   modelId: string | undefined
 ): GenerationProvider | undefined =>
   useClassyModelSelectorStore((s) =>
-    modelId ? resolveSelectedProvider(s.selectedProviders[page]?.[modelId]) : undefined
+    modelId ? resolveSelectedProvider(
+      s.selectedProviders[page]?.[modelId],
+      s.selectedModels[page]?.id === modelId ? s.selectedModels[page] : undefined,
+    ) : undefined
   );
 
+/** Redirect retired direct providers and reject unknown values, falling back when the model disallows a choice. */
 function resolveSelectedProvider(
   provider: GenerationProvider | undefined,
+  model?: Model,
 ): GenerationProvider | undefined {
   // Retired direct accounts must not reach generation or pricing requests,
   // including when an older selection is still in state.
-  if (
+  const resolvedProvider =
     provider === GenerationProvider.Sora ||
     provider === GenerationProvider.WorldLabs
-  ) {
-    return GenerationProvider.Artcraft;
+      ? GenerationProvider.Artcraft
+      : provider;
+  if (resolvedProvider === undefined) return undefined;
+  const allowedProviders = model?.getProviders();
+  if (allowedProviders && !allowedProviders.includes(resolvedProvider)) {
+    return allowedProviders[0];
   }
-  return provider;
+  return Object.values(GenerationProvider).includes(resolvedProvider)
+    ? resolvedProvider
+    : undefined;
 }

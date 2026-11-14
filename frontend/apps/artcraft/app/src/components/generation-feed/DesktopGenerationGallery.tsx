@@ -20,6 +20,7 @@ import {
   downloadMediaFileToDisk,
   downloadMediaFilesToFolder,
 } from "./desktopMediaActions";
+import { galleryItemQuickActions } from "./galleryItemQuickActions";
 
 // Desktop twin of the webapp's GenerationGallery: renders the shared feed in
 // whichever layout the TopBar toggle picked (grid by default), injecting the
@@ -197,6 +198,7 @@ function SelectionDownloadBar({
 // record, make-video seeds the video page, share copies the public media
 // link, download saves via Tauri. stopPropagation keeps taps from also
 // opening the lightbox.
+/** Render only the quick actions available for this completed item, including local-only download restrictions. */
 function ItemActions({
   item,
   promptToken,
@@ -212,17 +214,8 @@ function ItemActions({
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
-  const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
-  const isAudio = item.mediaClass === "audio";
-  // Audio v1: no recreate / make-video — share + download only.
-  const recreateMediaClass: "image" | "video" | null = isVideo
-    ? "video"
-    : is3D || isAudio
-      ? null
-      : "image";
-  const canRecreate = !!promptToken && !!recreateMediaClass;
-  const canMakeVideo = !!enableMakeVideo && !isVideo && !is3D && !isAudio;
+  const actions = galleryItemQuickActions(item, { promptToken, enableMakeVideo });
+  const recreateMediaClass = actions.recreateMediaClass;
 
   const buttonClass =
     variant === "card"
@@ -281,7 +274,7 @@ function ItemActions({
 
   return (
     <>
-      {canRecreate && (
+      {recreateMediaClass && (
         <Tooltip content="Recreate" position="top">
           <button
             type="button"
@@ -297,7 +290,7 @@ function ItemActions({
           </button>
         </Tooltip>
       )}
-      {canMakeVideo && (
+      {actions.makeVideo && (
         <Tooltip content="Make Video" position="top">
           <button
             type="button"
@@ -309,20 +302,22 @@ function ItemActions({
           </button>
         </Tooltip>
       )}
-      <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Share"
-          className={buttonClass}
-        >
-          <DynamicIcon
-            icon={shareCopied ? CheckIcon : LinkIcon}
-            className="text-sm"
-          />
-        </button>
-      </Tooltip>
-      {item.fullImage && (
+      {actions.share && (
+        <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
+          <button
+            type="button"
+            onClick={handleShare}
+            aria-label="Share"
+            className={buttonClass}
+          >
+            <DynamicIcon
+              icon={shareCopied ? CheckIcon : LinkIcon}
+              className="text-sm"
+            />
+          </button>
+        </Tooltip>
+      )}
+      {actions.download && (
         <Tooltip content="Download" position="top">
           <button
             type="button"

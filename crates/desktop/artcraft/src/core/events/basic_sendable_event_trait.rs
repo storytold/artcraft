@@ -37,7 +37,7 @@ pub trait BasicSendableEvent : Clone + Debug + Serialize {
 
   /// Default implementation of send().
   /// This serializes and sends the event to the frontend.
-  fn send(&self, app: &AppHandle) -> Result<(), SendableEventError> {
+  fn send(&self, app: &AppHandle<impl tauri::Runtime>) -> Result<(), SendableEventError> {
     let wrapped = BasicEventWrapper {
       status: Self::EVENT_STATUS,
       data: self.clone(),
@@ -50,7 +50,7 @@ pub trait BasicSendableEvent : Clone + Debug + Serialize {
     Ok(())
   }
   
-  fn send_infallible(&self, app: &AppHandle) {
+  fn send_infallible(&self, app: &AppHandle<impl tauri::Runtime>) {
     if let Err(err) = self.send(app) {
       // Fail open
       error!("Failed to send event `{}`: {:?}", Self::FRONTEND_EVENT_NAME.to_str(), err);

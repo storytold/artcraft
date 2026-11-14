@@ -57,9 +57,10 @@ export const pickDownloadDirectory = async (): Promise<string | null> => {
 
 /** Downloads `url` to an explicit absolute filesystem path. */
 export const downloadUrlToPath = async (url: string, path: string) => {
-  await download(url, path);
+  await downloadTo(url, path);
 };
 
+/** Honor the download-location preference and cancellation, then download to an explicit or default destination. */
 export const downloadFileFromUrl = async (url: string, _mediaClass?: string, model?: string) => {
   console.log("GOT THE URL", url);
   try {
@@ -69,7 +70,7 @@ export const downloadFileFromUrl = async (url: string, _mediaClass?: string, mod
       return;
     }
     if (typeof chosen === "string") {
-      await download(url, chosen);
+      await downloadTo(url, chosen);
     } else {
       await DownloadUrl(url, { model });
     }
@@ -77,4 +78,22 @@ export const downloadFileFromUrl = async (url: string, _mediaClass?: string, mod
     console.error("Error downloading file:", error);
     throw error;
   }
+};
+
+// Images made without an account live on this computer and load through Tauri's asset protocol,
+// which the upload plugin can't fetch: the backend copies them into the chosen folder instead.
+const LOCAL_ASSET_URL = /^(asset:\/\/localhost|https?:\/\/asset\.localhost)\//;
+
+/** Copy local asset URLs through the native backend; use the download plugin for other URLs. */
+const downloadTo = async (url: string, path: string) => {
+  if (LOCAL_ASSET_URL.test(url)) {
+    const separatorIndex = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+    const directory = separatorIndex === 0 || (separatorIndex === 2 && /^[A-Za-z]:/.test(path))
+      ? path.slice(0, separatorIndex + 1)
+      : path.slice(0, separatorIndex);
+    const filename = path.slice(separatorIndex + 1);
+    await DownloadUrl(url, { directory, filename });
+    return;
+  }
+  await download(url, path);
 };

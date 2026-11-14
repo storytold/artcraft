@@ -88,7 +88,7 @@ describe("desktop catalog", () => {
     expect(images.find((model) => model.tauriId === "gpt_image_1")?.getProviders())
       .toEqual([GenerationProvider.Artcraft]);
     expect(videos.find((model) => model.tauriId === "sora_2")?.getProviders())
-      .toEqual([GenerationProvider.Artcraft]);
+      .toEqual([GenerationProvider.Artcraft, GenerationProvider.WaveSpeed]);
     expect(SPLAT_MODELS.map((model) => model.tauriId)).toEqual([
       "marble_0p1_mini", "marble_0p1_plus",
     ]);

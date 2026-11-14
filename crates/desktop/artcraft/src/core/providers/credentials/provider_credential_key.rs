@@ -8,6 +8,8 @@ pub enum ProviderCredentialKey {
   // ========== API KEYS==========
 
   FalApiKey,
+  #[serde(rename = "wavespeed_api_key")]
+  WaveSpeedApiKey,
   ReplicateApiKey,
 
   // ========== WEB LOGINS ==========
@@ -20,10 +22,12 @@ pub enum ProviderCredentialKey {
 
 
 impl ProviderCredentialKey {
+  /// Identify the payload representation expected for each provider credential.
   pub fn get_type(&self) -> ProviderCredentialType {
     match self {
       // Api keys
       Self::FalApiKey => ProviderCredentialType::ApiKey,
+      Self::WaveSpeedApiKey => ProviderCredentialType::ApiKey,
       Self::ReplicateApiKey => ProviderCredentialType::ApiKey,
       // Web logins
       Self::GrokWebLogin => ProviderCredentialType::WebLogin,
@@ -33,10 +37,12 @@ impl ProviderCredentialKey {
     }
   }
 
+  /// Return the profile filename, including the legacy WaveSpeed migration identity.
   pub fn get_filename(&self) -> &'static str {
     match self {
       // Api keys
       ProviderCredentialKey::FalApiKey => "fal.api_key.txt",
+      ProviderCredentialKey::WaveSpeedApiKey => "wavespeed.api_key.txt",
       ProviderCredentialKey::ReplicateApiKey => "replicate.api_key.txt",
       // Web logins
       ProviderCredentialKey::GrokWebLogin => "grok.web_login.toml",

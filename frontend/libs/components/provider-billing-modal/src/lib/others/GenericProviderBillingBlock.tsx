@@ -24,12 +24,15 @@ export function GenericProviderBillingBlock({
   );
 }
 
+/** Return the provider name used in billing guidance, falling back to Artcraft. */
 function getServiceProviderName(provider: GenerationProvider) : string {
   switch (provider) {
     case GenerationProvider.Sora:
       return "Sora";
     case GenerationProvider.Fal:
       return "Fal";
+    case GenerationProvider.WaveSpeed:
+      return "WaveSpeed";
     case GenerationProvider.Grok:
       return "Grok";
     case GenerationProvider.Midjourney:
