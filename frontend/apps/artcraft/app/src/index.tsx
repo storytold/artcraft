@@ -1,3 +1,4 @@
+import { initializeAppTheme } from "@storyteller/ui-settings-modal";
 import { StrictMode, useEffect } from "react";
 import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import { BrowserRouter } from "react-router-dom";
@@ -51,21 +52,7 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     PostHogInit();
   }, [env]);
 
-  // Apply stored theme early on mount
-  useEffect(() => {
-    const key = "st-theme";
-    const value = (localStorage.getItem(key) || "gray").trim();
-    const allowed = ["light", "gray", "black", "aurora", "sunset", "gradient"];
-    const normalized = value === "gradient" ? "aurora" : value;
-    const theme = allowed.includes(value) ? (normalized as string) : "gray";
-    const root = document.documentElement;
-    const toRemove: string[] = [];
-    root.classList.forEach((c) => {
-      if (c.startsWith("theme-")) toRemove.push(c);
-    });
-    toRemove.forEach((c) => root.classList.remove(c));
-    root.classList.add(`theme-${theme}`);
-  }, []);
+  useEffect(initializeAppTheme, []);
 
   /// Initizations that run only once on 1ST mount ///
   function setPage() {

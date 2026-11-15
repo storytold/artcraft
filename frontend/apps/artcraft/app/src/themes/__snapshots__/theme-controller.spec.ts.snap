@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`keeps each of the five built-in palette declarations unchanged 1`] = `
+[
+  "0b3cf41b8519a2c72ea28c679e5fbabbccb342a32f0db08c81b8c1a3647953ce",
+  "c7ba54430af0baf21907c0513af8625db29bb9a96001e0536708bce5d11482be",
+  "909cca6195cae0254f79f330819a2418cfae9fae039be37e8aa59c2264f04831",
+  "798f7baf965615dc73bed0771bd229b8996cb9f4764afce5ce4d482f86982619",
+  "aa54bd2769645256678500d710dda334a9bb9d1e100800f9a68babe70b7d1462",
+  "7c65eff6009af3b8fab05231ceb1f712520d2e0e9c69e83e792917076af076c3",
+  "06a3815132abfbb1f97b92d0a57de99de776caaf4167165aa9cf49c86806bbce",
+]
+`;
