@@ -12,7 +12,6 @@ import {
 } from "../../../../../libs/components/settings-modal/src/lib/themes/palette";
 import type { ThemeUpdate } from "../../../../../libs/components/settings-modal/src/lib/themes/desktop-theme";
 import { readFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 const baseCss = readFileSync(__dirname + "/../styles/base.css", "utf8");
 
 const PALETTE: Palette = {
@@ -330,16 +329,23 @@ it("ignores unknown properties but rejects missing fields, arrays and unsafe col
 });
 
 it("keeps each of the five built-in palette declarations unchanged", () => {
-  // Snapshot just the original declarations, excluding new Custom-only hooks.
-  const originalPalettes = baseCss.match(
-    /:root \{[\s\S]*?\n\}|\.theme-(?:light|gray|black|aurora|sunset)[^{]*\{\n {2}--st-bg:[\s\S]*?\n\}/g,
+  const blocks = baseCss.match(
+    /:root \{\n {2}--st-bg:[\s\S]*?\n\}|\.theme-(?:light|gray|black|aurora|sunset)[^{]*\{\n {2}--st-bg:[\s\S]*?\n\}/g,
   );
-  expect(originalPalettes).toHaveLength(7);
-  expect(
-    originalPalettes?.map((block) =>
-      createHash("sha256").update(block).digest("hex"),
+  expect(blocks).toHaveLength(6);
+  // Keep values readable in the snapshot so changes can be reviewed as colors.
+  const names = ["root", "light", "gray", "black", "aurora", "sunset"];
+  const palettes = blocks?.map((block, index) => [
+    names[index],
+    Object.fromEntries(
+      Array.from(block.matchAll(/(--[\w-]+):\s*([^;]+);/g))
+        .filter(
+          ([, key]) => !key.startsWith("--ease-") && !key.startsWith("--dur-"),
+        )
+        .map(([, key, value]) => [key, value.replace(/\s+/g, " ").trim()]),
     ),
-  ).toMatchSnapshot();
+  ]);
+  expect(Object.fromEntries(palettes ?? [])).toMatchSnapshot();
 });
 
 function setup(desktop = true) {

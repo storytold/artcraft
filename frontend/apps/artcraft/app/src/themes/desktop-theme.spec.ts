@@ -65,3 +65,12 @@ it("removes its listener if native setup fails and allows a later retry", async 
   await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(3));
   expect(mocks.unlisten).toHaveBeenCalledTimes(2);
 });
+
+it("handles asynchronous listener and native teardown failures without leaking callbacks", async () => {
+  mocks.unlisten.mockRejectedValueOnce(new Error("webview closing"));
+  const stop = await watchDesktopTheme(vi.fn());
+  mocks.invoke.mockRejectedValueOnce(new Error("native teardown failed"));
+  stop();
+  await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(2));
+  expect(mocks.unlisten).toHaveBeenCalledTimes(1);
+});

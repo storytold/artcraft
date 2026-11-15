@@ -888,3 +888,8 @@ img {
   background-color: var(--st-controls);
   border-color: var(--st-bg);
 }
+
+.theme-custom .bg-primary,
+.theme-custom .bg-brand-primary {
+  color: var(--st-accent-text);
+}

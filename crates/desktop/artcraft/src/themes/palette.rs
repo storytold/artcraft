@@ -25,7 +25,7 @@ pub struct HexColor(String);
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "status", rename_all = "camelCase")]
 pub enum ThemeUpdate {
-  Ready { palette: Palette },
+  Ready { palette: Box<Palette> },
   Error { reason: ThemeError },
 }
 
@@ -57,7 +57,7 @@ pub fn theme_path() -> Option<PathBuf> {
 
 pub fn read_theme(path: &Path) -> ThemeUpdate {
   match read_palette(path) {
-    Ok(palette) => ThemeUpdate::Ready { palette },
+    Ok(palette) => ThemeUpdate::Ready { palette: Box::new(palette) },
     Err(reason) => ThemeUpdate::Error { reason },
   }
 }
@@ -191,7 +191,7 @@ pub(crate) mod tests {
     std::fs::write(&path, VALID).unwrap();
     symlink(&path, &link).unwrap();
     assert_eq!(read_theme(&link), ThemeUpdate::Error { reason: ThemeError::Unreadable });
-    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0)).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o000)).unwrap();
     assert_eq!(read_theme(&path), ThemeUpdate::Error { reason: ThemeError::Unreadable });
   }
 

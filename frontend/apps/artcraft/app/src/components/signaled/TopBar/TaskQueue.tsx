@@ -240,13 +240,13 @@ const InProgressCard = ({
                   content="Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages."
                   position="top"
                   strategy="fixed"
-                  className="w-[200px] text-wrap bg-yellow-400/60"
+                  className="w-[200px] text-wrap bg-warning/60"
                   zIndex={50}
                   delay={100}
                 >
                   <TriangleAlertIcon
                     
-                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400" />
+                    className="h-3 w-3 shrink-0 text-warning/60 transition-all hover:text-warning" />
                 </Tooltip>
               )}
             </div>

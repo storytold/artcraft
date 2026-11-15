@@ -87,7 +87,7 @@ export class ThemeController {
     this.cancelWatch();
     this.clearOverrides();
     const { root, isDesktop, watch } = this.env;
-    for (const name of [...root.classList]) {
+    for (const name of Array.from(root.classList)) {
       if (name.startsWith("theme-")) root.classList.remove(name);
     }
     const { theme } = this.snapshot;
@@ -177,7 +177,8 @@ export class ThemeController {
       root.style.setProperty(key, value);
     }
     this.overrides = properties;
-    root.classList.add("theme-custom");
+    if (!root.classList.contains("theme-custom"))
+      root.classList.add("theme-custom");
     root.classList.toggle(
       "theme-custom-light",
       properties["--st-color-scheme"] === "light",

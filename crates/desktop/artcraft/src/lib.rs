@@ -166,12 +166,18 @@ pub fn run() {
 
   let builder = tauri::Builder::default()
     .manage(Arc::new(updates::Updates::default()))
+    .on_page_load(|webview, payload| {
+      // A reload/navigation can discard JS before its async cleanup reaches Rust.
+      if webview.label() == "main" && payload.event() == tauri::webview::PageLoadEvent::Started {
+        if let Some(state) = webview.try_state::<ThemeSubscription>() {
+          state.clear();
+        }
+      }
+    })
     .on_window_event(|window, event| {
       if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
         if let Some(state) = window.try_state::<ThemeSubscription>() {
-          if let Ok(mut active) = state.active.lock() {
-            active.take();
-          }
+          state.clear();
         }
       }
       if window.try_state::<Arc<updates::Updates>>().is_some_and(|updates| updates.prevents_exit()) {

@@ -41,19 +41,23 @@ export async function watchDesktopTheme(
         onChange(payload.update);
     },
   );
+  const releaseListener = () => {
+    // Tauri types this as void, but its implementation returns an IPC promise.
+    void Promise.resolve(unlisten()).catch(() => undefined);
+  };
   try {
     await enqueue(() =>
       invoke("watch_custom_theme_command", { subscriptionId }),
     );
   } catch (error) {
     active = false;
-    unlisten();
+    releaseListener();
     throw error;
   }
   return () => {
     if (!active) return;
     active = false;
-    unlisten();
+    releaseListener();
     void enqueue(() =>
       invoke("unwatch_custom_theme_command", { subscriptionId }),
     ).catch(() => undefined);

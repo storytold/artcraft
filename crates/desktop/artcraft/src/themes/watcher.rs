@@ -1,4 +1,5 @@
 use crate::themes::palette::{read_theme, ThemeError, ThemeUpdate};
+use notify::event::ModifyKind;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -11,10 +12,10 @@ const SAVE_DEBOUNCE: Duration = Duration::from_millis(120);
 /// One subscription owns both the OS watcher and its worker. Dropping it stops
 /// notifications and joins the worker; there is no polling when the file is idle.
 pub struct ThemeWatcher {
-  watcher: Option<RecommendedWatcher>,
+  maybe_watcher: Option<RecommendedWatcher>,
   cancelled: Arc<AtomicBool>,
-  wake: mpsc::SyncSender<bool>,
-  worker: Option<JoinHandle<()>>,
+  wake: mpsc::SyncSender<()>,
+  maybe_worker: Option<JoinHandle<()>>,
 }
 
 impl ThemeWatcher {
@@ -23,22 +24,36 @@ impl ThemeWatcher {
     // Watch the directory, not the inode: editors commonly save by rename.
     // Creating only the per-app directory also lets a missing theme appear later.
     std::fs::create_dir_all(parent).map_err(|_| "Cannot create the theme directory.")?;
+    // OS events can use canonical paths (notably /private/var on macOS).
+    let parent = parent.canonicalize().map_err(|_| "Cannot locate the theme directory.")?;
+    let path = parent.join(path.file_name().ok_or("Cannot locate theme.json.")?);
     let (wake, events) = mpsc::sync_channel(1);
     let event_sender = wake.clone();
     let watched_path = path.clone();
+    let watched_parent = parent.to_path_buf();
+    let watch_failed = Arc::new(AtomicBool::new(false));
+    let callback_failed = watch_failed.clone();
     let mut watcher = notify::recommended_watcher(move |event: notify::Result<Event>| {
-      let signal = match event {
-        Ok(event) if !matches!(event.kind, EventKind::Access(_)) && event.paths.iter().any(|p| p == &watched_path) => Some(false),
-        Err(_) => Some(true),
-        _ => None,
+      let relevant = match event {
+        Ok(event) => {
+          let directory_lost = event.paths.contains(&watched_parent) && matches!(event.kind, EventKind::Remove(_) | EventKind::Modify(ModifyKind::Name(_)));
+          if directory_lost {
+            callback_failed.store(true, Ordering::Release);
+          }
+          event.need_rescan() || directory_lost || (!matches!(event.kind, EventKind::Access(_)) && event.paths.contains(&watched_path))
+        },
+        Err(_) => {
+          callback_failed.store(true, Ordering::Release);
+          true
+        },
       };
-      if let Some(watch_error) = signal {
-        // A bounded queue coalesces save bursts without unbounded memory growth.
-        let _ = event_sender.try_send(watch_error);
+      if relevant {
+        // A bounded queue coalesces saves; the separate flag never loses errors.
+        let _ = event_sender.try_send(());
       }
     })
     .map_err(|_| "Cannot watch the theme directory.")?;
-    watcher.watch(parent, RecursiveMode::NonRecursive).map_err(|_| "Cannot watch the theme directory.")?;
+    watcher.watch(&parent, RecursiveMode::NonRecursive).map_err(|_| "Cannot watch the theme directory.")?;
     let cancelled = Arc::new(AtomicBool::new(false));
     let worker_cancelled = cancelled.clone();
     let worker = thread::Builder::new()
@@ -48,17 +63,17 @@ impl ThemeWatcher {
         if !send(previous.clone()) {
           return;
         }
-        while let Ok(watch_error) = events.recv() {
+        while events.recv().is_ok() {
           if worker_cancelled.load(Ordering::Acquire) {
             break;
           }
           // One bounded delay settles truncate/write and atomic-save event bursts.
           thread::sleep(SAVE_DEBOUNCE);
-          let watch_error = events.try_iter().fold(watch_error, |a, b| a || b);
+          let _ = events.try_recv();
           if worker_cancelled.load(Ordering::Acquire) {
             break;
           }
-          let update = if watch_error { ThemeUpdate::Error { reason: ThemeError::WatchError } } else { read_theme(&path) };
+          let update = if watch_failed.load(Ordering::Acquire) { ThemeUpdate::Error { reason: ThemeError::WatchError } } else { read_theme(&path) };
           if update != previous {
             previous = update.clone();
             if !send(update) {
@@ -68,16 +83,16 @@ impl ThemeWatcher {
         }
       })
       .map_err(|_| "Cannot start the theme watcher.")?;
-    Ok(Self { watcher: Some(watcher), cancelled, wake, worker: Some(worker) })
+    Ok(Self { maybe_watcher: Some(watcher), cancelled, wake, maybe_worker: Some(worker) })
   }
 }
 
 impl Drop for ThemeWatcher {
   fn drop(&mut self) {
     self.cancelled.store(true, Ordering::Release);
-    self.watcher.take();
-    let _ = self.wake.try_send(false);
-    if let Some(worker) = self.worker.take() {
+    self.maybe_watcher.take();
+    let _ = self.wake.try_send(());
+    if let Some(worker) = self.maybe_worker.take() {
       let _ = worker.join();
     }
   }
@@ -141,6 +156,40 @@ mod tests {
     drop(watcher);
     std::fs::write(path, VALID).unwrap();
     assert!(matches!(updates.recv_timeout(TIMEOUT), Err(mpsc::RecvTimeoutError::Disconnected)));
+  }
+
+  #[test]
+  fn reports_when_the_watched_directory_is_removed() {
+    let dir = tempfile::tempdir().unwrap();
+    let parent = dir.path().join("app");
+    let (watcher, updates) = start(parent.join("theme.json"));
+    updates.recv_timeout(TIMEOUT).unwrap();
+    std::fs::remove_dir(&parent).unwrap();
+    assert_eq!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Error { reason: ThemeError::WatchError });
+    drop(watcher);
+  }
+
+  #[test]
+  fn fails_safely_if_the_directory_is_not_a_directory() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("file");
+    std::fs::write(&path, "not a directory").unwrap();
+    assert!(ThemeWatcher::start(path.join("theme.json"), |_| true).is_err());
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn watches_the_canonical_location_of_a_symlinked_config_directory() {
+    let dir = tempfile::tempdir().unwrap();
+    let actual = dir.path().join("actual");
+    let alias = dir.path().join("alias");
+    std::fs::create_dir(&actual).unwrap();
+    std::os::unix::fs::symlink(&actual, &alias).unwrap();
+    let (watcher, updates) = start(alias.join("theme.json"));
+    updates.recv_timeout(TIMEOUT).unwrap();
+    std::fs::write(actual.join("theme.json"), VALID).unwrap();
+    assert!(matches!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Ready { .. }));
+    drop(watcher);
   }
 
   fn start(path: PathBuf) -> (ThemeWatcher, mpsc::Receiver<ThemeUpdate>) {
