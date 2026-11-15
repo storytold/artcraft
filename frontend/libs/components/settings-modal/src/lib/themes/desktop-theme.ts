@@ -27,39 +27,39 @@ export async function watchDesktopTheme(
   onChange: (update: ThemeUpdate) => void,
 ): Promise<() => void> {
   if (!IsDesktopApp()) return () => undefined;
-  const [{ invoke }, { listen }] = await Promise.all([
-    import("@tauri-apps/api/core"),
-    import("@tauri-apps/api/event"),
-  ]);
-  const subscriptionId = crypto.randomUUID();
-  let active = true;
-  // Subscribe before starting so the initial snapshot cannot race the listener.
-  const unlisten = await listen<ThemeEvent>(
-    "artcraft-custom-theme",
-    ({ payload }) => {
-      if (active && payload.subscriptionId === subscriptionId)
-        onChange(payload.update);
-    },
-  );
-  const releaseListener = () => {
-    // Tauri types this as void, but its implementation returns an IPC promise.
-    void Promise.resolve(unlisten()).catch(() => undefined);
-  };
-  try {
-    await enqueue(() =>
-      invoke("watch_custom_theme_command", { subscriptionId }),
+  return enqueue(async () => {
+    const [{ invoke }, { listen }] = await Promise.all([
+      import("@tauri-apps/api/core"),
+      import("@tauri-apps/api/event"),
+    ]);
+    const subscriptionId = crypto.randomUUID();
+    let active = true;
+    // Subscribe before starting so the initial snapshot cannot race the listener.
+    const unlisten = await listen<ThemeEvent>(
+      "artcraft-custom-theme",
+      ({ payload }) => {
+        if (active && payload.subscriptionId === subscriptionId)
+          onChange(payload.update);
+      },
     );
-  } catch (error) {
-    active = false;
-    releaseListener();
-    throw error;
-  }
-  return () => {
-    if (!active) return;
-    active = false;
-    releaseListener();
-    void enqueue(() =>
-      invoke("unwatch_custom_theme_command", { subscriptionId }),
-    ).catch(() => undefined);
-  };
+    const releaseListener = () => {
+      // Tauri types this as void, but its implementation returns an IPC promise.
+      void Promise.resolve(unlisten()).catch(() => undefined);
+    };
+    try {
+      await invoke("watch_custom_theme_command", { subscriptionId });
+    } catch (error) {
+      active = false;
+      releaseListener();
+      throw error;
+    }
+    return () => {
+      if (!active) return;
+      active = false;
+      releaseListener();
+      void enqueue(() =>
+        invoke("unwatch_custom_theme_command", { subscriptionId }),
+      ).catch(() => undefined);
+    };
+  });
 }

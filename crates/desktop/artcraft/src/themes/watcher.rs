@@ -1,7 +1,7 @@
 use crate::themes::palette::{read_theme, ThemeError, ThemeUpdate};
 use notify::event::ModifyKind;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc};
 use std::thread::{self, JoinHandle};
@@ -35,13 +35,7 @@ impl ThemeWatcher {
     let callback_failed = watch_failed.clone();
     let mut watcher = notify::recommended_watcher(move |event: notify::Result<Event>| {
       let relevant = match event {
-        Ok(event) => {
-          let directory_lost = event.paths.contains(&watched_parent) && matches!(event.kind, EventKind::Remove(_) | EventKind::Modify(ModifyKind::Name(_)));
-          if directory_lost {
-            callback_failed.store(true, Ordering::Release);
-          }
-          event.need_rescan() || directory_lost || (!matches!(event.kind, EventKind::Access(_)) && event.paths.contains(&watched_path))
-        },
+        Ok(event) => event_requires_read(&event, &watched_path, &watched_parent, &callback_failed),
         Err(_) => {
           callback_failed.store(true, Ordering::Release);
           true
@@ -96,6 +90,15 @@ impl Drop for ThemeWatcher {
       let _ = worker.join();
     }
   }
+}
+
+fn event_requires_read(event: &Event, path: &Path, parent: &Path, watch_failed: &AtomicBool) -> bool {
+  let directory_lost = event.paths.iter().any(|p| p == parent) && matches!(event.kind, EventKind::Remove(_) | EventKind::Modify(ModifyKind::Name(_)));
+  if directory_lost {
+    watch_failed.store(true, Ordering::Release);
+  }
+  // Queue overflow/rescan events can have no paths: reread before filtering paths.
+  event.need_rescan() || directory_lost || (!matches!(event.kind, EventKind::Access(_)) && event.paths.iter().any(|p| p == path))
 }
 
 #[cfg(test)]
@@ -190,6 +193,15 @@ mod tests {
     std::fs::write(actual.join("theme.json"), VALID).unwrap();
     assert!(matches!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Ready { .. }));
     drop(watcher);
+  }
+
+  #[test]
+  fn pathless_rescan_events_trigger_a_read_without_marking_the_watch_failed() {
+    let failed = AtomicBool::new(false);
+    let event = Event::new(EventKind::Other).set_flag(notify::event::Flag::Rescan);
+    assert!(event.paths.is_empty());
+    assert!(event_requires_read(&event, Path::new("/app/theme.json"), Path::new("/app"), &failed));
+    assert!(!failed.load(Ordering::Acquire));
   }
 
   fn start(path: PathBuf) -> (ThemeWatcher, mpsc::Receiver<ThemeUpdate>) {

@@ -71,3 +71,10 @@ custom background. Choose readable foreground/background pairs; ArtCraft does
 not adjust palette contrast automatically.
 
 This feature does not read a shared Craft palette or add automatic System mode.
+
+## Regression tests
+
+From `frontend/`, run `npm run test:themes --workspace=artcraft` for the focused
+Vitest suite. On a machine with the native build prerequisites installed, run
+`SQLX_OFFLINE=true cargo test -p artcraft themes:: --lib` from the repository root
+for parsing, file reading, watcher behavior, and subscription cleanup tests.
