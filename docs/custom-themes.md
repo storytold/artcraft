@@ -51,17 +51,17 @@ CSS properties, never as stylesheet text. The frontend cannot choose a file path
 
 ## Palette mapping
 
-| Field      | ArtCraft tokens                                              | Editor HSL tokens                            |
-|------------|--------------------------------------------------------------|----------------------------------------------|
-| background | Background and sunken surfaces                               | background                                   |
-| surface    | Panels, modals, controls (including matching RGB values)      | card, popover, secondary, muted               |
-| border     | Panel/control borders and dividers                           | border, input                                |
-| text       | Foreground (including matching RGB values)                   | foreground and surface foregrounds           |
-| textDim    | Dim text token                                               | muted-foreground                             |
-| accent     | Semantic primary/brand colors, focus, selection, accent ink   | primary, accent, ring                        |
-| accentText | Accent text and selection text                               | primary-foreground, accent-foreground        |
-| danger     | Semantic danger color                                        | destructive                                  |
-| warning    | Semantic warning color                                       | warning                                      |
+| Field      | ArtCraft tokens                                             | Editor HSL tokens                     |
+|------------|-------------------------------------------------------------|---------------------------------------|
+| background | Background and sunken surfaces                              | background                            |
+| surface    | Panels, modals, controls (including matching RGB values)    | card, popover, secondary, muted       |
+| border     | Panel/control borders and dividers                          | border, input                         |
+| text       | Foreground (including matching RGB values)                  | foreground and surface foregrounds    |
+| textDim    | Dim text token                                              | muted-foreground                      |
+| accent     | Semantic primary/brand colors, focus, selection, accent ink | primary, accent, ring                 |
+| accentText | Accent text and selection text                              | primary-foreground, accent-foreground |
+| danger     | Semantic danger color                                       | destructive                           |
+| warning    | Semantic warning color                                      | warning                               |
 
 RGB and HSL values are derived from the same validated colors. Semantic Tailwind
 colors retain their existing fallbacks in the five built-in themes. Explicitly
