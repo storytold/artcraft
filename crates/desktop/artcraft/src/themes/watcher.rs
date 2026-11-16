@@ -47,6 +47,12 @@ impl ThemeWatcher {
       }
     })
     .map_err(|_| "Cannot watch the theme directory.")?;
+    // Windows can silently drop a deleted directory's own watch. Observe its
+    // deletion from the containing directory too; the callback keeps filtering
+    // all paths except theme.json and the theme directory itself.
+    if let Some(containing_directory) = parent.parent() {
+      watcher.watch(containing_directory, RecursiveMode::NonRecursive).map_err(|_| "Cannot watch the containing theme directory.")?;
+    }
     watcher.watch(&parent, RecursiveMode::NonRecursive).map_err(|_| "Cannot watch the theme directory.")?;
     let cancelled = Arc::new(AtomicBool::new(false));
     let worker_cancelled = cancelled.clone();
@@ -170,6 +176,41 @@ mod tests {
     std::fs::remove_dir(&parent).unwrap();
     assert_eq!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Error { reason: ThemeError::WatchError });
     drop(watcher);
+  }
+
+  #[test]
+  fn reports_directory_removal_when_the_theme_directory_watch_is_gone() {
+    let dir = tempfile::tempdir().unwrap();
+    let theme_directory = dir.path().join("app");
+    let (mut watcher, updates) = start(theme_directory.join("theme.json"));
+    assert_eq!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Error { reason: ThemeError::Missing });
+    // Windows can silently drop this watch on deletion. Remove it explicitly so
+    // this test requires the containing-directory notification on every platform.
+    let theme_directory = theme_directory.canonicalize().unwrap();
+    watcher.maybe_watcher.as_mut().unwrap().unwatch(&theme_directory).unwrap();
+    std::fs::remove_dir(&theme_directory).unwrap();
+    assert_eq!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Error { reason: ThemeError::WatchError });
+    assert!(matches!(updates.recv_timeout(QUIET), Err(mpsc::RecvTimeoutError::Timeout)));
+    drop(watcher);
+    assert!(matches!(updates.recv_timeout(TIMEOUT), Err(mpsc::RecvTimeoutError::Disconnected)));
+  }
+
+  #[test]
+  fn ignores_unrelated_changes_in_the_containing_directory() {
+    let dir = tempfile::tempdir().unwrap();
+    let (watcher, updates) = start(dir.path().join("app/theme.json"));
+    assert_eq!(updates.recv_timeout(TIMEOUT).unwrap(), ThemeUpdate::Error { reason: ThemeError::Missing });
+    let other_file = dir.path().join("theme.json");
+    let other_directory = dir.path().join("other-app");
+    let renamed = dir.path().join("renamed-app");
+    std::fs::write(&other_file, VALID).unwrap();
+    std::fs::create_dir(&other_directory).unwrap();
+    std::fs::rename(&other_directory, &renamed).unwrap();
+    std::fs::remove_dir(&renamed).unwrap();
+    std::fs::remove_file(&other_file).unwrap();
+    assert!(matches!(updates.recv_timeout(QUIET), Err(mpsc::RecvTimeoutError::Timeout)));
+    drop(watcher);
+    assert!(matches!(updates.recv_timeout(TIMEOUT), Err(mpsc::RecvTimeoutError::Disconnected)));
   }
 
   #[test]
