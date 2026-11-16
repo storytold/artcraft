@@ -96,3 +96,7 @@ Organize for top-to-bottom reading. Important things first, details later.
 
   Not: `| Model | Configuration | Credits | Speed | Score |` packed tight
   with varying widths per row.
+
+## Shared Craft libraries
+
+Before adding or changing reusable file-format, codec, protocol or UI code, check [craft-libs](https://github.com/storytold/craft-libs) and existing contributor work; reuse its public APIs or extend the appropriate shared library instead of adding an app-local duplicate, keeping app-specific policy and model mapping local and preserving compatibility, security limits and regression coverage.
