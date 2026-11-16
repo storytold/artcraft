@@ -15,8 +15,8 @@ path = "src/lib.rs"
 
 [dependencies]
 
-# External
-infer = "0.19.0" # Mimetype detection
+# Shared Craft libraries
+craft-sniff = { git = "https://github.com/storytold/craft-libs", rev = "425363fadf2cd04909239e978406f9edcc612d75" } # File signature detection
 
 [dev-dependencies]
 test_utils = { path = "../../../testing/test_utils" }
