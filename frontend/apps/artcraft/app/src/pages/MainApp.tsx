@@ -49,7 +49,6 @@ import { DomLevels, usePageSceneStore } from "@storyteller/ui-pagescene";
 
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
-import { UsersApi } from "~/Classes/ApiManager";
 import { authentication } from "~/signals";
 import { AUTH_STATUS } from "~/enums";
 import { useTabStore } from "./Stores/TabState";
@@ -148,16 +147,6 @@ export const MainApp = ({ sceneToken }: Props) => {
     await SoundManager.playFileDeleted();
     toast.error("File deleted.");
   });
-
-  // Session probe (runs once per shell mount).
-  useEffect(() => {
-    const usersApi = new UsersApi();
-    void usersApi.GetSession().then((result) => {
-      console.log(
-        `User Info | Username: ${result.data?.user?.username}, Token: ${result.data?.user?.user_token}`,
-      );
-    });
-  }, []);
 
   const { triggerRecheck } = useLoginModalStore();
   const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
