@@ -16,7 +16,7 @@ pub struct MimetypeInfo {
 impl MimetypeInfo {
   pub fn get_for_bytes(bytes: &[u8]) -> Option<Self> {
     craft_sniff::identify(bytes)
-        .map(|kind| Self::for_kind(kind))
+        .map(Self::for_kind)
   }
 
   pub fn get_for_path<P: AsRef<Path>>(path: P) -> io::Result<Option<Self>> {

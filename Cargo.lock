@@ -1778,7 +1778,7 @@ dependencies = [
 [[package]]
 name = "craft-sniff"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=425363fadf2cd04909239e978406f9edcc612d75#425363fadf2cd04909239e978406f9edcc612d75"
+source = "git+https://github.com/storytold/craft-libs?rev=070005125f0af1a5ae4a59002270e5849505bfc0#070005125f0af1a5ae4a59002270e5849505bfc0"
 
 [[package]]
 name = "craft-update"
