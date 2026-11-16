@@ -1,4 +1,4 @@
-import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
+import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, SettingsIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -11,10 +11,7 @@ import {
   useCreditsBalanceChangedEvent,
   useSubscriptionPlanChangedEvent,
 } from "@storyteller/tauri-events";
-import {
-  useTauriPlatform,
-  useTauriWindowControls,
-} from "@storyteller/tauri-utils";
+import { useTauriPlatform } from "@storyteller/tauri-utils";
 import { Button } from "@storyteller/ui-button";
 import {
   GalleryModal,
@@ -67,6 +64,7 @@ import { AppsQuickMenu } from "./AppsQuickMenu";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { TaskQueue } from "./TaskQueue";
 import { UploadImagesButton } from "./UploadImagesButton";
+import { WindowControls } from "./WindowControls";
 
 interface Props {
   pageName: string;
@@ -186,8 +184,6 @@ export const TopBar = ({ pageName }: Props) => {
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
 
-  const { isDesktop, isMaximized, minimize, toggleMaximize, close } =
-    useTauriWindowControls();
   const platform = useTauriPlatform();
 
   const handleOpenGalleryModal = () => {
@@ -655,34 +651,7 @@ export const TopBar = ({ pageName }: Props) => {
               {/* TODO(bt,2025-09-12): This was the old auth buttons that didn't work. We need to remove this and clean up the DOM. */}
             </div>
 
-            {isDesktop && platform !== "macos" && (
-              <div className="no-drag flex items-center">
-                <Button
-                  variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-white/10 hover:opacity-100"
-                  onClick={minimize}
-                >
-                  <MinusIcon className="text-xs" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-white/10 hover:opacity-100"
-                  onClick={toggleMaximize}
-                >
-                  <DynamicIcon
-                    icon={isMaximized ? PictureInPicture2Icon : SquareIcon}
-                    className="text-xs"
-                  />
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent p-0 text-base-fg opacity-70 shadow-none hover:bg-red hover:text-white hover:opacity-100"
-                  onClick={close}
-                >
-                  <XIcon className="text-lg" />
-                </Button>
-              </div>
-            )}
+            <WindowControls />
           </div>
         </nav>
       </header>

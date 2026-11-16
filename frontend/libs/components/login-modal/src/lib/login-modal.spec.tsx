@@ -179,4 +179,10 @@ describe("native login modal integration", () => {
     expect(useLoginModalStore.getState().isOpen).toBe(false);
     expect(screen.queryByRole("heading", { name: "Logged in as google_user" })).toBeNull();
   });
+
+  it("keeps the host window controls reachable above the login screen", async () => {
+    await act(async () => { render(<LoginModal windowControls={<button type="button">Close window</button>} />); });
+    expect(screen.getByText("Create your account")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Close window" })).toBeTruthy();
+  });
 });
