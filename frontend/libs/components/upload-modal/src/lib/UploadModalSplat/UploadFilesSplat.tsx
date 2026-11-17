@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { BoxIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, LoaderIcon, RotateCwIcon, XIcon } from "lucide-react";
+import { BoxIcon } from "lucide-react";
 import { WebGLRenderer, PerspectiveCamera } from "three";
 import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
 import { upload3DObjects } from "../UploadModal3D/utilities/upload3DObjects";
@@ -15,6 +14,7 @@ import {
   UploaderState,
   UploaderStates,
 } from "../Types";
+import { UploadFilesPanels } from "../UploadFilesPanels";
 
 interface FileEntry {
   file: File;
@@ -127,7 +127,7 @@ export const UploadFilesSplat = ({
       const canvas = canvasRef.current;
       const currentFile = fileEntries[previewIndex]?.file;
       const rafId = requestAnimationFrame(() => {
-        snapshotCanvasAsThumbnail({
+        void snapshotCanvasAsThumbnail({
           targetNode: canvas,
           resultCallback: (blob) => {
             if (blob && currentFile) {
@@ -222,7 +222,7 @@ export const UploadFilesSplat = ({
     );
 
     if (files.length === 1 && fileEntries.length === 1) {
-      upload3DObjects({
+      void upload3DObjects({
         title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
         assetFile: files[0],
         engineCategory,
@@ -236,7 +236,7 @@ export const UploadFilesSplat = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: files.length });
 
-    upload3DObjectsBatch({
+    void upload3DObjectsBatch({
       files,
       thumbnails: pendingThumbnails,
       engineCategory,
@@ -277,7 +277,7 @@ export const UploadFilesSplat = ({
     setIsUploading(true);
     setOverallProgress({ current: 0, total: failedFiles.length });
 
-    upload3DObjectsBatch({
+    void upload3DObjectsBatch({
       files: failedFiles,
       thumbnails: failedThumbnails,
       engineCategory,
@@ -331,118 +331,33 @@ export const UploadFilesSplat = ({
       )}
 
       {isMulti ? (
-        <PanelGroup direction="horizontal">
-          <Panel defaultSize={33} minSize={20}>
-          <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-none border border-white/15 bg-black/30 p-2">
-            {fileEntries.map((entry, i) => (
-              <li
-                key={i}
-                className={`group flex items-center justify-between gap-1.5 rounded-[3px] px-2 py-1 cursor-pointer text-sm transition-colors ${
-                  i === previewIndex ? "bg-white/10" : "hover:bg-white/5"
-                }`}
-                onClick={() => setPreviewIndex(i)}
-              >
-                <span className="truncate flex-1" title={entry.file.name}>
-                  {entry.file.name.slice(0, entry.file.name.lastIndexOf("."))}
-                </span>
-                <span className="shrink-0">
-                  {entry.status === "idle" && (
-                    <button
-                      className="opacity-40 hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFile(i);
-                      }}
-                      title="Remove"
-                    >
-                      <XIcon />
-                    </button>
-                  )}
-                  {entry.status === "uploading" && (
-                    <LoaderIcon
-                      
-                      className="animate-spin opacity-60" />
-                  )}
-                  {entry.status === "success" && (
-                    <CheckIcon  className="text-green-400" />
-                  )}
-                  {entry.status === "error" && (
-                    <span className="flex items-center gap-1">
-                      <CircleAlertIcon
-                        
-                        className="text-red-400" />
-                      <button
-                        className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          retrySingleFile(i);
-                        }}
-                        title="Retry"
-                      >
-                        <RotateCwIcon />
-                      </button>
-                    </span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-          </Panel>
-
-          <PanelResizeHandle className="flex w-4 items-center justify-center">
-            <div
-              className="h-8 w-1 rounded-none bg-white/20 transition-colors hover:bg-white/40"
-              onPointerDown={(e) => e.stopPropagation()}
+        <UploadFilesPanels
+          entries={fileEntries}
+          previewIndex={previewIndex}
+          setPreviewIndex={setPreviewIndex}
+          onRemove={removeFile}
+          onRetry={(i) => void retrySingleFile(i)}
+        >
+          <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
+            <canvas
+              className="pointer-events-none h-full min-h-48 !w-full"
+              ref={canvasCallbackRef}
             />
-          </PanelResizeHandle>
-
-          <Panel defaultSize={67} minSize={25}>
-          <div className="flex h-full flex-col gap-2">
-            <div className="relative w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
-              <canvas
-                className="pointer-events-none h-full min-h-48 !w-full"
-                ref={canvasCallbackRef}
-              />
-              {!currentFile && (
-                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
-                  <BoxIcon />
-                  Your model preview will appear here
-                </h6>
-              )}
-              {previewStatus.type.includes("Error") && (
-                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
-                  {previewStatus.type}
-                  {previewStatus.message && <br />}
-                  {previewStatus.message}
-                </h6>
-              )}
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
-                disabled={previewIndex === 0}
-              >
-                <ChevronLeftIcon />
-              </Button>
-              <span className="text-sm opacity-60">
-                {previewIndex + 1} / {fileEntries.length}
-              </span>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  setPreviewIndex((p) =>
-                    Math.min(fileEntries.length - 1, p + 1)
-                  )
-                }
-                disabled={previewIndex === fileEntries.length - 1}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </div>
+            {!currentFile && (
+              <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
+                <BoxIcon />
+                Your model preview will appear here
+              </h6>
+            )}
+            {previewStatus.type.includes("Error") && (
+              <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
+                {previewStatus.type}
+                {previewStatus.message && <br />}
+                {previewStatus.message}
+              </h6>
+            )}
           </div>
-          </Panel>
-        </PanelGroup>
+        </UploadFilesPanels>
       ) : (
         <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-none border border-white/15 bg-black/30">
           <canvas

@@ -75,7 +75,7 @@ function pickClosestScaleCandidate<T extends { distance: number; edge: ScaleEdge
     return shouldPreferCandidate && !shouldPreferBestCandidate
       ? candidate
       : bestCandidate;
-  });
+  }, candidates[0]);
 }
 
 export function snapPosition({
@@ -124,8 +124,10 @@ export function snapPosition({
     if (snapCandidatesWithinThreshold.length === 0) {
       return null;
     }
-    return snapCandidatesWithinThreshold.reduce((closest, current) =>
-      current.distance < closest.distance ? current : closest,
+    return snapCandidatesWithinThreshold.reduce(
+      (closest, current) =>
+        current.distance < closest.distance ? current : closest,
+      snapCandidatesWithinThreshold[0],
     );
   }
 

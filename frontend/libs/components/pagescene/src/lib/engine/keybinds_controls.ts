@@ -259,9 +259,9 @@ export class MouseControls {
 
     if (event.button !== 0 && this.camera) {
       const camera_pos = new THREE.Vector3(
-        parseFloat(this.camera.position.x.toFixed(2)),
-        parseFloat(this.camera.position.y.toFixed(2)),
-        parseFloat(this.camera.position.z.toFixed(2)),
+        Number.parseFloat(this.camera.position.x.toFixed(2)),
+        Number.parseFloat(this.camera.position.y.toFixed(2)),
+        Number.parseFloat(this.camera.position.z.toFixed(2)),
       );
       this.camera_last_pos.copy(camera_pos);
     }
@@ -408,9 +408,9 @@ export class MouseControls {
     }
 
     const camera_pos = new THREE.Vector3(
-      parseFloat(this.camera.position.x.toFixed(2)),
-      parseFloat(this.camera.position.y.toFixed(2)),
-      parseFloat(this.camera.position.z.toFixed(2)),
+      Number.parseFloat(this.camera.position.x.toFixed(2)),
+      Number.parseFloat(this.camera.position.y.toFixed(2)),
+      Number.parseFloat(this.camera.position.z.toFixed(2)),
     );
     if (this.camera_last_pos.equals(new THREE.Vector3(0, 0, 0))) {
       this.camera_last_pos.copy(camera_pos);

@@ -31,7 +31,7 @@ if [[ "${desktops[0]}" != "$work/$base/share/applications/ai.artcraft.app.deskto
 fi
 install -Dm644 "$script_dir/ai.artcraft.app.metainfo.xml" "$work/$base/share/metainfo/ai.artcraft.app.metainfo.xml"
 sed -i 's/^Name=.*/Name=ArtCraft Studio/' "$work/$base/share/applications/ai.artcraft.app.desktop"
-test -x "$work/$base/bin/artcraft"
+[[ -x "$work/$base/bin/artcraft" ]]
 case "$arch" in
   x86_64) machine='Advanced Micro Devices X86-64' ;;
   aarch64) machine='AArch64' ;;

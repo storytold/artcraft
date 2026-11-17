@@ -120,6 +120,7 @@ export const SliderV2 = ({
 
       {variant === "filled" ? (
         <div
+          role="presentation"
           ref={sliderRef}
           className={twMerge(
             "glass border-ui-border group relative h-7 w-full cursor-pointer overflow-hidden rounded-lg border",
@@ -146,6 +147,7 @@ export const SliderV2 = ({
               </span>
             )}
             <div
+              role="presentation"
               className={twMerge(
                 "absolute right-0 top-1/2 mr-1 h-4 w-0.5 -translate-y-1/2 rounded-full",
                 isDragging ? "bg-white" : "bg-white/50"
@@ -158,6 +160,7 @@ export const SliderV2 = ({
         </div>
       ) : (
         <div
+          role="presentation"
           ref={sliderRef}
           className={twMerge(
             "relative h-4 w-full cursor-pointer flex items-center",
@@ -173,6 +176,7 @@ export const SliderV2 = ({
             />
           )}
           <div
+            role="presentation"
             className={twMerge(
               "absolute top-1/2 z-10 size-4 -translate-y-1/2 rounded-full border-2 border-white bg-white shadow transition-colors duration-200 hover:ring-[4px] hover:ring-white/20",
               isDragging ? "ring-[4px] ring-white/20" : ""

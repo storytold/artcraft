@@ -22,7 +22,6 @@ import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  CommandSuccessStatus,
   GenerateImage,
   GenerateImageRequest,
 } from "@storyteller/tauri-api";
@@ -42,6 +41,7 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 interface PromptBox3DProps {
   cameras: Camera[];
@@ -328,7 +328,7 @@ export const PromptBox3D = ({
     if (onBeforeSubmit && !onBeforeSubmit()) return;
     const trimmed = prompt.trim();
     if (!trimmed) return;
-    if (isFinite(maxLen) && trimmed.length > maxLen) {
+    if (isOverPromptLimit(trimmed.length, maxLen)) {
       toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
@@ -341,7 +341,7 @@ export const PromptBox3D = ({
     if (onBeforeSubmit && !onBeforeSubmit()) {
       return;
     }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -509,13 +509,8 @@ export const PromptBox3D = ({
 
         console.log("generateResponse", generateResponse);
 
-        if (generateResponse.status === CommandSuccessStatus.Success) {
-          setIsEnqueueing(false);
-          return;
-        } else {
-          setIsEnqueueing(false);
-          return;
-        }
+        setIsEnqueueing(false);
+        return;
       }
 
       try {
@@ -543,7 +538,7 @@ export const PromptBox3D = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 
@@ -627,6 +622,7 @@ export const PromptBox3D = ({
         {onBuildModeChange && (
           <div className="flex">
             <div
+              role="presentation"
               className="glass glass-no-hover rounded-full p-1 shadow-xl"
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
@@ -679,6 +675,7 @@ export const PromptBox3D = ({
           />
         )}
         <div
+          role="presentation"
           className={twMerge(
             "glass relative w-full p-4",
             isPromptBoxFocused && "border-primary",
@@ -746,11 +743,7 @@ export const PromptBox3D = ({
                 }}
               />
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           {buildMode === "manual" && (

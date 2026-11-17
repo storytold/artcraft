@@ -37,30 +37,10 @@ jobs:
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
-          allowed-endpoints: >
-            *.chocolatey.org:443
-            *.crates.io:443
-            *.github.com:443
-            *.githubusercontent.com:443
-            api.github.com:443
-            chocolatey.org:443
-            community.chocolatey.org:443
-            crates.io:443
-            github.com:443
-            index.crates.io:443
-            objects.githubusercontent.com:443
-            packages.chocolatey.org:443
-            registry.npmjs.org:443
-            release-assets.githubusercontent.com:443
-            static.crates.io:443
-            static.rust-lang.org:443
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+      - uses: actions/checkout@v7
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
         with:
           toolchain: stable
 
@@ -74,7 +54,7 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
@@ -87,7 +67,7 @@ jobs:
           npm cache clean --force
 
           echo "Installing all workspace dependencies..."
-          npm ci
+          npm ci --ignore-scripts
 
           echo "=== Version Information ==="
           echo "Node version:"
@@ -127,7 +107,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: tauri-apps/tauri-action@6a45448f17a006facb105cc5257b3edbc353038a # v0.5.18
+        uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"

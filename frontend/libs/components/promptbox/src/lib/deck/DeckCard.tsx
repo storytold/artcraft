@@ -10,6 +10,7 @@ import { DynamicIcon } from "@storyteller/icons";
 import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
 import { DeckAddAction, DeckItem } from "./deckTypes";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 /**
  * One-shot pop-in used when a card is added to the deck. Injected inline so
@@ -68,7 +69,7 @@ export const DeckCard = ({
       el.volume = 0.2;
       audioRef.current = el;
       el.onended = () => setIsPlaying(false);
-      el.play();
+      void el.play();
       setIsPlaying(true);
     }
   }, [isPlaying, item.url, stopAudio]);
@@ -87,6 +88,9 @@ export const DeckCard = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={clickOnEnterOrSpace}
       className={twMerge(
         "glass group relative aspect-square w-14 shrink-0 overflow-hidden rounded-[3px] border-2 border-white/30 transition-all duration-200",
         !item.uploading &&

@@ -25,6 +25,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
 
   return (
     <div
+      role="presentation"
       className="border border-ui-panel-border bg-ui-controls flex w-full select-none items-center gap-3 rounded-none px-4 py-2 text-white"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
@@ -50,7 +51,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         onChange={(e) => {
           if (!editor) return;
           pauseTimeline(editor);
-          seekTimeline(editor, parseFloat(e.target.value));
+          seekTimeline(editor, Number.parseFloat(e.target.value));
         }}
         className="h-1 flex-1 cursor-pointer accent-white"
       />

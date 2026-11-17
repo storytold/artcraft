@@ -20,6 +20,7 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -260,7 +261,7 @@ export const PromptBoxEdit = ({
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -437,11 +438,7 @@ export const PromptBoxEdit = ({
                   onBlur={() => setIsFocused(false)}
                 />
                 <PromptFullscreenButton onClick={openFullscreen} />
-                <span
-                  className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
-                >
-                  {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-                </span>
+                <PromptLengthCounter prompt={prompt} maxLen={maxLen} idleClassName="text-white/40" />
               </div>
             </div>
             <div className="mt-3.5 flex items-center justify-between gap-2">

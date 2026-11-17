@@ -27,7 +27,7 @@ export class WaveformCache {
     audioUrl,
   }: GetSourceWaveformSummaryArgs): Promise<SourceWaveformSummary> {
     const existing = this.summaries.get(sourceKey);
-    if (existing) {
+    if (existing !== undefined) {
       return existing;
     }
 

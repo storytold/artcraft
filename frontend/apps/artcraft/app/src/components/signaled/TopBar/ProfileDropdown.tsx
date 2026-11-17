@@ -26,7 +26,7 @@ export default function ProfileDropdown() {
       label: "Logout",
       icon: LogOutIcon,
       onClick: () => {
-        logout();
+        void logout();
       },
     },
   ];

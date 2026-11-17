@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 interface PortalTooltipProps {
   children: React.ReactElement;
@@ -249,6 +250,7 @@ function InfoHint({ content }: { content: ReactNode }) {
       {open &&
         createPortal(
           <div
+            role="presentation"
             // Body-portaled, so inside a Radix modal (promptbox focus mode)
             // taps here must not count as outside clicks on the dialog.
             data-modal-outside-safe=""
@@ -351,6 +353,10 @@ function RichListRow({
 }: RichListRowProps) {
   return (
     <div
+      role="button"
+      aria-disabled={item.disabled || undefined}
+      tabIndex={0}
+      onKeyDown={clickOnEnterOrSpace}
       data-selected={item.selected ? "true" : undefined}
       onClick={() => {
         if (!item.disabled) onClick?.();
@@ -602,6 +608,7 @@ function SubmenuFlyout({
   return (
     <>
       <div
+        role="presentation"
         ref={triggerRef}
         onMouseEnter={scheduleOpen}
         onMouseLeave={scheduleClose}
@@ -1277,6 +1284,10 @@ export const PopoverMenu = ({
 
                             const itemRow = (
                               <div
+                                role="button"
+                                aria-disabled={item.disabled || undefined}
+                                tabIndex={0}
+                                onKeyDown={clickOnEnterOrSpace}
                                 data-selected={
                                   item.selected ? "true" : undefined
                                 }

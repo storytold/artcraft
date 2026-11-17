@@ -135,7 +135,7 @@ export const ButtonDropdown = ({
                           )}
                           <div className="grow text-start">{option.label}</div>
                           <div className="ml-6 font-mono text-[11px] font-normal text-white/45">
-                            {option.description && option.description}
+                            {option.description}
                           </div>
                           {showSelected && (
                             <>
