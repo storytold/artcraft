@@ -8,6 +8,7 @@ import { addClipToCharacter } from "../../../actions";
 import { AssetType, ToastTypes } from "../../../enums";
 import { usePageSceneStore } from "../../../PageSceneStore";
 import type { MediaItem } from "../../../models/assets";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 interface Props {
   debug?: string;
@@ -110,6 +111,10 @@ export const ItemElement = ({ item }: Props) => {
       )}
 
       <div
+        // Only animations are added by a click; the rest are dragged in.
+        role={item.type === AssetType.ANIMATION ? "button" : "presentation"}
+        tabIndex={item.type === AssetType.ANIMATION ? 0 : undefined}
+        onKeyDown={clickOnEnterOrSpace}
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-none border border-white/15 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
         onPointerDown={(event) => dragAndDrop.onPointerDown(event, item, editor)}
         onClick={handleClick}

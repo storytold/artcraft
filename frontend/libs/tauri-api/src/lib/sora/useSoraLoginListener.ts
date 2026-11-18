@@ -21,7 +21,7 @@ export function useSoraLoginListener(
       unlisten = stop;
     };
 
-    setupListener();
+    void setupListener();
 
     return () => {
       if (unlisten) unlisten();

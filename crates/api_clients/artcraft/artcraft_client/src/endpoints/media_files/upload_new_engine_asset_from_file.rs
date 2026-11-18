@@ -35,7 +35,7 @@ pub async fn upload_new_engine_asset_from_file<P: AsRef<Path>>(
   let client = storyteller_client_builder(api_host)
       .build()?;
 
-  let file_bytes = std::fs::read(path.as_ref())?;
+  let file_bytes = tokio::fs::read(path.as_ref()).await?;
   let file_name = path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()

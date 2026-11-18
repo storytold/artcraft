@@ -32,15 +32,19 @@ export type SceneObject = {
 };
 
 export interface SceneManagerAPI {
-  create(media_token: string, name: string, position: THREE.Vector3): void;
-  retrieve(object_uuid: string): void;
-  delete(object_uuid: string): void;
+  create(
+    media_token: string,
+    name: string,
+    position: THREE.Vector3,
+  ): Promise<THREE.Object3D | undefined>;
+  retrieve(object_uuid: string): Promise<THREE.Object3D | undefined>;
+  delete(object_uuid: string): Promise<void>;
   update(
     object_uuid: string,
     position: THREE.Vector3,
     rotation: THREE.Euler,
     scale: THREE.Vector3,
-  ): void;
+  ): Promise<void>;
   selected(): void;
   render_outliner(timeline_characters: { [key: string]: ClipGroup }): void;
   select_object(id: string): void;

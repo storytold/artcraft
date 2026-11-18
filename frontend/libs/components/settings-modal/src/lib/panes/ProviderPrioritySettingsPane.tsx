@@ -139,7 +139,7 @@ export const ProviderPrioritySettingsPane = () => {
 
       setItems(items);
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   const sensors = useSensors(
@@ -178,7 +178,7 @@ export const ProviderPrioritySettingsPane = () => {
         const newOrder = arrayMove(prevItems, oldIndex, newIndex);
 
         // Send update to backend
-        updateProviderPriorityOnBackend(newOrder);
+        void updateProviderPriorityOnBackend(newOrder);
 
         return newOrder;
       });

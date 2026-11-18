@@ -170,7 +170,7 @@ export function useCurrency(): UseCurrencyResult {
 
   useEffect(() => {
     let cancelled = false;
-    fetchRates().then((r) => {
+    void fetchRates().then((r) => {
       if (!cancelled) {
         setRates(r);
         setRatesLoaded(true);

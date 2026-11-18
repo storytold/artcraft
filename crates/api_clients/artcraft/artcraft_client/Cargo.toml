@@ -33,6 +33,7 @@ chrono.workspace = true
 cookie.workspace = true
 log.workspace = true
 reqwest = { workspace = true, features = ["multipart", "gzip"] }
+tokio = { workspace = true, features = ["fs"] }
 url.workspace = true
 
 # Serialization

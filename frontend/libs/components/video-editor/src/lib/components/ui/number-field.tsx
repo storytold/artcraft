@@ -153,7 +153,7 @@ function NumberField({
       ghostRef.current.textContent = ghostValue;
     }
     const paddingLeft =
-      parseFloat(getComputedStyle(inputRef.current).paddingLeft) || 0;
+      Number.parseFloat(getComputedStyle(inputRef.current).paddingLeft) || 0;
     setSuffixLeft(paddingLeft + ghostRef.current.offsetWidth);
   }, [ghostValue, suffix]);
 
@@ -166,7 +166,7 @@ function NumberField({
 
   const handleIconPointerDown = (event: React.PointerEvent) => {
     if (!onScrub || disabled || event.button !== 0) return;
-    const parsed = parseFloat(String(value ?? "0"));
+    const parsed = Number.parseFloat(String(value ?? "0"));
     startValueRef.current = Number.isNaN(parsed) ? 0 : parsed;
     cumulativeDeltaRef.current = 0;
     let hasReceivedFirstMove = false;

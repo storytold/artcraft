@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { EngineContext, setActiveEditor } from "./EngineContext";
 
 import Editor from "../../engine/editor";
+import { ensureAmmoLoaded } from "../../engine/ammoLoader";
 import type { PageSceneAdapter } from "../../adapter";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { usePageSceneStore } from "../../PageSceneStore";
@@ -61,6 +62,9 @@ export const EngineProvider = ({
     // them to null on unmount).
     if (!sceneContainer || !editorCanvas || !camViewCanvas) return undefined;
 
+    // Ammo.js WASM is a global side-effect script the physics path depends on; the singleton
+    // appends it to document.body once, however often the Editor is constructed.
+    void ensureAmmoLoaded();
     const newEditor = new Editor(adapterRef.current);
     newEditor.initialize({
       sceneToken: sceneToken || "",

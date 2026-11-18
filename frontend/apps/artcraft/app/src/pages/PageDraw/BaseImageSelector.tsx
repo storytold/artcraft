@@ -11,6 +11,7 @@ import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 import { BlankCanvasModal, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
+import { v4 as uuidv4 } from "uuid";
 
 const MAX_GALLERY_SELECTIONS = 1;
 
@@ -64,7 +65,7 @@ export const BaseImageSelector = ({
     setIsBlankCanvasModalOpen(false);
     const blankImage: BaseSelectorImage = {
       url: "",
-      mediaToken: `blank_canvas_${width}x${height}_${Math.random().toString(36).substring(2, 8)}`,
+      mediaToken: `blank_canvas_${width}x${height}_${uuidv4()}`,
       isBlankCanvas: true,
       blankCanvasWidth: width,
       blankCanvasHeight: height,
@@ -79,12 +80,12 @@ export const BaseImageSelector = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         uploadImage({
-          title: `reference-image-${Math.random().toString(36).substring(2, 15)}`,
+          title: `reference-image-${uuidv4()}`,
           assetFile: file,
           progressCallback: (newState) => {
             if (newState.status === UploaderStates.success && newState.data) {
               const mediaToken = newState.data || "";
-              (async () => {
+              void (async () => {
                 let finalUrl = reader.result as string;
                 let thumbnailUrlTemplate = undefined;
                 try {

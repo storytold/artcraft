@@ -23,7 +23,7 @@ const scope = self as unknown as {
   postMessage: (message: ConvertResponse, transfer?: Transferable[]) => void;
 };
 
-scope.onmessage = async (event) => {
+const convert = async (event: MessageEvent<ConvertRequest>) => {
   const { id, buffer } = event.data;
   try {
     const group = new FBXLoader().parse(buffer, "");
@@ -45,4 +45,8 @@ scope.onmessage = async (event) => {
   } catch (error) {
     scope.postMessage({ id, ok: false, error: String(error) });
   }
+};
+
+scope.onmessage = (event) => {
+  void convert(event);
 };

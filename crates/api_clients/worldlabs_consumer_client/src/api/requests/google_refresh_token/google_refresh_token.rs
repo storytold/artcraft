@@ -141,8 +141,8 @@ mod tests {
   async fn test_requests() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Debug);
 
-    let refresh_token = "AMf-vByUgA0J9S93vULECe-sD50cbR85AFVYF60gKAmLFF1MBYwXlKRJCsv7z3oSpLtP0ApyOU5fAl52qHWM2U0yKgEu5gQ5UCUDt5SEG4UBRHWvHEmLLcu-Zl04Fq4ljocSEO3qJzuX1wyshmptZxlDPRkjdLYgyn-Kp03woI2yRPKLuQF5hQtABHabsNUh9Zhs129sgxuUlOuw4zsFI4L8UdE3bEuF3k6Mic7KlE3440YwyQ8Qtmk9zHtXIx2ob56N-1WTGSqwMUuQ1mX4OOvLve9bw2zDW3UzchomTWkh732886RPrP-DNRkPbO3FejUEMxuYQFWYX3EEeIEdfNGXFNGPL1dNniSXlSaKadpX699Ishjviv-x9o-pPQa3zoAj3NzWLyd8mn5rDBh9qAO_iDETaeo01Sjhb4mGYfAWZ-g4S6nW778";
-    let refresh_token = WorldLabsRefreshToken::new(refresh_token.to_string());
+    let refresh_token = std::env::var("WORLDLABS_REFRESH_TOKEN")?;
+    let refresh_token = WorldLabsRefreshToken::new(refresh_token);
 
     let result = google_refresh_token(GoogleRefreshTokenArgs {
       refresh_token: &refresh_token,

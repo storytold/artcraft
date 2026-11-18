@@ -194,6 +194,7 @@ export const TimelineClipRow = ({
                 <>
                   {/* click-away backdrop */}
                   <div
+                    role="presentation"
                     className="fixed inset-0"
                     style={{ zIndex: 9998 }}
                     onClick={() => setPickerAnchor(null)}

@@ -91,7 +91,6 @@ class Scene {
   ) {
     this.version = version;
     this.name = name;
-    this.gridHelper;
     this.scene = new THREE.Scene();
     this.hot_items = [];
 
@@ -112,7 +111,7 @@ class Scene {
   initialize() {
     this.scene = new THREE.Scene();
     this.placeholder_manager = new LoadingPlaceHolderManager(this.scene);
-    this.placeholder_manager.initialize();
+    void this.placeholder_manager.initialize();
 
     this._createGrid();
     this._create_base_lighting();
@@ -1026,21 +1025,20 @@ class Scene {
     onComplete: () => void,
     signal?: AbortSignal,
   ): Promise<GLTF> {
-    return new Promise<GLTF>(async (resolve, reject) => {
-      let buffer;
-      try {
-        // Host-supplied CORS-bypassed binary fetch (FetchProxy under
-        // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (
-          await this.deps.fetchAsset(media_url, { signal })
-        ).arrayBuffer();
-      } catch (error) {
-        if ((error as { name?: string })?.name !== "AbortError") {
-          console.error("load GLB from Tauri error:", error);
-        }
-        reject(error);
-        return;
+    let buffer: ArrayBuffer;
+    try {
+      // Host-supplied CORS-bypassed binary fetch (FetchProxy under
+      // Tauri; plain fetch under web hosts that allow it).
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("load GLB from Tauri error:", error);
       }
+      throw error;
+    }
+    return new Promise<GLTF>((resolve, reject) => {
       const glbLoader = new GLTFLoader();
       glbLoader.parse(
         buffer,
@@ -1068,30 +1066,23 @@ class Scene {
     onComplete: () => void,
     signal?: AbortSignal,
   ): Promise<SplatMesh> {
-    return new Promise(async (resolve, reject) => {
-      let buffer;
-      try {
-        // Host-supplied CORS-bypassed binary fetch (FetchProxy under
-        // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (
-          await this.deps.fetchAsset(media_url, { signal })
-        ).arrayBuffer();
-      } catch (error) {
-        if ((error as { name?: string })?.name !== "AbortError") {
-          console.error("load Splat from Tauri error:", error);
-        }
-        reject(error);
-        return;
+    let buffer: ArrayBuffer;
+    try {
+      // Host-supplied CORS-bypassed binary fetch (FetchProxy under
+      // Tauri; plain fetch under web hosts that allow it).
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("load Splat from Tauri error:", error);
       }
-
-      new SplatMesh({
-        fileBytes: buffer,
-        onLoad: (mesh) => {
-          resolve(mesh);
-          onComplete();
-        },
-      });
-    });
+      throw error;
+    }
+    const mesh = new SplatMesh({ fileBytes: buffer });
+    await mesh.initialized;
+    onComplete();
+    return mesh;
   }
 
   /**

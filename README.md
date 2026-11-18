@@ -1,4 +1,9 @@
 <h1 align="center">ArtCraft</h1>
+
+<p align="center">
+  <a href="https://sonarcloud.io/project/overview?id=storytold_artcraft"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
+  <a href="https://coderabbit.ai"><img alt="Reviewed by CodeRabbit" src="https://img.shields.io/coderabbit/prs/github/storytold/artcraft?style=flat-square&label=Reviewed%20by%20CodeRabbit&logo=coderabbit"></a>
+</p>
 <p align="center"><strong>The IDE for artists.</strong></p>
 
 <!-- Main video: https://www.youtube.com/watch?v=kzvQMdg66Go
@@ -126,13 +131,15 @@ Additional provider integrations are planned for Kling, Google, Runway, and Luma
 
 ## Downloads
 
-- [Stable releases for Windows and macOS](https://getartcraft.com/)
-- [Latest builds on GitHub](https://github.com/storytold/artcraft/releases)
+- [Stable releases for Windows, macOS, and Linux](https://getartcraft.com/)
+- [Latest builds on GitHub](https://github.com/storytold/artcraft/releases) (including AppImage, DEB, RPM, Arch, and Flatpak packages)
+- [Linux packaging notes](./packaging/linux/README.md)
 - [Build from source](./_docs/dev_setup.md), including Linux
 
 ## Documentation
 
 - [Development setup](./_docs/dev_setup.md)
+- [Linux packaging](./packaging/linux/README.md)
 - [Developer documentation](./_docs)
 - [Desktop build and development scripts](./script/artcraft)
 - [Roadmap](./ROADMAP.md)

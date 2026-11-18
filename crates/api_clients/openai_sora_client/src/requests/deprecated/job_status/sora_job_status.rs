@@ -11,7 +11,7 @@ use errors::AnyhowResult;
 use log::{debug, error, warn};
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
-use std::{fs::File, io::Write, path::Path};
+use std::path::Path;
 use url::Url;
 use wreq::Client;
 
@@ -271,9 +271,7 @@ pub async fn get_image_gen_status(status_request: &StatusRequest, credentials: &
 
 pub async fn save_generations_to_dir(generations: &[Generation], dir: &str) -> AnyhowResult<()> {
   let dir = Path::new(dir);
-  if !dir.exists() {
-    std::fs::create_dir_all(dir)?;
-  }
+  tokio::fs::create_dir_all(dir).await?;
   for generation in generations {
     let response = wreq::get(generation.url.clone()).send().await?;
     let image_bytes = response.bytes().await?;
@@ -282,15 +280,13 @@ pub async fn save_generations_to_dir(generations: &[Generation], dir: &str) -> A
     let ext = url.path().split(".").last().unwrap_or("png");
     let path = Path::new(dir).join(format!("{}.{}", generation.id, ext));
 
-    let mut file = File::create(path)?;
-    file.write_all(&image_bytes)?;
+    tokio::fs::write(path, &image_bytes).await?;
 
     let thumbnail_url = generation.encodings.thumbnail.path.clone();
     let thumbnail_response = wreq::get(thumbnail_url).send().await?;
     let thumbnail_bytes = thumbnail_response.bytes().await?;
     let thumbnail_path = Path::new(dir).join(format!("{}_thumbnail.{}", generation.id, ext));
-    let mut thumbnail_file = File::create(thumbnail_path)?;
-    thumbnail_file.write_all(&thumbnail_bytes)?;
+    tokio::fs::write(thumbnail_path, &thumbnail_bytes).await?;
   }
 
   Ok(())

@@ -9,6 +9,7 @@ import {
   type VFXResult,
   type VFXSubTab,
 } from "./types";
+import { v4 as uuidv4 } from "uuid";
 
 type VFXState = {
   subTab: VFXSubTab;
@@ -90,10 +91,7 @@ export const useVFXStore = create<VFXState>()(
 
       startResult: () => {
         const { prompt, resolution, source, mask, reference } = get();
-        const id =
-          typeof crypto !== "undefined" && crypto.randomUUID
-            ? crypto.randomUUID()
-            : Math.random().toString(36).slice(2);
+        const id = uuidv4();
         const result: VFXResult = {
           id,
           status: "pending",

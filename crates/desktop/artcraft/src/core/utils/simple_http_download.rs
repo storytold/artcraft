@@ -1,8 +1,6 @@
 use errors::AnyhowResult;
 use reqwest::Client;
 use reqwest::Url;
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::path::Path;
 
 const USER_AGENT: &str = "storyteller-client/1.0";
@@ -22,13 +20,7 @@ pub async fn simple_http_download<P: AsRef<Path>>(url: &Url, download_path: P) -
   //let response : Response = reqwest::get(url).await?;
   let bytes = response.bytes().await?;
 
-  let mut file = OpenOptions::new()
-      .create(true) // To create a new file
-      .write(true)
-      .truncate(true)
-      .open(download_path)?;
-
-  file.write_all(&bytes)?;
+  tokio::fs::write(download_path, bytes).await?;
 
   Ok(())
 }

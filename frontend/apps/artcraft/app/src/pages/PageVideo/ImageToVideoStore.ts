@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { v4 as uuidv4 } from "uuid";
 
 export type VideoItem = {
   media_token: string;
@@ -33,11 +34,7 @@ type ImageToVideoState = {
 export const useImageToVideoStore = create<ImageToVideoState>((set, get) => ({
   batches: [],
   startBatch: (prompt: string, modelLabel: string, subscriberId?: string) => {
-    const id = subscriberId
-      ? subscriberId
-      : crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+    const id = subscriberId || uuidv4();
     const batch: ImageToVideoBatch = {
       id,
       prompt,
@@ -61,7 +58,7 @@ export const useImageToVideoStore = create<ImageToVideoState>((set, get) => ({
         ? s.batches.findIndex((b) => b.id === pending.id)
         : -1;
       if (idx === -1) {
-        const id = Math.random().toString(36).slice(2);
+        const id = uuidv4();
         const batch: ImageToVideoBatch = {
           id,
           prompt,

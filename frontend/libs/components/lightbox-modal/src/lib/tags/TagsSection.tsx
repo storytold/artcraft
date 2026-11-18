@@ -83,7 +83,7 @@ export function TagsSection({
   useEffect(() => {
     if (currentUsername !== undefined) return;
     let cancelled = false;
-    resolveSessionUsername().then((username) => {
+    void resolveSessionUsername().then((username) => {
       if (!cancelled) setResolvedUsername(username);
     });
     return () => {
@@ -133,7 +133,7 @@ export function TagsSection({
     }
     ownTagsLoadedRef.current = true;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const all: TagDetails[] = [];
       let cursor: string | undefined = undefined;
       for (let page = 0; page < 50; page++) {

@@ -89,8 +89,9 @@ export const ArtCraftSignUp = ({
       {isSignUp ? (
         <>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>Username</label>
+            <label htmlFor="signup-username" className={FIELD_LABEL}>Username</label>
             <Input
+              id="signup-username"
               name="username"
               placeholder="Username"
               required
@@ -99,8 +100,9 @@ export const ArtCraftSignUp = ({
             />
           </div>
           <div className="space-y-2">
-            <label className={FIELD_LABEL}>Email</label>
+            <label htmlFor="signup-email" className={FIELD_LABEL}>Email</label>
             <Input
+              id="signup-email"
               name="email"
               type="email"
               placeholder="you@example.com"
@@ -112,8 +114,9 @@ export const ArtCraftSignUp = ({
         </>
       ) : (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>Email or Username</label>
+          <label htmlFor="signup-username-or-email" className={FIELD_LABEL}>Email or Username</label>
           <Input
+            id="signup-username-or-email"
             name="usernameOrEmail"
             placeholder="you@example.com or username"
             required
@@ -124,9 +127,10 @@ export const ArtCraftSignUp = ({
       )}
 
       <div className="space-y-2">
-        <label className={FIELD_LABEL}>Password</label>
+        <label htmlFor="signup-password" className={FIELD_LABEL}>Password</label>
         <div className="relative">
           <Input
+            id="signup-password"
             name="password"
             type={showPassword ? "text" : "password"}
             placeholder="Min. 8 characters"
@@ -147,9 +151,10 @@ export const ArtCraftSignUp = ({
 
       {isSignUp && (
         <div className="space-y-2">
-          <label className={FIELD_LABEL}>Confirm Password</label>
+          <label htmlFor="signup-confirm-password" className={FIELD_LABEL}>Confirm Password</label>
           <div className="relative">
             <Input
+              id="signup-confirm-password"
               name="confirmPassword"
               type={showConfirm ? "text" : "password"}
               placeholder="Re-enter password"

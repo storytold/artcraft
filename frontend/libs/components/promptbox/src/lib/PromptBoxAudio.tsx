@@ -47,6 +47,7 @@ import {
 import { AudioTuningPopover } from "./common/AudioTuningPopover";
 import { SoundsSettingsPopover } from "./common/SoundsSettingsPopover";
 import { StylePromptRow } from "./common/StylePromptRow";
+import { v4 as uuidv4 } from "uuid";
 
 const DEFAULT_AUDIO_MODEL_ID = "suno_music";
 
@@ -273,7 +274,7 @@ export const PromptBoxAudio = ({
         }
         total += duration;
         added.push({
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: item.fullImage,
           file: new File([], "library-audio"),
           mediaToken: item.id,
@@ -352,7 +353,7 @@ export const PromptBoxAudio = ({
     if (e.key !== "Enter") return;
     if (enterToGenerate && !e.shiftKey) {
       e.preventDefault();
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 

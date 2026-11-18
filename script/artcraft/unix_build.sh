@@ -15,7 +15,7 @@ config_path="${rust_crate_path}/tauri.conf.json"
 
 pushd "${frontend_path}" || exit
 
-npm install --verbose
+npm install --ignore-scripts --verbose
 
 popd || exit
 

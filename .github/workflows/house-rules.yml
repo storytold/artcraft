@@ -1,0 +1,28 @@
+name: House rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - AGENTS.md
+      - CLAUDE.md
+      - .github/workflows/house-rules.yml
+  pull_request:
+    paths:
+      - AGENTS.md
+      - CLAUDE.md
+      - .github/workflows/house-rules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: house-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  house-rules:
+    uses: storytold/craft-common-actions/.github/workflows/house-rules.yml@main
+    with:
+      rust: false

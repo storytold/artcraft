@@ -8,7 +8,7 @@
 let ammoLoadPromise: Promise<void> | null = null;
 
 export const ensureAmmoLoaded = (): Promise<void> => {
-  if (ammoLoadPromise) return ammoLoadPromise;
+  if (ammoLoadPromise !== null) return ammoLoadPromise;
 
   ammoLoadPromise = new Promise<void>((resolve, reject) => {
     if (typeof document === "undefined") {

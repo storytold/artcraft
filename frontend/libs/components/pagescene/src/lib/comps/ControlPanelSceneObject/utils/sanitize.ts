@@ -17,13 +17,13 @@ function sanitizeNumericInput(input: string): number {
   const integerPart = parts[0];
   const decimalPart = parts[1];
 
-  const decimal = decimalPart !== "" ? parseFloat(`.${decimalPart}`) : 0.0;
+  const decimal = decimalPart !== "" ? Number.parseFloat(`.${decimalPart}`) : 0.0;
 
   if (integerPart === undefined) {
     return decimal;
   }
 
-  const integer = parseInt(integerPart);
+  const integer = Number.parseInt(integerPart);
 
   if (decimalPart === undefined) {
     return integer;

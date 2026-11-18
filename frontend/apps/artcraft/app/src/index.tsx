@@ -26,12 +26,12 @@ const ENV = {
 const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   console.log("GlobalSettingsManager()");
 
-  SyncStorytellerApiConfig();
+  void SyncStorytellerApiConfig();
 
   useSignals();
 
   useSignalEffect(() => {
-    persistLogin();
+    void persistLogin();
   });
 
   /// Initizations that depends on ENV vars ///

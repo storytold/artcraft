@@ -87,7 +87,7 @@ export const completedAudioJobs = computed(() => {
 export const shouldPollActiveJobs = signal<boolean>(false);
 
 export const startPollingActiveJobs = () => {
-  PollRecentJobs(); //poll once regardless of polling intervals
+  void PollRecentJobs(); //poll once regardless of polling intervals
   shouldPollActiveJobs.value = true;
 };
 

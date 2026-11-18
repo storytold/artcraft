@@ -94,7 +94,7 @@ async fn download_generated_results(
   }
   ensure!(!urls.is_empty(), "Completed task has no downloadable results");
   let path = checkpoint_path(root, task);
-  let mut checkpoint: AutoDownloadCheckpoint = match std::fs::read(&path) {
+  let mut checkpoint: AutoDownloadCheckpoint = match tokio::fs::read(&path).await {
     Ok(bytes) => serde_json::from_slice(&bytes)?,
     Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
       AutoDownloadCheckpoint { download_time: Local::now(), saved: BTreeMap::new() }

@@ -14,7 +14,7 @@ pub async fn initialize_sora_jwt_bearer_token(app_data_root: &AppDataRoot) -> An
     return Ok(()); // Bearer token already exists.
   }
 
-  let cookie = std::fs::read_to_string(app_data_root.get_sora_cookie_file_path())?
+  let cookie = tokio::fs::read_to_string(app_data_root.get_sora_cookie_file_path()).await?
       .trim()
       .to_string();
 
@@ -22,7 +22,7 @@ pub async fn initialize_sora_jwt_bearer_token(app_data_root: &AppDataRoot) -> An
 
   let bearer = generate_bearer_jwt_with_cookie(&cookie).await?;
 
-  std::fs::write(app_data_root.get_sora_bearer_token_file_path(), bearer)?;
+  tokio::fs::write(app_data_root.get_sora_bearer_token_file_path(), bearer).await?;
 
   Ok(())
 }

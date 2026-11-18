@@ -344,6 +344,7 @@ export const Tooltip = ({
       leaveTo="opacity-0"
     >
       <div
+        role="presentation"
         ref={setTooltipRef}
         {...(portal ? { "data-modal-outside-safe": "" } : {})}
         onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
@@ -396,6 +397,7 @@ export const Tooltip = ({
 
   return (
     <div
+      role="presentation"
       ref={triggerRef}
       onPointerEnter={() => {
         setIsHoveringTrigger(true);
