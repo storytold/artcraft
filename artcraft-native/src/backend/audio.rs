@@ -7,13 +7,16 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use log::warn;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 use tokio::sync::Semaphore;
 
+/// Delay before retrying failed remote previews.
+const RETRY_AFTER: Duration = Duration::from_secs(5);
 /// The webapp's reference preview volume.
+
 const PREVIEW_VOLUME: f32 = 0.2;
 /// Peaks kept per waveform (resampled to however many bars are drawn).
 const PEAK_COUNT: usize = 256;
@@ -32,7 +35,8 @@ pub struct AudioPlayer {
   current: Option<Clip>,
   tx: Sender<Loaded>,
   rx: Receiver<Loaded>,
-  waveforms: HashMap<String, WaveformLookup>,
+  waveforms: HashMap<String, (WaveformLookup, Option<Instant>)>,
+  next_request: u64,
   limiter: Arc<Semaphore>,
   /// The tracks' volume slider, 0–1.
   track_volume: f32,
@@ -65,6 +69,7 @@ pub struct Playback {
 
 /// The clip that's playing, by the caller's key (a track's key is its URL).
 struct Clip {
+  request: u64,
   key: String,
   track: bool,
   /// Where to start once it has downloaded (a seek before it loaded).
@@ -72,14 +77,14 @@ struct Clip {
 }
 
 enum Loaded {
-  Clip { key: String, bytes: Result<Arc<[u8]>, String> },
+  Clip { key: String, request: u64, bytes: Result<Arc<[u8]>, String> },
   Waveform { url: String, waveform: Option<Waveform> },
 }
 
 impl AudioPlayer {
   pub fn new(rt: tokio::runtime::Handle, http: reqwest::Client) -> Self {
     let (tx, rx) = channel();
-    Self { rt, http, output: None, sink: None, current: None, tx, rx, waveforms: HashMap::new(), limiter: Arc::new(Semaphore::new(MAX_CONCURRENT_WAVEFORMS)), track_volume: 1.0 }
+    Self { rt, http, output: None, sink: None, current: None, tx, rx, waveforms: HashMap::new(), next_request: 0, limiter: Arc::new(Semaphore::new(MAX_CONCURRENT_WAVEFORMS)), track_volume: 1.0 }
   }
 
   /// Starts a reference clip under `key`, or stops it if it's what's playing.
@@ -160,10 +165,17 @@ impl AudioPlayer {
   /// The waveform of the track at `url`, downloading and decoding it the first time it's asked
   /// for.
   pub fn waveform(&mut self, ctx: &egui::Context, url: &str) -> WaveformLookup {
-    if let Some(lookup) = self.waveforms.get(url) {
-      return lookup.clone();
+    if let Some((lookup, retry_at)) = self.waveforms.get(url) {
+      match retry_at {
+        Some(deadline) if Instant::now() >= *deadline => {},
+        Some(deadline) => {
+          ctx.request_repaint_after(deadline.saturating_duration_since(Instant::now()));
+          return lookup.clone();
+        },
+        None => return lookup.clone(),
+      }
     }
-    self.waveforms.insert(url.to_owned(), WaveformLookup::Loading);
+    self.waveforms.insert(url.to_owned(), (WaveformLookup::Loading, None));
     let (http, limiter, tx, ctx, url) = (self.http.clone(), self.limiter.clone(), self.tx.clone(), ctx.clone(), url.to_owned());
     self.rt.spawn(async move {
       let waveform = match limiter.acquire_owned().await {
@@ -189,11 +201,11 @@ impl AudioPlayer {
     while let Ok(loaded) = self.rx.try_recv() {
       match loaded {
         Loaded::Waveform { url, waveform } => {
-          self.waveforms.insert(url, waveform.map_or(WaveformLookup::Failed, |w| WaveformLookup::Ready(Arc::new(w))));
+          self.waveforms.insert(url, waveform.map_or_else(|| (WaveformLookup::Failed, Some(Instant::now() + RETRY_AFTER)), |w| (WaveformLookup::Ready(Arc::new(w)), None)));
         },
-        Loaded::Clip { key, bytes } => {
+        Loaded::Clip { key, request, bytes } => {
           // Superseded by another clip (or stopped) while downloading.
-          let Some(clip) = self.current.as_ref().filter(|c| c.key == key) else {
+          let Some(clip) = self.current.as_ref().filter(|c| c.key == key && c.request == request) else {
             continue;
           };
           let (volume, start_at) = (if clip.track { self.track_volume } else { PREVIEW_VOLUME }, clip.start_at);
@@ -214,11 +226,13 @@ impl AudioPlayer {
 
   fn start(&mut self, ctx: &egui::Context, key: &str, url: &str, track: bool, start_at: f32) {
     self.stop();
-    self.current = Some(Clip { key: key.to_owned(), track, start_at });
+    self.next_request += 1;
+    let request = self.next_request;
+    self.current = Some(Clip { key: key.to_owned(), request, track, start_at });
     let (http, tx, ctx, key, url) = (self.http.clone(), self.tx.clone(), ctx.clone(), key.to_owned(), url.to_owned());
     self.rt.spawn(async move {
       let bytes = download(&http, &url).await;
-      let _ = tx.send(Loaded::Clip { key, bytes });
+      let _ = tx.send(Loaded::Clip { key, request, bytes });
       ctx.request_repaint();
     });
   }
@@ -339,5 +353,39 @@ mod tests {
     assert_eq!(waveform.peaks.len(), PEAK_COUNT);
     assert_eq!(waveform.peaks[0], 0.0, "starts silent");
     assert_eq!(*waveform.peaks.last().unwrap(), 1.0, "ends loud");
+  }
+}
+
+#[cfg(test)]
+mod recovery_tests {
+  use super::*;
+
+  #[tokio::test]
+  async fn stale_same_key_success_and_failure_cannot_replace_a_new_clip() {
+    let mut player = AudioPlayer::new(tokio::runtime::Handle::current(), reqwest::Client::new());
+    player.current = Some(Clip { key: "same".into(), request: 2, track: true, start_at: 8.0 });
+    for bytes in [Err("old failure".into()), Ok(Arc::from(&b"old audio"[..]))] {
+      player.tx.send(Loaded::Clip { key: "same".into(), request: 1, bytes }).unwrap();
+    }
+    assert!(player.poll().is_none());
+    assert_eq!(player.track("same").unwrap().position, 8.0);
+    assert!(player.output.is_none());
+    player.tx.send(Loaded::Clip { key: "same".into(), request: 2, bytes: Err("current failure".into()) }).unwrap();
+    assert!(player.poll().unwrap().contains("current failure"));
+    assert!(player.current.is_none());
+  }
+
+  #[tokio::test]
+  async fn failed_waveform_retries_after_cooldown_only_once() {
+    let mut player = AudioPlayer::new(tokio::runtime::Handle::current(), reqwest::Client::new());
+    let ctx = egui::Context::default();
+    let url = "http://127.0.0.1:1/waveform";
+    player.tx.send(Loaded::Waveform { url: url.into(), waveform: None }).unwrap();
+    player.poll();
+    assert!(matches!(player.waveform(&ctx, url), WaveformLookup::Failed));
+    player.waveforms.get_mut(url).unwrap().1 = Some(Instant::now() - RETRY_AFTER);
+    assert!(matches!(player.waveform(&ctx, url), WaveformLookup::Loading));
+    assert!(matches!(player.waveform(&ctx, url), WaveformLookup::Loading));
+    assert!(player.waveforms[url].1.is_none());
   }
 }

@@ -265,7 +265,9 @@ impl CharactersModal {
               Ok(bytes) => {
                 let mut img = RefMedia::uploading(RefKind::Image, None);
                 let key = format!("local://{}", img.id);
-                cache.insert_bytes(ui.ctx(), &key, Arc::from(bytes));
+                let bytes: Arc<[u8]> = Arc::from(bytes);
+                img.local_preview = Some(bytes.clone());
+                cache.insert_bytes(ui.ctx(), &key, bytes);
                 img.preview = Some(key);
                 actions.push(CharactersAction::Upload { ref_id: img.id, path });
                 self.image = Some(img);

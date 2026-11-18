@@ -1,0 +1,7 @@
+# The `storyteller-docs` Netlify site still builds this repository, but its
+# build command (./script/netlify_build_docs.sh) and the docs themselves now
+# live in storytold/artcraft-services, so every deploy preview here fails.
+# Skip those builds until the Netlify site is repointed or disconnected, then
+# delete this file.
+[build]
+  ignore = "exit 0"

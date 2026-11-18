@@ -7,9 +7,9 @@
 
 use std::collections::HashMap;
 use std::io::Cursor;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use egui::{ColorImage, TextureHandle, TextureOptions};
 use image::AnimationDecoder;
@@ -17,6 +17,8 @@ use log::warn;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
 
+/// Delay before retrying failed remote previews.
+const RETRY_AFTER: Duration = Duration::from_secs(5);
 /// How many images may download at once.
 const MAX_CONCURRENT_DOWNLOADS: usize = 6;
 /// Longest side of a decoded image; larger ones are downscaled before upload.
@@ -38,6 +40,7 @@ pub struct MediaCache {
   rx: Receiver<Loaded>,
   entries: HashMap<String, Entry>,
   frame: u64,
+  local_sources: HashMap<String, Weak<[u8]>>,
 }
 
 /// What [`MediaCache::get`] knows about an image.
@@ -61,7 +64,7 @@ enum Entry {
     total: f32,
     last_used: u64,
   },
-  Failed,
+  Failed { retry_at: Instant },
 }
 
 struct Loaded {
@@ -77,7 +80,7 @@ enum Decoded {
 impl MediaCache {
   pub fn new(rt: Handle, http: reqwest::Client) -> Self {
     let (tx, rx) = channel();
-    Self { rt, http, limiter: Arc::new(Semaphore::new(MAX_CONCURRENT_DOWNLOADS)), tx, rx, entries: HashMap::new(), frame: 0 }
+    Self { rt, http, limiter: Arc::new(Semaphore::new(MAX_CONCURRENT_DOWNLOADS)), tx, rx, entries: HashMap::new(), frame: 0, local_sources: HashMap::new() }
   }
 
   /// The texture for `url`, starting its download the first time it's asked for.
@@ -92,7 +95,9 @@ impl MediaCache {
   }
 
   /// Decodes `bytes` off the UI thread and registers the result under `key`.
+  /// Keep a clone of `bytes` while attached so evicted local textures can be decoded again.
   pub fn insert_bytes(&mut self, ctx: &egui::Context, key: &str, bytes: Arc<[u8]>) {
+    self.local_sources.insert(key.to_owned(), Arc::downgrade(&bytes));
     if self.entries.contains_key(key) {
       return;
     }
@@ -120,20 +125,29 @@ impl MediaCache {
           let frames = frames.into_iter().enumerate().map(|(i, (img, d))| (ctx.load_texture(format!("{key}#{i}"), img, TextureOptions::LINEAR), d)).collect();
           Entry::Animated { frames, total, last_used: self.frame }
         },
-        None => Entry::Failed,
+        None => Entry::Failed { retry_at: Instant::now() + RETRY_AFTER },
       };
     }
     let frame = self.frame;
+    self.local_sources.retain(|_, bytes| bytes.strong_count() > 0);
     let crowded = self.entries.len() > SOFT_CAPACITY;
     self.entries.retain(|_, e| match e {
       Entry::Animated { last_used, .. } => frame.saturating_sub(*last_used) < EVICT_ANIMATED_AFTER_FRAMES,
       Entry::Ready { last_used, .. } | Entry::Loading { last_used } => !crowded || frame.saturating_sub(*last_used) < EVICT_AFTER_FRAMES,
-      Entry::Failed => true,
+      Entry::Failed { retry_at } => Instant::now() < *retry_at,
     });
   }
 
   fn lookup(&mut self, ctx: &egui::Context, key: &str, url: &str, animated: bool) -> Lookup {
     let frame = self.frame;
+    if matches!(self.entries.get(key), Some(Entry::Failed { retry_at }) if Instant::now() >= *retry_at) {
+      self.entries.remove(key);
+    }
+    if !self.entries.contains_key(key) {
+      if let Some(bytes) = self.local_sources.get(key).and_then(Weak::upgrade) {
+        self.insert_bytes(ctx, key, bytes);
+      }
+    }
     match self.entries.get_mut(key) {
       Some(Entry::Ready { texture, last_used }) => {
         *last_used = frame;
@@ -157,7 +171,10 @@ impl MediaCache {
         *last_used = frame;
         Lookup::Loading
       },
-      Some(Entry::Failed) => Lookup::Failed,
+      Some(Entry::Failed { retry_at }) => {
+        ctx.request_repaint_after(retry_at.saturating_duration_since(Instant::now()));
+        Lookup::Failed
+      },
       None => {
         self.entries.insert(key.to_owned(), Entry::Loading { last_used: frame });
         self.spawn_download(ctx, key.to_owned(), url.to_owned(), animated);
@@ -241,4 +258,58 @@ fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
 fn to_color_image(rgba: image::RgbaImage) -> ColorImage {
   let size = [rgba.width() as usize, rgba.height() as usize];
   ColorImage::from_rgba_unmultiplied(size, rgba.as_raw())
+}
+
+#[cfg(test)]
+mod recovery_tests {
+  use super::*;
+
+  #[tokio::test]
+  async fn failed_preview_retries_after_cooldown() {
+    let mut cache = MediaCache::new(Handle::current(), reqwest::Client::new());
+    let ctx = egui::Context::default();
+    let url = "http://127.0.0.1:1/image";
+    cache.entries.insert(url.into(), Entry::Loading { last_used: 0 });
+    cache.tx.send(Loaded { key: url.into(), decoded: None }).unwrap();
+    cache.poll(&ctx);
+    assert!(matches!(cache.get(&ctx, url), Lookup::Failed));
+    cache.entries.insert(url.into(), Entry::Failed { retry_at: Instant::now() - RETRY_AFTER });
+    assert!(matches!(cache.get(&ctx, url), Lookup::Loading));
+    assert!(matches!(cache.entries[url], Entry::Loading { .. }));
+  }
+
+  #[tokio::test]
+  async fn attached_local_source_survives_texture_eviction_and_releases_on_detach() {
+    let mut cache = MediaCache::new(Handle::current(), reqwest::Client::new());
+    let ctx = egui::Context::default();
+    let mut png = Cursor::new(Vec::new());
+    image::DynamicImage::new_rgba8(1, 1).write_to(&mut png, image::ImageFormat::Png).unwrap();
+    let bytes: Arc<[u8]> = Arc::from(png.into_inner());
+    cache.insert_bytes(&ctx, "local://test", bytes.clone());
+    wait_ready(&mut cache, &ctx).await;
+    cache.frame += EVICT_AFTER_FRAMES;
+    for n in 0..SOFT_CAPACITY {
+      cache.entries.insert(format!("other{n}"), Entry::Loading { last_used: cache.frame });
+    }
+    cache.poll(&ctx);
+    assert!(!cache.entries.contains_key("local://test"));
+    assert!(matches!(cache.get(&ctx, "local://test"), Lookup::Loading));
+    wait_ready(&mut cache, &ctx).await;
+    drop(bytes);
+    tokio::time::timeout(Duration::from_secs(2), async {
+      while cache.local_sources["local://test"].strong_count() > 0 { tokio::task::yield_now().await; }
+    }).await.unwrap();
+    cache.poll(&ctx);
+    assert!(!cache.local_sources.contains_key("local://test"));
+  }
+
+  async fn wait_ready(cache: &mut MediaCache, ctx: &egui::Context) {
+    tokio::time::timeout(Duration::from_secs(2), async {
+      loop {
+        cache.poll(ctx);
+        if matches!(cache.get(ctx, "local://test"), Lookup::Ready(_)) { break; }
+        tokio::time::sleep(Duration::from_millis(5)).await;
+      }
+    }).await.unwrap();
+  }
 }
