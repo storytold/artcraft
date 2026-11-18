@@ -206,29 +206,44 @@ fn decode(bytes: &[u8]) -> Option<ColorImage> {
 }
 
 /// The frames of an animated GIF or WebP (subsampled to the budget), or `None` when it isn't
-/// animated. Every decoded frame is a whole canvas, so the frames are timed in a first pass and
-/// only the kept ones are decoded into images in a second: one canvas is alive at a time.
+/// animated. Every decoded frame is a whole canvas, so frames are read in one pass and only the
+/// kept ones are thumbnailed: one canvas is alive at a time. The number of frames isn't known up
+/// front, so the step starts at 1 and doubles (merging neighbouring kept frames) whenever more than
+/// [`ANIMATED_MAX_FRAMES`] are kept.
 fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
-  let delays = animation_frames(bytes)?
-    .take(ANIMATED_MAX_SOURCE_FRAMES)
-    .map(|frame| {
-      let (n, d) = frame.ok()?.delay().numer_denom_ms();
-      Some(n as f32 / d.max(1) as f32 / 1000.0)
-    })
-    .collect::<Option<Vec<f32>>>()?;
-  if delays.len() < 2 {
+  // (thumbnail, seconds shown, source frames folded into it)
+  let mut kept: Vec<(image::DynamicImage, f32, usize)> = Vec::new();
+  let mut step = 1;
+  for frame in animation_frames(bytes)?.take(ANIMATED_MAX_SOURCE_FRAMES) {
+    let frame = frame.ok()?;
+    let (n, d) = frame.delay().numer_denom_ms();
+    let secs = n as f32 / d.max(1) as f32 / 1000.0;
+    // Fold a skipped frame's time into the kept one before it.
+    if let Some(last) = kept.last_mut().filter(|last| last.2 < step) {
+      last.1 += secs;
+      last.2 += 1;
+      continue;
+    }
+    kept.push((image::DynamicImage::ImageRgba8(frame.into_buffer()).thumbnail(ANIMATED_SIDE, ANIMATED_SIDE), secs, 1));
+    if kept.len() > ANIMATED_MAX_FRAMES {
+      step *= 2;
+      let mut merged = Vec::with_capacity(kept.len() / 2 + 1);
+      let mut pairs = kept.into_iter();
+      while let Some(mut first) = pairs.next() {
+        if let Some(second) = pairs.next() {
+          first.1 += second.1;
+          first.2 += second.2;
+        }
+        merged.push(first);
+      }
+      kept = merged;
+    }
+  }
+  if kept.iter().map(|k| k.2).sum::<usize>() < 2 {
     return None;
   }
-  // Keep every n-th frame, folding the skipped frames' time into the kept one.
-  let step = delays.len().div_ceil(ANIMATED_MAX_FRAMES);
-  let mut out = Vec::with_capacity(delays.len() / step + 1);
-  for (frame, chunk) in animation_frames(bytes)?.step_by(step).zip(delays.chunks(step)) {
-    let secs: f32 = chunk.iter().sum();
-    let image = image::DynamicImage::ImageRgba8(frame.ok()?.into_buffer()).thumbnail(ANIMATED_SIDE, ANIMATED_SIDE);
-    // Some encoders write 0 ms delays; browsers treat those as ~100 ms.
-    out.push((to_color_image(image.to_rgba8()), if secs < 0.02 { 0.1 * chunk.len() as f32 } else { secs }));
-  }
-  Some(out)
+  // Some encoders write 0 ms delays; browsers treat those as ~100 ms.
+  Some(kept.into_iter().map(|(image, secs, count)| (to_color_image(image.to_rgba8()), if secs < 0.02 { 0.1 * count as f32 } else { secs })).collect())
 }
 
 /// An animated GIF's or WebP's frames, decoded as they're read; `None` when it isn't animated or
@@ -306,7 +321,7 @@ mod tests {
   #[test]
   fn long_animations_are_subsampled_keeping_their_timing() {
     let frames = decode_frames(&gif(8, 8, 100, 2)).expect("animated");
-    assert_eq!(frames.len(), 34, "every 3rd of 100 frames");
+    assert_eq!(frames.len(), 25, "every 4th of 100 frames");
     let total: f32 = frames.iter().map(|(_, secs)| secs).sum();
     assert!((total - 2.0).abs() < 1e-3, "skipped frames' time folds into the kept ones, got {total} s");
   }
