@@ -23,7 +23,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       const prefs = await GetAppPreferences();
       setPreferences(prefs.preferences);
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   const playSounds = preferences?.play_sounds || false;

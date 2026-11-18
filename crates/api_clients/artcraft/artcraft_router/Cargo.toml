@@ -31,7 +31,7 @@ reqwest.workspace = true
 serde.workspace = true
 wreq.workspace = true
 serde_derive.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["fs"] }
 uuid.workspace = true
 
 [dev-dependencies]

@@ -26,7 +26,7 @@ export function clearFontAtlasCache(): void {
 
 export function loadFontAtlas(): Promise<FontAtlas | null> {
   if (cachedAtlas) return Promise.resolve(cachedAtlas);
-  if (atlasFetchPromise) return atlasFetchPromise;
+  if (atlasFetchPromise !== null) return atlasFetchPromise;
 
   atlasFetchPromise = fetch(FONT_ATLAS_PATH)
     .then(async (response) => {

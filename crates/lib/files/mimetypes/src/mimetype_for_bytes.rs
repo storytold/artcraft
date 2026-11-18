@@ -1,14 +1,12 @@
-
 const DEFAULT_BINARY_MIMETYPE : &str = "application/octet-stream";
 
 pub fn get_mimetype_for_bytes(bytes: &[u8]) -> Option<&'static str> {
-  infer::get(bytes)
-      .map(|typ| typ.mime_type())
+  craft_sniff::identify(bytes)
+      .map(|kind| kind.mime_type())
 }
 
 pub fn get_mimetype_for_bytes_or_default(bytes: &[u8]) -> &'static str {
-  infer::get(bytes)
-      .map(|typ| typ.mime_type())
+  get_mimetype_for_bytes(bytes)
       .unwrap_or(DEFAULT_BINARY_MIMETYPE)
 }
 
@@ -37,5 +35,12 @@ mod tests {
 
     assert_eq!(get_mimetype_for_bytes(&bytes), None);
     assert_eq!(get_mimetype_for_bytes_or_default(&bytes), "application/octet-stream");
+  }
+
+  #[test]
+  fn test_mimetype_3d_models() {
+    assert_eq!(get_mimetype_for_bytes(b"glTF\x02\0\0\0"), Some("model/gltf-binary"));
+    assert_eq!(get_mimetype_for_bytes(b"Kaydara FBX Binary  \0\x1a\0"), Some("model/fbx"));
+    assert_eq!(get_mimetype_for_bytes(b"ply\nformat ascii 1.0\n"), Some("model/ply"));
   }
 }

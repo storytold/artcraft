@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ai.artcraft.app</id>
+  <name>ArtCraft Studio</name>
+  <summary>Create images and video with AI</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <developer id="ai.artcraft">
+    <name>ArtCraft</name>
+  </developer>
+  <url type="homepage">https://getartcraft.com</url>
+  <url type="bugtracker">https://github.com/storytold/artcraft/issues</url>
+  <url type="vcs-browser">https://github.com/storytold/artcraft</url>
+  <url type="contact">https://discord.gg/artcraft</url>
+  <description>
+    <p>ArtCraft Studio is a creative desktop workspace for generating AI images and video with connected AI providers.</p>
+    <ul>
+      <li>Text-to-image and image-to-image creation with state-of-the-art models</li>
+      <li>Video generation and camera motion controls</li>
+      <li>Direct integration with Fal, Grok, Midjourney, Sora, and WorldLabs</li>
+      <li>Local task persistence with an embedded SQLite queue</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">ai.artcraft.app.desktop</launchable>
+  <categories>
+    <category>Graphics</category>
+    <category>AudioVideo</category>
+  </categories>
+  <keywords>
+    <keyword>ai</keyword>
+    <keyword>image</keyword>
+    <keyword>video</keyword>
+    <keyword>generation</keyword>
+    <keyword>art</keyword>
+  </keywords>
+  <branding>
+    <color type="primary" scheme_preference="light">#2f7bf5</color>
+    <color type="primary" scheme_preference="dark">#1a5bc4</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">760</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+  <content_rating type="oars-1.1" />
+  <provides>
+    <binary>artcraft</binary>
+  </provides>
+</component>

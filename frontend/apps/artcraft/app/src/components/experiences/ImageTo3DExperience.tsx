@@ -38,6 +38,7 @@ import {
 } from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -69,10 +70,7 @@ const formatTime = (timestamp: number) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-const generateId = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2, 10);
+const generateId = () => uuidv4();
 
 const WORLD_MODEL_PAGE = ModelPage.ImageTo3DWorld;
 const OBJECT_MODEL_PAGE = ModelPage.ImageTo3DObject;
@@ -256,7 +254,7 @@ export const ImageTo3DExperience = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    handleFiles(event.target.files);
+    void handleFiles(event.target.files);
     event.target.value = "";
   };
 
@@ -264,7 +262,7 @@ export const ImageTo3DExperience = ({
     event.preventDefault();
     event.stopPropagation();
     setDragActive(false);
-    handleFiles(event.dataTransfer?.files);
+    void handleFiles(event.dataTransfer?.files);
   };
 
   const handlePickFromLibrary = () => {
@@ -599,6 +597,9 @@ export const ImageTo3DExperience = ({
     <div className="flex justify-center">
       {uploadedPreview ? (
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={clickOnEnterOrSpace}
           className={twMerge(
             "group relative cursor-pointer overflow-hidden border border-white/30 bg-black/30 transition-all hover:border-white/60",
             hasResults ? "aspect-square w-24" : "aspect-square w-48",
@@ -716,7 +717,7 @@ export const ImageTo3DExperience = ({
                   e.stopPropagation();
                   setDragActive(false);
                   if (e.dataTransfer?.files)
-                    handleWorldFiles(
+                    void handleWorldFiles(
                       Array.from(e.dataTransfer.files).filter((f) =>
                         f.type.startsWith("image/"),
                       ),
@@ -754,6 +755,9 @@ export const ImageTo3DExperience = ({
 
     const worldImageThumbnail = (img: WorldImage) => (
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={clickOnEnterOrSpace}
         key={img.id}
         className={twMerge(
           "group relative aspect-square overflow-hidden rounded-[3px] border border-white/30 bg-black/30 transition-all",
@@ -944,7 +948,7 @@ export const ImageTo3DExperience = ({
           <div
             className={twMerge(
               "mx-auto grid h-full w-full grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10",
-              variant === "world" ? "max-w-[1600px]" : "max-w-[1600px]",
+              "max-w-[1600px]",
             )}
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
@@ -1111,7 +1115,7 @@ export const ImageTo3DExperience = ({
               <div
                 className={twMerge(
                   "flex items-center justify-between gap-2.5",
-                  hasResults ? "mt-3" : "mt-3",
+                  "mt-3",
                 )}
               >
                 <ClassyModelSelector
@@ -1177,7 +1181,7 @@ export const ImageTo3DExperience = ({
         className="hidden"
         onChange={(e) => {
           if (e.target.files) {
-            handleWorldFiles(Array.from(e.target.files));
+            void handleWorldFiles(Array.from(e.target.files));
           }
           e.target.value = "";
         }}
@@ -1202,6 +1206,7 @@ export const ImageTo3DExperience = ({
 
       {previewImage && (
         <div
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
           onClick={() => setPreviewImage(null)}
         >

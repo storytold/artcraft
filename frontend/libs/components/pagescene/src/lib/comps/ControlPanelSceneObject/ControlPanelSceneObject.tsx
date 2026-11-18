@@ -119,9 +119,9 @@ export const ControlPanelSceneObject = () => {
 
   function localToEngine(xyz: Record<string, string>) {
     return {
-      x: parseFloat(xyz.x),
-      y: parseFloat(xyz.y),
-      z: parseFloat(xyz.z),
+      x: Number.parseFloat(xyz.x),
+      y: Number.parseFloat(xyz.y),
+      z: Number.parseFloat(xyz.z),
     };
   }
   function engineToLocal(xyz: XYZ) {
@@ -245,7 +245,7 @@ export const ControlPanelSceneObject = () => {
       if (value === "" || value === "-" || value === ".") {
         return true;
       }
-      return !/^-?[0-9]*(.[0-9]*)?$/.test(value);
+      return !/^-?\d*(\.\d*)?$/.test(value);
     });
 
   const handlePositionChange = (xyz: Record<string, string>) => {
@@ -276,9 +276,9 @@ export const ControlPanelSceneObject = () => {
 
   const handleUniformScaleChange = (scale: number) => {
     const updatedScaleValues: Record<string, string> = {};
-    updatedScaleValues.x = (parseFloat(localScale.x) + scale).toString();
-    updatedScaleValues.y = (parseFloat(localScale.y) + scale).toString();
-    updatedScaleValues.z = (parseFloat(localScale.z) + scale).toString();
+    updatedScaleValues.x = (Number.parseFloat(localScale.x) + scale).toString();
+    updatedScaleValues.y = (Number.parseFloat(localScale.y) + scale).toString();
+    updatedScaleValues.z = (Number.parseFloat(localScale.z) + scale).toString();
 
     handleScaleChange(updatedScaleValues);
   };

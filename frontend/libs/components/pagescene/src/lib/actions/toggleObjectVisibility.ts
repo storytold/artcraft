@@ -14,7 +14,7 @@ export function toggleObjectVisibility(editor: Editor, uuid: string): void {
   if (!obj) return;
   const before = obj.visible;
   editor.bus.emit(new OutlinerItemVisibilityToggledEvent(uuid));
-  editor.sceneManager?.hideObject(uuid);
+  void editor.sceneManager?.hideObject(uuid);
   editor.history.record(
     new VisibilityAction(editor, uuid, before, !before),
   );

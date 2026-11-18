@@ -54,10 +54,8 @@ export function appendAlpha({
 
 function stripCssNoise({ text }: { text: string }): string {
   let cleaned = text.trim();
-  cleaned = cleaned
-    .replace(/\s*!important\s*/gi, "")
-    .replace(/;+\s*$/, "")
-    .trim();
+  cleaned = cleaned.replace(/!important/gi, " ").trim();
+  while (cleaned.endsWith(";")) cleaned = cleaned.slice(0, -1).trimEnd();
 
   const colonIndex = cleaned.indexOf(":");
   const parenIndex = cleaned.indexOf("(");
@@ -146,7 +144,7 @@ export function parseColorInput({
       return isValidHex ? cleaned : null;
     }
     case "rgb": {
-      const parts = input.split(",").map((part) => parseInt(part.trim(), 10));
+      const parts = input.split(",").map((part) => Number.parseInt(part.trim(), 10));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "rgb" as const,
@@ -157,7 +155,7 @@ export function parseColorInput({
       return formatHex(color).slice(1);
     }
     case "hsl": {
-      const parts = input.split(",").map((part) => parseFloat(part.trim()));
+      const parts = input.split(",").map((part) => Number.parseFloat(part.trim()));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "hsl" as const,
@@ -168,7 +166,7 @@ export function parseColorInput({
       return formatHex(color).slice(1);
     }
     case "hsv": {
-      const parts = input.split(",").map((part) => parseFloat(part.trim()));
+      const parts = input.split(",").map((part) => Number.parseFloat(part.trim()));
       if (parts.length < 3 || parts.some(Number.isNaN)) return null;
       const color = {
         mode: "hsv" as const,

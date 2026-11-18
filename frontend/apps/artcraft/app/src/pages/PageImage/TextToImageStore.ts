@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { GeneratedImage } from "@storyteller/tauri-events";
 import type { ModelCreator } from "@storyteller/model-list";
+import { v4 as uuidv4 } from "uuid";
 
 export type TextToImageBatch = {
   id: string;
@@ -43,11 +44,7 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
     subscriberId?: string,
     modelCreator?: ModelCreator,
   ) => {
-    const id = subscriberId
-      ? subscriberId
-      : crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+    const id = subscriberId || uuidv4();
     const batch: TextToImageBatch = {
       id,
       prompt,

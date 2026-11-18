@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { CheckIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SaveIcon, SkipBackIcon, SkipForwardIcon, SparklesIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
-import { DynamicIcon } from "@storyteller/icons";
+import { CheckIcon, ImagesIcon, RotateCwIcon, SaveIcon, SparklesIcon, VideoIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
@@ -13,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import { useTabStore } from "~/pages/Stores/TabState";
+import { VideoTransportControls } from "../../components/reusable/VideoTransportControls";
 
 export const VideoFrameExtractor = () => {
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -420,7 +420,7 @@ export const VideoFrameExtractor = () => {
         const file = new File([blob], fileName, { type: "image/png" });
 
         const referenceImage: RefImage = {
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: frameUrl,
           file: file,
           mediaToken: uploadResponse.data,
@@ -515,6 +515,7 @@ export const VideoFrameExtractor = () => {
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
+                        role="presentation"
                         ref={progressBarRef}
                         className="group relative mb-3 h-3 cursor-pointer bg-white/15"
                         onClick={handleProgressBarClick}
@@ -526,6 +527,7 @@ export const VideoFrameExtractor = () => {
                           }}
                         />
                         <div
+                          role="presentation"
                           className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize bg-yellow-400"
                           style={{
                             left: `${duration ? (startTime / duration) * 100 : 0}%`,
@@ -566,61 +568,18 @@ export const VideoFrameExtractor = () => {
                           }}
                         />
                       </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => seekToFrame("first")}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="First Frame"
-                          >
-                            <SkipBackIcon
-                              
-                              className="text-sm text-white" />
-                          </button>
-                          <button
-                            onClick={togglePlayPause}
-                            className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/20 transition-colors hover:bg-white/30"
-                          >
-                            <DynamicIcon
-                              icon={isPlaying ? PauseIcon : PlayIcon}
-                              className="text-white"
-                            />
-                          </button>
-                          <button
-                            onClick={() => seekToFrame("last")}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="Last Frame"
-                          >
-                            <SkipForwardIcon
-                              
-                              className="text-sm text-white" />
-                          </button>
-                          <div className="mx-1 h-6 w-px bg-white/20" />
-                          <button
-                            onClick={toggleMute}
-                            className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                          >
-                            <DynamicIcon
-                              icon={isMuted ? VolumeXIcon : Volume2Icon}
-                              className="text-sm text-white"
-                            />
-                          </button>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={volume}
-                            onChange={(e) =>
-                              setVolume(parseFloat(e.target.value))
-                            }
-                            className="w-20 accent-white"
-                          />
-                        </div>
-                        <div className="font-mono text-sm tabular-nums text-white">
-                          {formatTime(currentTime)} / {formatTime(duration)}
-                        </div>
-                      </div>
+                      <VideoTransportControls
+                        isPlaying={isPlaying}
+                        isMuted={isMuted}
+                        volume={volume}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onSeek={seekToFrame}
+                        onTogglePlay={togglePlayPause}
+                        onToggleMute={toggleMute}
+                        onVolumeChange={setVolume}
+                        formatTime={formatTime}
+                      />
                     </div>
                   </div>
                 </div>
@@ -712,7 +671,7 @@ export const VideoFrameExtractor = () => {
                               setNumFrames(
                                 Math.max(
                                   1,
-                                  Math.min(50, parseInt(e.target.value) || 1),
+                                  Math.min(50, Number.parseInt(e.target.value) || 1),
                                 ),
                               )
                             }
@@ -735,7 +694,7 @@ export const VideoFrameExtractor = () => {
                             value={frameDistance}
                             onChange={(e) =>
                               setFrameDistance(
-                                Math.max(1, parseInt(e.target.value) || 1),
+                                Math.max(1, Number.parseInt(e.target.value) || 1),
                               )
                             }
                             className="w-full rounded-[3px] border border-white/15 bg-ui-controls px-3 py-2 text-sm tabular-nums text-base-fg focus:border-white/60 focus:outline-none"

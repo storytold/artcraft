@@ -33,8 +33,6 @@ use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_successful_task_status_with_metadata::{update_successful_task_status_with_metadata, UpdateSuccessfulTaskArgs};
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
@@ -213,8 +211,7 @@ async fn download_generation_item(
 
   info!("Writing to path: {:?}", download_path);
 
-  let mut file = File::create(&download_path)?;
-  file.write_all(&image_bytes)?;
+  tokio::fs::write(&download_path, image_bytes).await?;
 
   Ok(download_path)
 }

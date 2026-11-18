@@ -408,9 +408,8 @@ export function Viewer3D({
 
     if (SPLAT_EXTENSIONS.includes(urlExtension)) {
       console.log(`[Viewer3D] splat format detected (.${urlExtension})`);
-      new SplatMesh({
-        url: modelUrl,
-        onLoad: (mesh) => {
+      void new SplatMesh({ url: modelUrl }).initialized
+        .then((mesh) => {
           if (cancelled) {
             mesh.dispose();
             return;
@@ -434,8 +433,10 @@ export function Viewer3D({
           }
 
           console.log("Splat loaded");
-        },
-      });
+        })
+        .catch((error) =>
+          console.error("[Viewer3D] splat load failed:", error),
+        );
     } else if (!GLTF_EXTENSIONS.includes(urlExtension)) {
       // Known non-glTF model format with no loader wired here (obj, fbx,
       // pmx, …). Show the fallback shape rather than spamming a parse error.
@@ -560,6 +561,7 @@ export function Viewer3D({
 
   return (
     <div
+      role="presentation"
       className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}

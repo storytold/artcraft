@@ -77,7 +77,7 @@ export class LoadingPlaceHolderManager {
     if (result === undefined) {
       return;
     }
-    result.destroyWithScene(this.scene);
+    void result.destroyWithScene(this.scene);
     this.messages.delete(id);
   }
 

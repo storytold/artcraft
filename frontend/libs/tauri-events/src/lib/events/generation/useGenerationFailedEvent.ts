@@ -26,15 +26,15 @@ export const useGenerationFailedEvent = () => {
       });
 
       if (isUnmounted) {
-        unlisten.then(f => f()); // Unsubscribe if unmounted early.
+        void unlisten.then(f => f()); // Unsubscribe if unmounted early.
       }
     };
 
-    setup();
+    void setup();
     
     return () => {
       isUnmounted = true;
-      unlisten.then(f => f());
+      void unlisten.then(f => f());
     };
 
   }, []);

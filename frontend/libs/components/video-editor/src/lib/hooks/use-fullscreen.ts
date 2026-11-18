@@ -20,7 +20,7 @@ export function useFullscreen({
   const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
     if (document.fullscreenElement) {
-      document.exitFullscreen();
+      void document.exitFullscreen();
     } else {
       containerRef.current.requestFullscreen();
     }

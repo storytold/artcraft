@@ -59,6 +59,8 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
+import { v4 as uuidv4 } from "uuid";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 declare global {
   interface Window {
@@ -128,7 +130,7 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -333,7 +335,7 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
+        id: uuidv4(),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -930,19 +932,19 @@ export const PromptBoxVideo = ({
     for (const item of allMentionItems) {
       const imgMatch = item.label.match(/^@Image(\d+)$/);
       if (imgMatch) {
-        const idx = parseInt(imgMatch[1]) - 1;
+        const idx = Number.parseInt(imgMatch[1]) - 1;
         map[item.label] = IMAGE_COLORS[idx % IMAGE_COLORS.length];
         continue;
       }
       const vidMatch = item.label.match(/^@Video(\d+)$/);
       if (vidMatch) {
-        const idx = parseInt(vidMatch[1]) - 1;
+        const idx = Number.parseInt(vidMatch[1]) - 1;
         map[item.label] = VIDEO_COLORS[idx % VIDEO_COLORS.length];
         continue;
       }
       const audMatch = item.label.match(/^@Audio(\d+)$/);
       if (audMatch) {
-        const idx = parseInt(audMatch[1]) - 1;
+        const idx = Number.parseInt(audMatch[1]) - 1;
         map[item.label] = AUDIO_COLORS[idx % AUDIO_COLORS.length];
         continue;
       }
@@ -1044,7 +1046,7 @@ export const PromptBoxVideo = ({
       toast.error("Please enter a prompt to generate video");
       return;
     }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -1217,9 +1219,7 @@ export const PromptBoxVideo = ({
     const enqueuePromises: Promise<unknown>[] = [];
 
     for (let i = 0; i < count; i++) {
-      const subscriberId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
+      const subscriberId = uuidv4();
       subscriberIds.push(subscriberId);
       enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
@@ -1231,7 +1231,7 @@ export const PromptBoxVideo = ({
       console.error("PromptBoxVideo - enqueue failed", failure.reason);
       toast.error(commandErrorMessage(failure.reason, "Failed to start video generation. Please try again."));
     }
-    if (acceptedIds.length) onEnqueuePressed?.(prompt, acceptedIds);
+    if (acceptedIds.length) void onEnqueuePressed?.(prompt, acceptedIds);
 
     setIsEnqueueing(false);
   };
@@ -1282,7 +1282,7 @@ export const PromptBoxVideo = ({
         return;
       }
 
-      handleEnqueue();
+      void handleEnqueue();
     }
   };
 
@@ -1392,7 +1392,7 @@ export const PromptBoxVideo = ({
                       )
                         return;
                       if (!prompt.trim()) return;
-                      handleEnqueue();
+                      void handleEnqueue();
                     }
                   }}
                   onFocus={() => setIsFocused(true)}
@@ -1413,11 +1413,7 @@ export const PromptBoxVideo = ({
                 />
               )}
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between gap-2">

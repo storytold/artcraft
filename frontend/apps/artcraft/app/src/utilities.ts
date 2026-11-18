@@ -40,7 +40,7 @@ export const isJobStatusTerminal = (curr: JobStatus) => {
 };
 
 export const isNumberString = (value: string) => {
-  return !isNaN(Number(value));
+  return !Number.isNaN(Number(value));
 };
 
 export const isJobStatusError = (curr: JobStatus) => {

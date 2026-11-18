@@ -29,6 +29,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
 
   return (
     <div
+      role="presentation"
       className="fixed left-1/2 top-32 flex -translate-x-1/2 transform items-center justify-center gap-2"
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}

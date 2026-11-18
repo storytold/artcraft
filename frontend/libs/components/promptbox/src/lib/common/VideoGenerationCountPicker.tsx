@@ -20,7 +20,7 @@ export const VideoGenerationCountPicker = ({
   }));
 
   const onSelect = (item: PopoverItem) => {
-    const count = parseInt(item.label, 10);
+    const count = Number.parseInt(item.label, 10);
     if (counts.includes(count)) {
       handleCountChange(count);
     }

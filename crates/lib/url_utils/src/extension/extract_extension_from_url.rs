@@ -6,24 +6,13 @@ use url::Url;
 // TODO: Lookups against these as lists will be slow
 
 /// Known image extensions.
-const KNOWN_IMAGE_EXTENSIONS: &[Extension] = &[
-  Extension::from_static("png", ".png"),
-  Extension::from_static("jpg", ".jpg"),
-  Extension::from_static("jpeg", ".jpeg"),
-  Extension::from_static("webp", ".webp"),
-];
+const KNOWN_IMAGE_EXTENSIONS: &[Extension] = &[Extension::from_static("png", ".png"), Extension::from_static("jpg", ".jpg"), Extension::from_static("jpeg", ".jpeg"), Extension::from_static("webp", ".webp")];
 
 /// Known audio extensions.
-const KNOWN_AUDIO_EXTENSIONS: &[Extension] = &[
-  Extension::from_static("wav", ".wav"),
-  Extension::from_static("mp3", ".mp3"),
-];
+const KNOWN_AUDIO_EXTENSIONS: &[Extension] = &[Extension::from_static("wav", ".wav"), Extension::from_static("mp3", ".mp3")];
 
 /// Known video extensions.
-const KNOWN_VIDEO_EXTENSIONS: &[Extension] = &[
-  Extension::from_static("mp4", ".mp4"),
-  Extension::from_static("webm", ".webm"),
-];
+const KNOWN_VIDEO_EXTENSIONS: &[Extension] = &[Extension::from_static("mp4", ".mp4"), Extension::from_static("webm", ".webm")];
 
 /// Controls which extensions are accepted when extracting from a URL.
 pub enum ExtractExtensions {
@@ -62,9 +51,7 @@ pub fn extract_extension_from_url_str(url: &str, accept: &ExtractExtensions) -> 
 /// Extracts a file extension from a parsed `Url`, filtered by `accept`.
 pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Option<Extension> {
   let path = url.path();
-  let raw_ext = std::path::Path::new(path)
-    .extension()
-    .and_then(|ext| ext.to_str())?;
+  let raw_ext = std::path::Path::new(path).extension().and_then(|ext| ext.to_str())?;
 
   let lower = raw_ext.to_lowercase();
   let candidate = Extension::new(&lower);
@@ -72,27 +59,40 @@ pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Opti
   match accept {
     ExtractExtensions::All => Some(candidate),
     ExtractExtensions::Set(set) => {
-      if set.contains(&candidate) { Some(candidate) } else { None }
-    }
-    ExtractExtensions::KnownImage => {
-      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate) { Some(candidate) } else { None }
-    }
-    ExtractExtensions::KnownAudio => {
-      if slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate) { Some(candidate) } else { None }
-    }
-    ExtractExtensions::KnownVideo => {
-      if slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate) { Some(candidate) } else { None }
-    }
-    ExtractExtensions::KnownMedia => {
-      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate)
-        || slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate)
-        || slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate)
-      {
+      if set.contains(&candidate) {
         Some(candidate)
       } else {
         None
       }
-    }
+    },
+    ExtractExtensions::KnownImage => {
+      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate) {
+        Some(candidate)
+      } else {
+        None
+      }
+    },
+    ExtractExtensions::KnownAudio => {
+      if slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate) {
+        Some(candidate)
+      } else {
+        None
+      }
+    },
+    ExtractExtensions::KnownVideo => {
+      if slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate) {
+        Some(candidate)
+      } else {
+        None
+      }
+    },
+    ExtractExtensions::KnownMedia => {
+      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate) || slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate) || slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate) {
+        Some(candidate)
+      } else {
+        None
+      }
+    },
   }
 }
 
@@ -190,19 +190,14 @@ mod tests {
 
   #[test]
   fn set_matches_custom_list() {
-    let accept = ExtractExtensions::from_vec(vec![
-      Extension::from_static("csv", ".csv"),
-      Extension::from_static("tsv", ".tsv"),
-    ]);
+    let accept = ExtractExtensions::from_vec(vec![Extension::from_static("csv", ".csv"), Extension::from_static("tsv", ".tsv")]);
     let ext = extract_extension_from_url_str("https://example.com/data.csv", &accept);
     assert_eq!(ext.unwrap().without_period(), "csv");
   }
 
   #[test]
   fn set_rejects_non_member() {
-    let accept = ExtractExtensions::from_vec(vec![
-      Extension::from_static("csv", ".csv"),
-    ]);
+    let accept = ExtractExtensions::from_vec(vec![Extension::from_static("csv", ".csv")]);
     let ext = extract_extension_from_url_str("https://example.com/data.png", &accept);
     assert!(ext.is_none());
   }
@@ -215,10 +210,7 @@ mod tests {
 
   #[test]
   fn query_params_ignored() {
-    let ext = extract_extension_from_url_str(
-      "https://example.com/file.mp4?token=abc&format=hd",
-      &ExtractExtensions::KnownVideo,
-    );
+    let ext = extract_extension_from_url_str("https://example.com/file.mp4?token=abc&format=hd", &ExtractExtensions::KnownVideo);
     assert_eq!(ext.unwrap().without_period(), "mp4");
   }
 
@@ -230,8 +222,7 @@ mod tests {
   }
 
   fn extract_extension_all(url: &str) -> Option<String> {
-    extract_extension_from_url_str(url, &ExtractExtensions::All)
-        .map(|ext| ext.without_period().to_string())
+    extract_extension_from_url_str(url, &ExtractExtensions::All).map(|ext| ext.without_period().to_string())
   }
 
   #[test]

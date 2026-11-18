@@ -8,7 +8,7 @@ export function useDesktopUsername(): string | null {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const session = await new UsersApi().GetSession();
         if (!cancelled && session.success && session.data?.user) {

@@ -60,7 +60,7 @@ pub async fn legacy_upload_media_file_from_file<P: AsRef<Path>>(
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
-  let file_bytes = std::fs::read(args.path.as_ref())
+  let file_bytes = tokio::fs::read(args.path.as_ref()).await
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
   let file_name = args.path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();

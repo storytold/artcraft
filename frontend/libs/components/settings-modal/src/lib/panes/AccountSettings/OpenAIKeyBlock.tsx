@@ -28,7 +28,7 @@ export const OpenAIApiKeyBlock = () => {
         setIsCheckingOpenAIApiKey(false);
       }
     };
-    fetchKey();
+    void fetchKey();
   }, []);
 
   const syncOpenAIApiKey = async (key: string) => {

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { DropletIcon, ImagesIcon, PauseIcon, PlayIcon, RotateCwIcon, SkipBackIcon, SkipForwardIcon, VideoIcon, Volume2Icon, VolumeXIcon } from "lucide-react";
-import { DynamicIcon } from "@storyteller/icons";
+import { DropletIcon, ImagesIcon, RotateCwIcon, VideoIcon } from "lucide-react";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/tauri-api";
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
+import { VideoTransportControls } from "../../components/reusable/VideoTransportControls";
 
 export const VideoWatermarkRemover = () => {
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -255,6 +255,7 @@ export const VideoWatermarkRemover = () => {
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
+                        role="presentation"
                         ref={progressBarRef}
                         className="group relative mb-3 h-3 cursor-pointer bg-white/15"
                         onClick={handleProgressBarClick}
@@ -266,61 +267,18 @@ export const VideoWatermarkRemover = () => {
                           }}
                         />
                       </div>
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => seekToFrame("first")}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="First Frame"
-                          >
-                            <SkipBackIcon
-                              
-                              className="text-sm text-white" />
-                          </button>
-                          <button
-                            onClick={togglePlayPause}
-                            className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/20 transition-colors hover:bg-white/30"
-                          >
-                            <DynamicIcon
-                              icon={isPlaying ? PauseIcon : PlayIcon}
-                              className="text-white"
-                            />
-                          </button>
-                          <button
-                            onClick={() => seekToFrame("last")}
-                            className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                            title="Last Frame"
-                          >
-                            <SkipForwardIcon
-                              
-                              className="text-sm text-white" />
-                          </button>
-                          <div className="mx-1 h-6 w-px bg-white/20" />
-                          <button
-                            onClick={toggleMute}
-                            className="flex h-7 w-7 items-center justify-center rounded-[3px] bg-white/10 transition-colors hover:bg-white/20"
-                          >
-                            <DynamicIcon
-                              icon={isMuted ? VolumeXIcon : Volume2Icon}
-                              className="text-sm text-white"
-                            />
-                          </button>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={volume}
-                            onChange={(e) =>
-                              setVolume(parseFloat(e.target.value))
-                            }
-                            className="w-20 accent-white"
-                          />
-                        </div>
-                        <div className="font-mono text-sm tabular-nums text-white">
-                          {formatTime(currentTime)} / {formatTime(duration)}
-                        </div>
-                      </div>
+                      <VideoTransportControls
+                        isPlaying={isPlaying}
+                        isMuted={isMuted}
+                        volume={volume}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onSeek={seekToFrame}
+                        onTogglePlay={togglePlayPause}
+                        onToggleMute={toggleMute}
+                        onVolumeChange={setVolume}
+                        formatTime={formatTime}
+                      />
                     </div>
                   </div>
                 </div>
