@@ -29,10 +29,10 @@ ios = { level = "full", notes = "" }
 #tauri-plugin = { workspace = true, features = ["build"] }
 tauri-plugin = { version = "2.6.2", features = ["build"] }
 #schemars = { workspace = true }
-schemars = { version = "0.8" }
+schemars = { version = "1.2" }
 serde = { workspace = true }
 url = { workspace = true }
-urlpattern = "0.3"
+urlpattern = "0.6"
 regex = "1"
 
 [dependencies]
@@ -44,7 +44,7 @@ thiserror = { workspace = true }
 tokio = { version = "1", features = ["sync", "macros"] }
 #tauri-plugin-fs = { path = "../fs", version = "2.2.1" }
 tauri-plugin-fs = { workspace = true }
-urlpattern = "0.3"
+urlpattern = "0.6"
 regex = "1"
 http = "1"
 reqwest = { version = "0.12", default-features = false }
