@@ -3,7 +3,7 @@ use std::path::Path;
 use craft_image_codecs::{ChannelLayout, Image, SampleType};
 use image::{DynamicImage, GrayAlphaImage, GrayImage, ImageBuffer, Luma, LumaA, Rgb, RgbImage, Rgba, RgbaImage};
 
-use errors::AnyhowResult;
+use errors::{AnyhowResult, anyhow};
 
 use crate::resize_preserving_aspect::resize_preserving_aspect;
 
@@ -12,27 +12,27 @@ fn craft_image_to_dynamic(image: Image) -> AnyhowResult<DynamicImage> {
   let layout = image.layout();
   let sample_type = image.sample_type();
   match (layout, sample_type) {
-    (ChannelLayout::Gray, SampleType::U8) => Ok(DynamicImage::ImageLuma8(GrayImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow::anyhow!("invalid gray8 buffer"))?)),
-    (ChannelLayout::GrayA, SampleType::U8) => Ok(DynamicImage::ImageLumaA8(GrayAlphaImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow::anyhow!("invalid grayA8 buffer"))?)),
-    (ChannelLayout::Rgb, SampleType::U8) => Ok(DynamicImage::ImageRgb8(RgbImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow::anyhow!("invalid rgb8 buffer"))?)),
-    (ChannelLayout::Rgba, SampleType::U8) => Ok(DynamicImage::ImageRgba8(RgbaImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow::anyhow!("invalid rgba8 buffer"))?)),
+    (ChannelLayout::Gray, SampleType::U8) => Ok(DynamicImage::ImageLuma8(GrayImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow!("invalid gray8 buffer"))?)),
+    (ChannelLayout::GrayA, SampleType::U8) => Ok(DynamicImage::ImageLumaA8(GrayAlphaImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow!("invalid grayA8 buffer"))?)),
+    (ChannelLayout::Rgb, SampleType::U8) => Ok(DynamicImage::ImageRgb8(RgbImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow!("invalid rgb8 buffer"))?)),
+    (ChannelLayout::Rgba, SampleType::U8) => Ok(DynamicImage::ImageRgba8(RgbaImage::from_raw(w, h, image.into_data()).ok_or_else(|| anyhow!("invalid rgba8 buffer"))?)),
     (ChannelLayout::Gray, SampleType::U16) => {
-      let samples = image.to_u16_samples().map_err(|e| anyhow::anyhow!(e))?;
-      Ok(DynamicImage::ImageLuma16(ImageBuffer::<Luma<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow::anyhow!("invalid gray16 buffer"))?))
+      let samples = image.to_u16_samples().ok_or_else(|| anyhow!("could not read 16-bit image samples"))?;
+      Ok(DynamicImage::ImageLuma16(ImageBuffer::<Luma<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow!("invalid gray16 buffer"))?))
     },
     (ChannelLayout::GrayA, SampleType::U16) => {
-      let samples = image.to_u16_samples().map_err(|e| anyhow::anyhow!(e))?;
-      Ok(DynamicImage::ImageLumaA16(ImageBuffer::<LumaA<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow::anyhow!("invalid grayA16 buffer"))?))
+      let samples = image.to_u16_samples().ok_or_else(|| anyhow!("could not read 16-bit image samples"))?;
+      Ok(DynamicImage::ImageLumaA16(ImageBuffer::<LumaA<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow!("invalid grayA16 buffer"))?))
     },
     (ChannelLayout::Rgb, SampleType::U16) => {
-      let samples = image.to_u16_samples().map_err(|e| anyhow::anyhow!(e))?;
-      Ok(DynamicImage::ImageRgb16(ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow::anyhow!("invalid rgb16 buffer"))?))
+      let samples = image.to_u16_samples().ok_or_else(|| anyhow!("could not read 16-bit image samples"))?;
+      Ok(DynamicImage::ImageRgb16(ImageBuffer::<Rgb<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow!("invalid rgb16 buffer"))?))
     },
     (ChannelLayout::Rgba, SampleType::U16) => {
-      let samples = image.to_u16_samples().map_err(|e| anyhow::anyhow!(e))?;
-      Ok(DynamicImage::ImageRgba16(ImageBuffer::<Rgba<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow::anyhow!("invalid rgba16 buffer"))?))
+      let samples = image.to_u16_samples().ok_or_else(|| anyhow!("could not read 16-bit image samples"))?;
+      Ok(DynamicImage::ImageRgba16(ImageBuffer::<Rgba<u16>, Vec<u16>>::from_raw(w, h, samples).ok_or_else(|| anyhow!("invalid rgba16 buffer"))?))
     },
-    _ => Ok(DynamicImage::ImageRgba8(RgbaImage::from_raw(w, h, image.to_rgba8()).ok_or_else(|| anyhow::anyhow!("invalid rgba8 fallback buffer"))?)),
+    _ => Ok(DynamicImage::ImageRgba8(RgbaImage::from_raw(w, h, image.to_rgba8()).ok_or_else(|| anyhow!("invalid rgba8 fallback buffer"))?)),
   }
 }
 
