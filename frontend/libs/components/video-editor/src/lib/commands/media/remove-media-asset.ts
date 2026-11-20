@@ -91,11 +91,15 @@ export class RemoveMediaAssetCommand extends Command {
         url: URL.createObjectURL(this.removedAsset.file),
       };
 
-      editor.media.setAssets({
-        assets: this.savedAssets.map((a) =>
-          a.id === this.assetId ? restoredAsset : a,
-        ),
-      });
+      // Other removals may already have been undone, recreating their
+      // object URLs. Replacing the whole saved array would restore their
+      // revoked URLs instead. Restore only this asset into the live list.
+      const restoredAssets = [...editor.media.getAssets()];
+      const savedIndex = this.savedAssets.findIndex(
+        (asset) => asset.id === this.assetId,
+      );
+      restoredAssets.splice(savedIndex, 0, restoredAsset);
+      editor.media.setAssets({ assets: restoredAssets });
 
       // Persistence handled by host via ProjectStorageAdapter
     }
