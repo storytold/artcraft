@@ -14,6 +14,8 @@ updates:
           - "*"
     commit-message:
       prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
 
   # Maintain GitHub Actions workflows
   - package-ecosystem: "github-actions"
@@ -28,3 +30,5 @@ updates:
           - "*"
     commit-message:
       prefix: "ci(deps)"
+    cooldown:
+      default-days: 7
