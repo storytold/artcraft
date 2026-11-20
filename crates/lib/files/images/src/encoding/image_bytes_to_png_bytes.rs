@@ -27,5 +27,13 @@ mod tests {
     let decoded16 = craft_image_codecs::decode(&out16).unwrap();
     assert_eq!(decoded16.sample_type(), SampleType::U16);
     assert_eq!(decoded16.to_u16_samples().unwrap(), vec![100, 200, 300, u16::MAX]);
+
+    let jpeg = craft_image_codecs::encode(&src8, Format::Jpeg, &EncodeOptions::default()).unwrap();
+    let from_jpeg = craft_image_codecs::decode(&image_bytes_to_png_bytes(&jpeg).unwrap()).unwrap();
+    assert_eq!(from_jpeg.dimensions(), (2, 1));
+
+    let gif = craft_image_codecs::encode(&src8, Format::Gif, &EncodeOptions::default()).unwrap();
+    let from_gif = craft_image_codecs::decode(&image_bytes_to_png_bytes(&gif).unwrap()).unwrap();
+    assert_eq!(from_gif.dimensions(), (2, 1));
   }
 }
