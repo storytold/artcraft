@@ -68,6 +68,7 @@ export function useGalleryData(options: {
   const [pageIndex, setPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const isLoadingRef = useRef(false);
+  const generationRef = useRef(0);
 
   const api = useMemo(() => new GalleryModalApi(), []);
 
@@ -108,6 +109,7 @@ export function useGalleryData(options: {
       if (!username) return;
       if (isLoadingRef.current) return;
       isLoadingRef.current = true;
+      const generation = generationRef.current;
       setIsLoading(true);
 
       try {
@@ -118,6 +120,8 @@ export function useGalleryData(options: {
           page_index: reset ? 0 : pageIndex,
           page_size: PAGE_SIZE,
         });
+
+        if (generation !== generationRef.current) return;
 
         if (response.success && response.data) {
           const modelIdSet =
@@ -157,9 +161,11 @@ export function useGalleryData(options: {
         // ignore
       }
 
-      setIsLoading(false);
-      setIsInitialLoading(false);
-      isLoadingRef.current = false;
+      if (generation === generationRef.current) {
+        setIsLoading(false);
+        setIsInitialLoading(false);
+        isLoadingRef.current = false;
+      }
     },
     [
       username,
@@ -175,6 +181,8 @@ export function useGalleryData(options: {
   // Initial load + filter change. When logged out (no username), clear the
   // loading flag so the shell renders the empty state instead of a spinner.
   useEffect(() => {
+    generationRef.current++;
+    setIsLoading(false);
     setItems([]);
     setPageIndex(0);
     isLoadingRef.current = false;
@@ -186,6 +194,9 @@ export function useGalleryData(options: {
     setHasMore(true);
     setIsInitialLoading(true);
     loadItems(true);
+    return () => {
+      generationRef.current++;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, JSON.stringify(filterMediaClasses), JSON.stringify(filterModelIds)]);
 
@@ -196,6 +207,7 @@ export function useGalleryData(options: {
   }, [hasMore, loadItems]);
 
   const refresh = useCallback(() => {
+    generationRef.current++;
     setItems([]);
     setPageIndex(0);
     setHasMore(true);
