@@ -256,6 +256,10 @@ export class MouseControls {
         event.clientY,
       );
       if (this.fkHelper.trySelectJoint(this.mouse)) {
+        // The release click is suppressed, so refresh the click baseline here.
+        if (this.camera) {
+          this.camera_last_pos.copy(roundedCameraPosition(this.camera));
+        }
         // Keep the joint picked at press time even if the release misses it.
         this.ignoreNextClick = true;
         return;
@@ -281,11 +285,7 @@ export class MouseControls {
     }
 
     if (event.button !== 0 && this.camera) {
-      const camera_pos = new THREE.Vector3(
-        Number.parseFloat(this.camera.position.x.toFixed(2)),
-        Number.parseFloat(this.camera.position.y.toFixed(2)),
-        Number.parseFloat(this.camera.position.z.toFixed(2)),
-      );
+      const camera_pos = roundedCameraPosition(this.camera);
       this.camera_last_pos.copy(camera_pos);
     }
   }
@@ -430,11 +430,7 @@ export class MouseControls {
       return;
     }
 
-    const camera_pos = new THREE.Vector3(
-      Number.parseFloat(this.camera.position.x.toFixed(2)),
-      Number.parseFloat(this.camera.position.y.toFixed(2)),
-      Number.parseFloat(this.camera.position.z.toFixed(2)),
-    );
+    const camera_pos = roundedCameraPosition(this.camera);
     if (this.camera_last_pos.equals(new THREE.Vector3(0, 0, 0))) {
       this.camera_last_pos.copy(camera_pos);
     }
@@ -503,4 +499,13 @@ export class MouseControls {
       this.deps.bus.emit(new OutlinerSelectedItemChangedEvent(selected));
     }
   }
+}
+
+function roundedCameraPosition(camera: THREE.PerspectiveCamera): THREE.Vector3 {
+  const { x, y, z } = camera.position;
+  return new THREE.Vector3(
+    Number.parseFloat(x.toFixed(2)),
+    Number.parseFloat(y.toFixed(2)),
+    Number.parseFloat(z.toFixed(2)),
+  );
 }

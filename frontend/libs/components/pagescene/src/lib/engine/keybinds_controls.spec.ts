@@ -23,9 +23,9 @@ describe("pose-mode pointer input", () => {
     expect(rig.lock).not.toHaveBeenCalled();
   });
 
-  it("selects a joint on the first click after the camera moves", () => {
+  it("selects and clears a joint without extra clicks after the camera moves", () => {
     const rig = createPoseRig();
-    rig.camera.position.x += 0.25;
+    rig.camera.position.x += 0.254;
     rig.camera.updateMatrixWorld();
     const event = mouseEventAt(rig.jointPosition());
 
@@ -35,6 +35,14 @@ describe("pose-mode pointer input", () => {
     rig.controls.onMouseClick();
 
     expect(rig.selectedJointId()).toBe(rig.joint.uuid);
+
+    const background = mouseEventAt(rig.background);
+    rig.controls.onMouseMove(background);
+    rig.controls.onMouseDown(background);
+    rig.controls.onMouseUp(background);
+    rig.controls.onMouseClick();
+
+    expect(rig.selectedJointId()).toBeUndefined();
   });
 
   it("keeps camera look for a primary drag outside the markers", () => {
