@@ -1,8 +1,6 @@
 use crate::image_info::image_info_error::ImageInfoError;
-use image::{GenericImageView, ImageReader};
 use mimetypes::mimetype_info::file_extension::FileExtension;
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
-use std::io::Cursor;
 use std::path::Path;
 
 #[derive(Clone, Debug)]
@@ -18,28 +16,17 @@ pub struct ImageInfo {
 }
 
 impl ImageInfo {
-  /// Note: This has to do a full file read, and we throw the parsed image on the floor.
+  /// Probe image dimensions without decoding pixels when possible, falling back to full decode.
   pub fn decode_image_from_bytes(bytes: &[u8]) -> Result<Self, ImageInfoError> {
-    let image = ImageReader::new(Cursor::new(bytes)).with_guessed_format()?.decode()?;
-    let (width, height) = image.dimensions();
-    Ok(ImageInfo {
-      mimetype_info: MimetypeInfo::get_for_bytes(bytes)
-          .ok_or_else(|| ImageInfoError::CouldNotDetermineMimetype)?,
-      width,
-      height,
-    })
+    let (width, height) = craft_image_codecs::probe_size(bytes).or_else(|_| craft_image_codecs::decode(bytes).map(|image| image.dimensions()))?;
+    Ok(ImageInfo { mimetype_info: MimetypeInfo::get_for_bytes(bytes).ok_or_else(|| ImageInfoError::CouldNotDetermineMimetype)?, width, height })
   }
 
-  /// Note: This has to do a full file read, and we throw the parsed image on the floor.
+  /// Probe image dimensions from `path`, falling back to full decode if needed.
   pub fn decode_image_from_path<P: AsRef<Path>>(path: P) -> Result<Self, ImageInfoError> {
-    let image = ImageReader::open(&path)?.decode()?;
-    let (width, height) = image.dimensions();
-    Ok(ImageInfo {
-      mimetype_info: MimetypeInfo::get_for_path(path)?
-          .ok_or_else(|| ImageInfoError::CouldNotDetermineMimetype)?,
-      width,
-      height,
-    })
+    let bytes = std::fs::read(&path)?;
+    let (width, height) = craft_image_codecs::probe_size(&bytes).or_else(|_| craft_image_codecs::decode(&bytes).map(|image| image.dimensions()))?;
+    Ok(ImageInfo { mimetype_info: MimetypeInfo::get_for_path(path)?.ok_or_else(|| ImageInfoError::CouldNotDetermineMimetype)?, width, height })
   }
 
   pub fn width(&self) -> u32 {

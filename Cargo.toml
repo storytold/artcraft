@@ -59,6 +59,7 @@ build_metadata = { path = "crates/lib/build_metadata" }
 cloudflare_errors = { path = "crates/lib/cloudflare_errors" }
 cloudflare_mitigation = { path = "crates/lib/cloudflare_mitigation" }
 cookie_store = { path = "crates/lib/cookie_store" }
+craft-image-codecs = { git = "https://github.com/storytold/craft-libs", rev = "057b0e3e01aed74ecc5d18eb047ddd7328b46b1d" }
 enums = { path = "crates/schema/public/enums" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
