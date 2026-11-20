@@ -91,23 +91,26 @@ export class FKHelper {
   }
 
   onMouseClick(mouse: THREE.Vector2) {
+    if (!this.trySelectJoint(mouse)) {
+      this.resetHighlight();
+      this.removeControls();
+    }
+  }
+
+  trySelectJoint(mouse: THREE.Vector2): boolean {
     // @ts-expect-error — TransformControls.camera is set by the local copy
     // under engine/TransformControls.js but isn't declared in three's types.
     this.raycaster.setFromCamera(mouse, this.transformControls.camera);
-    const intersections = this.raycaster.intersectObjects(this.targetBoneSpheres, false);
+    const [intersection] = this.raycaster.intersectObjects(
+      this.targetBoneSpheres,
+      false,
+    );
+    const marker = intersection?.object;
+    if (!marker?.parent) return false;
 
-    if (intersections.length < 1) {
-      console.log("No intersections");
-      this.resetHighlight();
-      this.removeControls();
-      return;
-    }
-
-    // Attach the controls to the first bone
-    const firstBone = intersections[0];
-    this.highlightSphere(firstBone.object);
-    this.showControls(firstBone.object.parent!);
-    console.log("Showing bone", firstBone.object);
+    this.highlightSphere(marker);
+    this.showControls(marker.parent);
+    return true;
   }
 
   private showControls(object?: THREE.Object3D) {
