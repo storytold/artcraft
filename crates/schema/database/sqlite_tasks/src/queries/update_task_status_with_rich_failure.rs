@@ -4,6 +4,9 @@ use crate::error::SqliteTasksError;
 use enums::tauri::tasks::task_status::TaskStatus;
 use tokens::tokens::sqlite::tasks::TaskId;
 
+/// Maximum length, in bytes, of the stored failure message.
+const MAX_FAILURE_MESSAGE_BYTES: usize = 255;
+
 pub struct UpdateTaskWithRichFailureArgs<'a> {
   pub db: &'a TaskDbConnection,
   pub task_id: &'a TaskId,
@@ -24,7 +27,7 @@ pub async fn update_task_status_with_rich_failure(
 
   // Trim the message so it doesn't overflow the database column
   let maybe_failure_message_temp = args.maybe_failure_message
-      .map(|s| if s.len() > 255 { &s[..255] } else { s });
+      .map(truncate_failure_message);
 
   // info!("Update task id: {}, status: {}", task_id_temp, status_temp);
 
@@ -48,4 +51,34 @@ pub async fn update_task_status_with_rich_failure(
   let rows_updated = res.rows_affected() > 0;
 
   Ok(rows_updated)
+}
+
+/// Truncate to at most `MAX_FAILURE_MESSAGE_BYTES` without splitting a UTF-8 character.
+/// NB: Slicing at a fixed byte offset panics when it lands inside a multi-byte character.
+fn truncate_failure_message(message: &str) -> &str {
+  &message[..message.floor_char_boundary(MAX_FAILURE_MESSAGE_BYTES)]
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn short_messages_are_unchanged() {
+    assert_eq!(truncate_failure_message("Prompt was flagged"), "Prompt was flagged");
+  }
+
+  #[test]
+  fn long_ascii_messages_are_cut_at_the_limit() {
+    let message = "a".repeat(300);
+    assert_eq!(truncate_failure_message(&message).len(), MAX_FAILURE_MESSAGE_BYTES);
+  }
+
+  #[test]
+  fn multi_byte_character_on_the_limit_is_not_split() {
+    // 254 ASCII bytes, then a 3-byte character straddling byte 255.
+    let message = format!("{}{}", "a".repeat(254), "€€");
+    let truncated = truncate_failure_message(&message);
+    assert_eq!(truncated, "a".repeat(254));
+  }
 }
