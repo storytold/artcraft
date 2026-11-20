@@ -10,7 +10,7 @@ use crate::backend::wire::MediaFile;
 use crate::feed::types::MediaKind;
 use crate::prompt_box::deck::cover_uv;
 use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia};
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 use crate::ui::widgets;
 
@@ -79,11 +79,11 @@ impl LibraryPicker {
     };
     let close = widgets::modal(ctx, Id::new("library-picker"), width, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Pick from library", 22.0));
+        ui.label(widgets::heading(i18n::t("Pick from library"), 22.0));
         ui.add_space(8.0);
-        widgets::hud(ui, noun, theme::MUTED);
+        widgets::hud(ui, i18n::t(noun), theme::MUTED);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+          if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
             actions.push(PickerAction::Close);
           }
         });
@@ -114,7 +114,7 @@ impl LibraryPicker {
           self.toggle(token);
         }
         if self.items.is_empty() && !self.loading && !self.has_more {
-          ui.painter().text(origin + vec2(w / 2.0, 80.0), Align2::CENTER_CENTER, format!("No {noun} in your library yet"), FontId::new(14.0, egui::FontFamily::Proportional), theme::MUTED);
+          ui.painter().text(origin + vec2(w / 2.0, 80.0), Align2::CENTER_CENTER, i18n::fmt("No {noun} in your library yet", &[("noun", i18n::tl(noun))]), FontId::new(14.0, egui::FontFamily::Proportional), theme::MUTED);
         }
         if self.loading {
           icons::paint_spinner(ui, Rect::from_center_size(origin + vec2(w / 2.0, total + 24.0), vec2(24.0, 24.0)), theme::MUTED);
@@ -124,13 +124,13 @@ impl LibraryPicker {
       });
       ui.add_space(12.0);
       ui.horizontal(|ui| {
-        widgets::hud(ui, &format!("{}/{} selected", self.selected.len(), self.max), theme::MUTED);
+        widgets::hud(ui, &i18n::fmt("{selected}/{total} selected", &[("selected", &self.selected.len().to_string()), ("total", &self.max.to_string())]), theme::MUTED);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
           let any = !self.selected.is_empty();
-          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, "Use selected", widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
+          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, i18n::t("Use selected"), widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
             actions.push(PickerAction::Confirm(self.picks()));
           }
-          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, "Deselect all", widgets::Kind::Secondary, 0.0, theme::CONTROL_H)).inner.clicked() {
+          if ui.add_enabled_ui(any, |ui| widgets::button(ui, None, i18n::t("Deselect all"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H)).inner.clicked() {
             self.selected.clear();
           }
         });
@@ -184,7 +184,7 @@ fn tile_ui(ui: &mut egui::Ui, rect: Rect, item: &MediaFile, kind: RefKind, attac
   }
   let p = ui.painter();
   if attached {
-    p.text(rect.center(), Align2::CENTER_CENTER, "Attached", FontId::new(11.0, theme::semibold()), theme::fade(Color32::WHITE, 0.7));
+    p.text(rect.center(), Align2::CENTER_CENTER, i18n::t("Attached"), FontId::new(11.0, theme::semibold()), theme::fade(Color32::WHITE, 0.7));
   } else if let Some(i) = order {
     p.rect_stroke(rect, 0.0, Stroke::new(2.0, theme::ACCENT_400), egui::StrokeKind::Inside);
     let chip = Rect::from_min_size(rect.min + vec2(8.0, 8.0), vec2(22.0, 22.0));

@@ -2,6 +2,7 @@
 
 use egui::{Id, Ui};
 
+use crate::i18n;
 use crate::models::{self, ModelInfo};
 use crate::prompt_box::pickers::{self, OptionLead, PickOption, Trigger};
 use crate::ui::icons::Icon;
@@ -17,7 +18,8 @@ pub fn aspect_ratio(ui: &mut Ui, id: Id, model: &ModelInfo, current: &str) -> Op
     Some(ratio) => Leading::Aspect(Some(ratio)),
     None => Leading::Icon(Icon::Wand),
   };
-  pickers::option_picker(ui, id, Trigger::Pill(lead), "Aspect Ratio", "Aspect Ratio", &current.to_owned(), &options)
+  let title = i18n::t("Aspect Ratio");
+  pickers::option_picker(ui, id, Trigger::Pill(lead), title, title, &current.to_owned(), &options)
 }
 
 fn aspect_lead(value: &str) -> OptionLead {
@@ -34,7 +36,8 @@ pub fn resolution(ui: &mut Ui, id: Id, model: &ModelInfo, current: &str) -> Opti
   }
   let options: Vec<PickOption<String>> = model.resolutions.iter().map(|v| PickOption::new(v.clone(), models::resolution_label(v))).collect();
   let caption = if models::resolution_is_hd(current) { "HD" } else { "SD" };
-  pickers::option_picker(ui, id, Trigger::Pill(Leading::Caption(caption)), "Resolution", "Resolution", &current.to_owned(), &options)
+  let title = i18n::t("Resolution");
+  pickers::option_picker(ui, id, Trigger::Pill(Leading::Caption(caption)), title, title, &current.to_owned(), &options)
 }
 
 /// The quality picker (`QualityPicker`).
@@ -43,15 +46,22 @@ pub fn quality(ui: &mut Ui, id: Id, model: &ModelInfo, current: &str) -> Option<
     return None;
   }
   let options: Vec<PickOption<String>> = model.qualities.iter().map(|v| PickOption::new(v.clone(), models::quality_label(v))).collect();
-  pickers::option_picker(ui, id, Trigger::Pill(Leading::Icon(Icon::Gem)), "Quality", "Quality", &current.to_owned(), &options)
+  let title = i18n::t("Quality");
+  pickers::option_picker(ui, id, Trigger::Pill(Leading::Icon(Icon::Gem)), title, title, &current.to_owned(), &options)
 }
 
 /// The number of generations (`GenerationCountPicker`): a quiet copy-icon button.
 pub fn count(ui: &mut Ui, id: Id, model: &ModelInfo, current: u16, noun: &str) -> Option<u16> {
   let options: Vec<PickOption<u16>> = model.batch_options().into_iter().map(|n| PickOption::new(n, n.to_string())).collect();
+  let tip = i18n::t("Number of generations");
   if options.len() <= 1 {
-    ui.add_enabled_ui(false, |ui| crate::ui::widgets::ghost(ui, Icon::Copy, Some(&current.to_string()), "Number of generations", false));
+    ui.add_enabled_ui(false, |ui| crate::ui::widgets::ghost(ui, Icon::Copy, Some(&current.to_string()), tip, false));
     return None;
   }
-  pickers::option_picker(ui, id, Trigger::Ghost(Icon::Copy), &format!("No. of {noun}"), "Number of generations", &current, &options)
+  let header = match noun {
+    "images" => i18n::t("No. of images"),
+    "videos" => i18n::t("No. of videos"),
+    _ => tip,
+  };
+  pickers::option_picker(ui, id, Trigger::Ghost(Icon::Copy), header, tip, &current, &options)
 }

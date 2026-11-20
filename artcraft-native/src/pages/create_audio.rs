@@ -14,6 +14,7 @@ use crate::backend::providers::Provider;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 use crate::models::{self, AudioCaps, Catalog, DEFAULT_AUDIO_MODEL, MUSICAL_KEYS, ModelInfo};
 use crate::pages::common::{self, AppRequest, CostState, Env};
 use crate::prompt_box::deck::cover_uv;
@@ -111,7 +112,7 @@ impl CreateAudioPage {
   fn prompt_box(&mut self, ui: &mut Ui, env: &mut Env<'_>, model: Option<&ModelInfo>) {
     let missing_ref = model.is_some_and(|m| self.missing_required_ref(m));
     let accepts: Vec<RefKind> = model.map_or_else(Vec::new, |m| [(RefKind::Audio, m.audio_refs_max), (RefKind::Image, m.image_refs_max)].into_iter().filter(|(_, n)| *n > 0).map(|(k, _)| k).collect());
-    let props = PromptBoxProps { id: Id::new("audio-prompt-box"), placeholder: PLACEHOLDER, enter_to_generate: env.enter_to_generate, mentions: &[], max_length: None, deck: DeckMode::None, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !missing_ref, generating: self.generating, generate_tooltip: "Generate", warning: missing_ref.then_some("Audio track required"), banner: None, extra_input: !self.settings.style_prompt.is_empty() };
+    let props = PromptBoxProps { id: Id::new("audio-prompt-box"), placeholder: i18n::t(PLACEHOLDER), enter_to_generate: env.enter_to_generate, mentions: &[], max_length: None, deck: DeckMode::None, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !missing_ref, generating: self.generating, generate_tooltip: i18n::t("Generate"), warning: missing_ref.then_some(i18n::t("Audio track required")), banner: None, extra_input: !self.settings.style_prompt.is_empty() };
 
     let playing = self.refs.audios.iter().map(|r| r.id).find(|id| env.audio.is_playing(&ref_key(*id)));
     let image = self.refs.images.first().and_then(|r| r.preview.as_deref()).and_then(|key| match env.cache.get(&env.ctx, key) {
@@ -171,7 +172,7 @@ impl CreateAudioPage {
           self.make_room_for_image(env);
           common::upload_png(env, &mut self.refs, png, ImageSlot::Reference);
         },
-        _ => env.toasts.error("Image references aren't available here"),
+        _ => env.toasts.error(i18n::tl("Image references aren't available here")),
       },
       PromptBoxAction::Deck(_) | PromptBoxAction::MentionPicked(..) => {},
     }
@@ -215,13 +216,13 @@ impl CreateAudioPage {
       self.add_audio(env, m, &audios);
     } else if let Some(path) = image {
       if m.image_refs_max == 0 {
-        env.toasts.error("Image references aren't available here");
+        env.toasts.error(i18n::tl("Image references aren't available here"));
         return;
       }
       self.make_room_for_image(env);
       common::upload_path(env, &mut self.refs, path, RefKind::Image, ImageSlot::Reference);
     } else if !paths.is_empty() {
-      env.toasts.error(format!("Only {} files can be added here", accepted_kinds(m)));
+      env.toasts.error(i18n::fmt_logical("Only {kinds} files can be added here", &[("kinds", &accepted_kinds(m))]));
     }
   }
 
@@ -231,12 +232,13 @@ impl CreateAudioPage {
       return;
     }
     if m.audio_refs_max == 0 {
-      env.toasts.error("Audio references aren't available here");
+      env.toasts.error(i18n::tl("Audio references aren't available here"));
       return;
     }
     let free = m.audio_refs_max.saturating_sub(self.refs.audios.len());
     if paths.len() > free {
-      env.toasts.error(format!("Max {} audio track{}", m.audio_refs_max, if m.audio_refs_max == 1 { "" } else { "s" }));
+      let key = if m.audio_refs_max == 1 { "Max {max} audio track" } else { "Max {max} audio tracks" };
+      env.toasts.error(i18n::fmt_logical(key, &[("max", &m.audio_refs_max.to_string())]));
     }
     if free == 0 {
       return;
@@ -282,7 +284,7 @@ impl CreateAudioPage {
   fn make_room_for_audio(&mut self, toasts: &mut Toasts) {
     if !self.refs.images.is_empty() {
       self.refs.images.clear();
-      toasts.error("Removed image reference \u{2014} it can't be combined with audio");
+      toasts.error(i18n::tl("Removed image reference \u{2014} it can't be combined with audio"));
     }
   }
 
@@ -293,7 +295,7 @@ impl CreateAudioPage {
         env.audio.stop();
       }
       self.refs.audios.clear();
-      env.toasts.error("Removed audio reference \u{2014} it can't be combined with an image");
+      env.toasts.error(i18n::tl("Removed audio reference \u{2014} it can't be combined with an image"));
     }
     self.refs.images.clear();
   }
@@ -307,7 +309,7 @@ impl CreateAudioPage {
       return;
     };
     if self.missing_required_ref(m) {
-      env.toasts.error(format!("{} needs an audio track to work from \u{2014} add one first", m.name));
+      env.toasts.error(i18n::fmt_logical("{model} needs an audio track to work from \u{2014} add one first", &[("model", &m.name)]));
       return;
     }
     if !env.signed_in {
@@ -315,7 +317,7 @@ impl CreateAudioPage {
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error("Please wait for your references to finish uploading");
+      env.toasts.error(i18n::tl("Please wait for your references to finish uploading"));
       return;
     }
     self.generating = true;
@@ -326,7 +328,7 @@ impl CreateAudioPage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Audio, job_tokens, meta, env.catalog);
-    env.toasts.success("Audio generation enqueued!");
+    env.toasts.success(i18n::tl("Audio generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str, status: Option<u16>) {
@@ -393,8 +395,13 @@ impl CreateAudioPage {
 /// Beat & Key, and Tuning.
 fn audio_toolbar(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   let toggles = [(caps.instrumental, &mut s.instrumental, "audio-instrumental", Icon::MicOff, "Instrumental"), (caps.keep_lyrics, &mut s.keep_lyrics, "audio-keep-lyrics", Icon::Mic, "Keep lyrics"), (caps.loopable, &mut s.loopable, "audio-loop", Icon::Repeat, "Loop")];
-  for (supported, value, id, icon, label) in toggles {
-    if supported && pickers::toggle(ui, Id::new(id), icon, label, *value, &format!("{label}: {}", if *value { "ON" } else { "OFF" })) {
+  for (supported, value, id, icon, key) in toggles {
+    if !supported {
+      continue;
+    }
+    let tip_key = if *value { "{label}: ON" } else { "{label}: OFF" };
+    let tip = i18n::fmt(tip_key, &[("label", i18n::tl(key))]);
+    if pickers::toggle(ui, Id::new(id), icon, i18n::t(key), *value, &tip) {
       *value = !*value;
     }
   }
@@ -410,22 +417,22 @@ fn audio_toolbar(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
 fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   let mut parts = Vec::new();
   if caps.bpm {
-    parts.push(s.bpm.map_or_else(|| "Auto BPM".to_owned(), |b| format!("{b} BPM")));
+    parts.push(s.bpm.map_or_else(|| i18n::t("Auto BPM").to_owned(), |b| i18n::fmt("{bpm} BPM", &[("bpm", &b.to_string())])));
   }
   if caps.musical_key {
-    parts.push(musical_key(&s.musical_key).2.to_owned());
+    parts.push(i18n::t(musical_key(&s.musical_key).2).to_owned());
   }
-  let label = if parts.is_empty() { "Beat".to_owned() } else { parts.join(" \u{b7} ") };
-  pickers::popover_pill(ui, Id::new("audio-beat"), Leading::Icon(Icon::Drum), &label, "Beat & Key", |ui| {
+  let label = if parts.is_empty() { i18n::t("Beat").to_owned() } else { parts.join(" \u{b7} ") };
+  pickers::popover_pill(ui, Id::new("audio-beat"), Leading::Icon(Icon::Drum), &label, i18n::t("Beat & Key"), |ui| {
     ui.set_width(POPOVER_WIDTH);
-    widgets::menu_header(ui, "Beat & Key");
+    widgets::menu_header(ui, i18n::t("Beat & Key"));
     padded(ui, |ui| {
       if caps.bpm {
         ui.horizontal(|ui| {
-          setting_name(ui, "BPM");
+          setting_name(ui, i18n::t("BPM"));
           ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            setting_value(ui, &s.bpm.map_or_else(|| "Auto".to_owned(), |b| b.to_string()));
-            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new("Auto").size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+            setting_value(ui, &s.bpm.map_or_else(|| i18n::t("Auto").to_owned(), |b| b.to_string()));
+            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new(i18n::t("Auto")).size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
               s.bpm = None;
             }
           });
@@ -437,18 +444,18 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
       }
       if caps.musical_key {
         ui.add_space(6.0);
-        setting_name(ui, "Musical key");
+        setting_name(ui, i18n::t("Musical key"));
         ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
         let width = ui.available_width();
         let (auto, keys) = MUSICAL_KEYS.split_first().expect("keys");
-        if choice_chip(ui, auto.2, s.musical_key == auto.0, width, auto.1).clicked() {
+        if choice_chip(ui, i18n::t(auto.2), s.musical_key == auto.0, width, i18n::t(auto.1)).clicked() {
           s.musical_key = auto.0.to_owned();
         }
         let cell = (width - 12.0) / 4.0;
         for row in keys.chunks(4) {
           ui.horizontal(|ui| {
             for (value, label, short) in row {
-              if choice_chip(ui, short, s.musical_key == *value, cell, label).clicked() {
+              if choice_chip(ui, short, s.musical_key == *value, cell, i18n::t(label)).clicked() {
                 s.musical_key = (*value).to_owned();
               }
             }
@@ -461,12 +468,13 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
 
 /// The Tuning popover: sample rate chips and the speed, volume and pitch sliders.
 fn tuning(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
-  pickers::popover_pill(ui, Id::new("audio-tuning"), Leading::Icon(Icon::SlidersHorizontal), "Tuning", "Tuning", |ui| {
+  let title = i18n::t("Tuning");
+  pickers::popover_pill(ui, Id::new("audio-tuning"), Leading::Icon(Icon::SlidersHorizontal), title, title, |ui| {
     ui.set_width(POPOVER_WIDTH);
-    widgets::menu_header(ui, "Tuning");
+    widgets::menu_header(ui, title);
     padded(ui, |ui| {
       if !caps.sample_rates.is_empty() {
-        setting_name(ui, "Sample rate");
+        setting_name(ui, i18n::t("Sample rate"));
         let current = caps.sample_rate(s.sample_rate_hz);
         ui.horizontal_wrapped(|ui| {
           ui.spacing_mut().item_spacing = vec2(4.0, 4.0);
@@ -480,13 +488,13 @@ fn tuning(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
         ui.add_space(6.0);
       }
       if caps.speed {
-        labeled_slider(ui, "Speed", &format!("{:.2}\u{d7}", s.speed), &mut s.speed, SPEED_RANGE, 0.05);
+        labeled_slider(ui, i18n::t("Speed"), &format!("{:.2}\u{d7}", s.speed), &mut s.speed, SPEED_RANGE, 0.05);
       }
       if caps.volume {
-        labeled_slider(ui, "Volume", &format!("{:.2}\u{d7}", s.volume), &mut s.volume, VOLUME_RANGE, 0.05);
+        labeled_slider(ui, i18n::t("Volume"), &format!("{:.2}\u{d7}", s.volume), &mut s.volume, VOLUME_RANGE, 0.05);
       }
       if caps.pitch {
-        labeled_slider(ui, "Pitch", &format!("{}{} st", if s.pitch > 0 { "+" } else { "" }, s.pitch), &mut s.pitch, PITCH_RANGE, 1.0);
+        labeled_slider(ui, i18n::t("Pitch"), &format!("{}{} st", if s.pitch > 0 { "+" } else { "" }, s.pitch), &mut s.pitch, PITCH_RANGE, 1.0);
       }
     });
   });
@@ -502,30 +510,31 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
     ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
     if m.audio_refs_max > 0 {
       icons::icon(ui, Icon::Music, 14.0, theme::MUTED);
-      ui.label(egui::RichText::new(format!("Audio Track ({}/{})", refs.audios.len(), m.audio_refs_max)).size(12.5).color(theme::MUTED));
+      let track_label = i18n::fmt("Audio Track ({count}/{max})", &[("count", &refs.audios.len().to_string()), ("max", &m.audio_refs_max.to_string())]);
+      ui.label(egui::RichText::new(track_label).size(12.5).color(theme::MUTED));
       if m.audio.requires_audio_ref && refs.audios.is_empty() {
-        ui.label(egui::RichText::new("required").size(12.5).color(theme::BAD));
+        ui.label(egui::RichText::new(i18n::t("required")).size(12.5).color(theme::BAD));
       }
       for (i, r) in refs.audios.iter().enumerate() {
         audio_tile(ui, i, r, playing == Some(r.id), actions);
       }
       if refs.audios.len() < m.audio_refs_max {
         let uploading = refs.audios.iter().any(|r| r.status == RefStatus::Uploading);
-        if ui.add_enabled_ui(!uploading, |ui| widgets::pill(ui, Leading::Icon(Icon::Upload), if uploading { "Uploading\u{2026}" } else { "Add audio" }, false)).inner.clicked() {
+        if ui.add_enabled_ui(!uploading, |ui| widgets::pill(ui, Leading::Icon(Icon::Upload), i18n::t(if uploading { "Uploading\u{2026}" } else { "Add audio" }), false)).inner.clicked() {
           actions.push(RowAction::AddAudio);
         }
-        if widgets::pill(ui, Leading::Icon(Icon::Folder), "From library", false).clicked() {
+        if widgets::pill(ui, Leading::Icon(Icon::Folder), i18n::t("From library"), false).clicked() {
           actions.push(RowAction::AudioFromLibrary);
         }
       }
     }
     if m.image_refs_max > 0 {
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("Image").size(12.5).color(theme::MUTED));
+      ui.label(egui::RichText::new(i18n::t("Image")).size(12.5).color(theme::MUTED));
       match refs.images.first() {
         Some(r) => image_tile(ui, r, image, actions),
         None => {
-          if widgets::pill(ui, Leading::Icon(Icon::Image), "Add image", false).clicked() {
+          if widgets::pill(ui, Leading::Icon(Icon::Image), i18n::t("Add image"), false).clicked() {
             actions.push(RowAction::AddImage);
           }
         },
@@ -540,7 +549,8 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
 /// One audio reference (`AudioRefTile`): play / stop, "Audio 1 · 12s", remove.
 fn audio_tile(ui: &mut Ui, index: usize, r: &RefMedia, playing: bool, actions: &mut Vec<RowAction>) {
   let uploading = r.status == RefStatus::Uploading;
-  let text = if uploading { format!("Audio {}", index + 1) } else { format!("Audio {} \u{b7} {}s", index + 1, r.duration_secs.round() as i64) };
+  let idx_str = (index + 1).to_string();
+  let text = if uploading { i18n::fmt("Audio {index}", &[("index", &idx_str)]) } else { i18n::fmt("Audio {index} · {secs}s", &[("index", &idx_str), ("secs", &(r.duration_secs.round() as i64).to_string())]) };
   let galley = ui.painter().layout_no_wrap(text, FontId::new(12.5, theme::medium()), theme::INK);
   let (rect, _) = ui.allocate_exact_size(vec2(6.0 + 24.0 + 8.0 + galley.size().x + 6.0 + 20.0 + 6.0, theme::CONTROL_H), Sense::hover());
   ui.painter().rect(rect, theme::RADIUS, theme::CONTROLS, Stroke::new(1.0, theme::LINE), egui::StrokeKind::Inside);
@@ -550,7 +560,8 @@ fn audio_tile(ui: &mut Ui, index: usize, r: &RefMedia, playing: bool, actions: &
   } else {
     let resp = ui.interact(play, Id::new(("audio-ref-play", r.id)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
     let label = if playing { "Stop" } else { "Play" };
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+    let accessible = i18n::tl(label).to_owned();
+    resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
     let fill = match (playing, resp.hovered()) {
       (true, _) => theme::ACCENT,
       (false, true) => theme::WASH_HOVER,
@@ -598,7 +609,7 @@ fn style_row(ui: &mut Ui, style: &mut String) {
   ui.horizontal(|ui| {
     icons::icon(ui, Icon::Tags, 14.0, theme::DIM);
     let clear_w = if style.is_empty() { 0.0 } else { 28.0 };
-    ui.add(egui::TextEdit::singleline(style).id_salt("audio-style").hint_text(STYLE_PLACEHOLDER).frame(egui::Frame::NONE).font(FontId::new(14.0, egui::FontFamily::Proportional)).desired_width(ui.available_width() - clear_w));
+    ui.add(egui::TextEdit::singleline(style).id_salt("audio-style").hint_text(i18n::t(STYLE_PLACEHOLDER)).frame(egui::Frame::NONE).font(FontId::new(14.0, egui::FontFamily::Proportional)).desired_width(ui.available_width() - clear_w));
     if !style.is_empty() {
       let (rect, _) = ui.allocate_exact_size(vec2(20.0, 20.0), Sense::hover());
       if x_button(ui, rect, Id::new("audio-style-clear"), "Clear style", true) {
@@ -611,13 +622,14 @@ fn style_row(ui: &mut Ui, style: &mut String) {
 /// A small round × at `rect`, painted while `shown` (it stays clickable for keyboards and tests).
 fn x_button(ui: &mut Ui, rect: Rect, id: Id, label: &str, shown: bool) -> bool {
   let resp = ui.interact(rect, id, Sense::click());
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+  let accessible = i18n::tl(label).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
   if shown || resp.hovered() {
     let fill = if resp.hovered() { theme::fade(theme::DANGER, 0.7) } else { Color32::from_black_alpha(128) };
     ui.painter().circle_filled(rect.center(), rect.width() / 2.0, fill);
     icons::paint(ui.painter(), rect.shrink(rect.width() * 0.27), Icon::X, Color32::WHITE);
   }
-  resp.on_hover_text(label).on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
+  resp.on_hover_text(i18n::t(label)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
 
 /// A selectable chip in the popovers (keys, sample rates): outlined, filled when selected.
@@ -630,7 +642,8 @@ fn choice_chip(ui: &mut Ui, label: &str, selected: bool, width: f32, tooltip: &s
   };
   ui.painter().rect(rect, theme::RADIUS, fill, Stroke::new(1.0, border), egui::StrokeKind::Inside);
   ui.painter().text(rect.center(), Align2::CENTER_CENTER, label, FontId::new(12.5, theme::medium()), if selected { theme::INK } else { theme::MUTED });
-  resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, label));
+  let accessible = i18n::logical_of(label).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::selected(egui::WidgetType::Button, true, selected, accessible.clone()));
   resp.on_hover_text(tooltip).on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
@@ -683,24 +696,25 @@ fn hundredths(value: f32) -> f64 {
 
 /// "audio", "audio or image" (for the drop toasts).
 fn accepted_kinds(m: &ModelInfo) -> String {
-  let kinds: Vec<&str> = [("audio", m.audio_refs_max), ("image", m.image_refs_max)].into_iter().filter(|(_, n)| *n > 0).map(|(k, _)| k).collect();
-  if kinds.is_empty() {
-    "reference".to_owned()
-  } else {
-    kinds.join(" or ")
+  let kinds: Vec<&str> = [("audio", m.audio_refs_max), ("image", m.image_refs_max)].into_iter().filter(|(_, n)| *n > 0).map(|(k, _)| i18n::tl(k)).collect();
+  match kinds.as_slice() {
+    [] => i18n::tl("reference").to_owned(),
+    [single] => (*single).to_owned(),
+    [a, b] => i18n::fmt_logical("{a} or {b}", &[("a", a), ("b", b)]),
+    many => many.join(", "),
   }
 }
 
 fn duration_message() -> String {
-  format!("Total audio duration cannot exceed {}s", MAX_REF_SECS as u32)
+  i18n::fmt_logical("Total audio duration cannot exceed {secs}s", &[("secs", &(MAX_REF_SECS as u32).to_string())])
 }
 
 /// What a failed generate tells the user: out of credits, an outage, or the server's message.
 fn failure_message(message: &str, status: Option<u16>) -> String {
   match status {
-    Some(402) => "Not enough credits for this generation".to_owned(),
-    Some(code) if code >= 500 => OUTAGE_MESSAGE.to_owned(),
-    _ if message.is_empty() => "Failed to start audio generation".to_owned(),
+    Some(402) => i18n::tl("Not enough credits for this generation").to_owned(),
+    Some(code) if code >= 500 => i18n::tl(OUTAGE_MESSAGE).to_owned(),
+    _ if message.is_empty() => i18n::tl("Failed to start audio generation").to_owned(),
     _ => message.to_owned(),
   }
 }

@@ -9,7 +9,7 @@ use egui::{Align2, Color32, CornerRadius, FontFamily, FontId, Id, Mesh, Rect, Se
 use crate::backend::audio::AudioPlayer;
 use crate::backend::media_cache::{Lookup, MediaCache};
 use crate::feed::types::{FailedJob, FeedItem, MediaKind, PendingJob, pending_status, time_ago};
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 use crate::ui::{creator_icons, waveform, widgets};
 
@@ -183,7 +183,9 @@ fn pending_card(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn
   if job.batch_count > 1 {
     let banner = Rect::from_min_max(rect.min + vec2(8.0, 8.0), pos2(rect.right() - 8.0, rect.top() + 34.0));
     p.rect_filled(banner, 0.0, Color32::from_black_alpha(153));
-    p.text(banner.center(), Align2::CENTER_CENTER, format!("Generating {} {} \u{b7} Results may appear one at a time", job.batch_count, job.kind.plural()), FontId::new(10.0, FontFamily::Proportional), theme::fade(Color32::WHITE, 0.7));
+    let kind_plural = i18n::logical_of(job.kind.display_plural());
+    let text = i18n::fmt("Generating {count} {kind} · Results may appear one at a time", &[("count", &job.batch_count.to_string()), ("kind", kind_plural)]);
+    p.text(banner.center(), Align2::CENTER_CENTER, text, FontId::new(10.0, FontFamily::Proportional), theme::fade(Color32::WHITE, 0.7));
   }
   let c = rect.center() - vec2(0.0, 18.0);
   icons::paint_spinner(ui, Rect::from_center_size(c, vec2(26.0, 26.0)), theme::fade(Color32::WHITE, 0.2));
@@ -219,7 +221,7 @@ fn failed_card(ui: &mut Ui, id: Id, rect: Rect, job: &FailedJob, cache: &mut Med
   p.rect_filled(button, theme::RADIUS, if resp.hovered() { theme::WASH_HOVER } else { theme::WASH });
   let ink = if resp.hovered() { theme::fade(Color32::WHITE, 0.7) } else { theme::fade(Color32::WHITE, 0.5) };
   icons::paint(p, Rect::from_center_size(button.left_center() + vec2(18.0, 0.0), vec2(12.0, 12.0)), Icon::X, ink);
-  p.text(button.left_center() + vec2(30.0, 0.0), Align2::LEFT_CENTER, "Dismiss", FontId::new(12.0, FontFamily::Proportional), ink);
+  p.text(button.left_center() + vec2(30.0, 0.0), Align2::LEFT_CENTER, i18n::t("Dismiss"), FontId::new(12.0, FontFamily::Proportional), ink);
   if resp.clicked() {
     actions.push(FeedAction::DismissFailed(job.job_token.clone()));
   }
@@ -263,7 +265,7 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
     }
   }
   if view.last_viewed == Some(item.token.as_str()) {
-    let galley = widgets::caps(ui, "Last viewed", 10.0, theme::medium(), 0.5, theme::fade(Color32::WHITE, 0.8));
+    let galley = widgets::caps(ui, i18n::t("Last viewed"), 10.0, theme::medium(), 0.5, theme::fade(Color32::WHITE, 0.8));
     let badge = Rect::from_min_size(pos2(rect.right() - 8.0 - galley.size().x - 26.0, rect.top() + 8.0), vec2(galley.size().x + 26.0, 18.0));
     let p = ui.painter();
     p.rect_filled(badge, theme::RADIUS, Color32::from_black_alpha(178));
@@ -276,7 +278,7 @@ fn item_card(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cach
     let band = edge_fade(ui, rect, 56.0, 178, is_audio);
     let chip_y = if is_audio { band.top() + 18.0 } else { band.bottom() - 18.0 };
     let mut x = band.left() + 8.0;
-    x = chip(ui, pos2(x, chip_y), Some(kind_icon(item.kind)), None, item.kind.label());
+    x = chip(ui, pos2(x, chip_y), Some(kind_icon(item.kind)), None, item.kind.display_label());
     if let Some(model) = item.model_id.as_deref() {
       chip(ui, pos2(x + 6.0, chip_y), None, Some(&names.creator(model)), &truncate(&names.display_name(model), 16));
     }
@@ -352,22 +354,22 @@ fn audio_face(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, aud
 fn item_actions<'a>(view: &FeedView<'_>, item: &FeedItem, prompt: Option<&String>) -> Vec<(Icon, &'a str, FeedAction)> {
   let mut buttons = Vec::new();
   if let Some(text) = prompt {
-    buttons.push((Icon::Copy, "Copy prompt", FeedAction::CopyPrompt(text.clone())));
+    buttons.push((Icon::Copy, i18n::t("Copy prompt"), FeedAction::CopyPrompt(text.clone())));
   }
   if item.prompt_token.is_some() && item.kind != MediaKind::Audio {
-    buttons.push((Icon::RotateCw, "Recreate", FeedAction::Recreate(item.token.clone())));
+    buttons.push((Icon::RotateCw, i18n::t("Recreate"), FeedAction::Recreate(item.token.clone())));
   }
   if view.make_video && item.kind == MediaKind::Image {
-    buttons.push((Icon::Video, "Make Video", FeedAction::MakeVideo(item.token.clone())));
+    buttons.push((Icon::Video, i18n::t("Make Video"), FeedAction::MakeVideo(item.token.clone())));
   }
-  buttons.push((Icon::Link, "Share", FeedAction::Share(item.token.clone())));
-  buttons.push((Icon::Download, "Download", FeedAction::Download(item.token.clone())));
+  buttons.push((Icon::Link, i18n::t("Share"), FeedAction::Share(item.token.clone())));
+  buttons.push((Icon::Download, i18n::t("Download"), FeedAction::Download(item.token.clone())));
   buttons
 }
 
 /// What an item is called without its prompt: its title, else "Audio Generation" and the like.
 fn fallback_title(item: &FeedItem) -> String {
-  item.title.clone().unwrap_or_else(|| format!("{} Generation", item.kind.label()))
+  item.title.clone().unwrap_or_else(|| i18n::fmt("{kind} Generation", &[("kind", i18n::logical_of(item.kind.display_label()))]))
 }
 
 fn kind_icon(kind: MediaKind) -> Icon {
@@ -386,14 +388,16 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
   let (progress, label) = pending_status(job, now);
   let x = thumb.right() + 16.0;
   let w = rect.right() - x;
-  let prompt = if job.prompt.is_empty() { "Generating\u{2026}" } else { job.prompt.as_str() };
+  let prompt = if job.prompt.is_empty() { i18n::t("Generating\u{2026}") } else { job.prompt.as_str() };
   let galley = clamp_lines(ui, prompt, 14.0, theme::INK, w, 2);
   let gh = galley.size().y;
   ui.painter().galley(pos2(x, thumb.top()), galley, theme::INK);
   let meta_y = thumb.top() + gh + 14.0;
   let mx = model_chip(ui, pos2(x, meta_y), job.model_id.as_deref().unwrap_or_default(), names, 12.0, theme::MUTED);
   if job.batch_count > 1 {
-    ui.painter().text(pos2(mx + 8.0, meta_y), Align2::LEFT_CENTER, format!("\u{b7} {} {}", job.batch_count, job.kind.plural()), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
+    let plural = job.kind.display_plural();
+    let label = if i18n::is_rtl() { format!("{plural} {} \u{b7}", job.batch_count) } else { format!("\u{b7} {} {plural}", job.batch_count) };
+    ui.painter().text(pos2(mx + 8.0, meta_y), Align2::LEFT_CENTER, label, FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
   }
   let bar = Rect::from_min_size(pos2(x, meta_y + 16.0), vec2(w.min(320.0), 4.0));
   widgets::progress_bar(ui.painter(), bar, progress as f32 / 100.0);
@@ -419,7 +423,7 @@ fn failed_row(ui: &mut Ui, id: Id, rect: Rect, job: &FailedJob, names: &dyn Mode
   let button = Rect::from_min_size(pos2(rect.right() - 92.0, thumb.top()), vec2(92.0, 28.0));
   let resp = ui.interact(button, id.with(("dismiss-row", &job.job_token)), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
   ui.painter().rect_filled(button, theme::RADIUS, if resp.hovered() { theme::WASH_HOVER } else { theme::WASH });
-  ui.painter().text(button.center(), Align2::CENTER_CENTER, "Dismiss", FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
+  ui.painter().text(button.center(), Align2::CENTER_CENTER, i18n::t("Dismiss"), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
   if resp.clicked() {
     actions.push(FeedAction::DismissFailed(job.job_token.clone()));
   }
@@ -470,7 +474,7 @@ fn item_row(ui: &mut Ui, view: &FeedView<'_>, rect: Rect, item: &FeedItem, cache
   let mut mx = x;
   if let Some(model) = item.model_id.as_deref() {
     mx = model_chip(ui, pos2(x, meta_y), model, names, 12.0, theme::MUTED);
-    ui.painter().text(pos2(mx + 6.0, meta_y), Align2::LEFT_CENTER, format!("\u{b7} {}", item.kind.label()), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
+    ui.painter().text(pos2(mx + 6.0, meta_y), Align2::LEFT_CENTER, format!("\u{b7} {}", item.kind.display_label()), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
   }
   let _ = mx;
   ui.painter().text(pos2(rect.right(), thumb.top() + 8.0), Align2::RIGHT_CENTER, time_ago(item.created_at, now), FontId::new(11.0, FontFamily::Proportional), theme::FAINT);

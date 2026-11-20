@@ -6,6 +6,7 @@ use egui::load::SizedTexture;
 use egui::{Align2, Color32, CornerRadius, FontId, Id, Order, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, pos2, vec2};
 
 use crate::backend::media_cache::{Lookup, MediaCache};
+use crate::i18n;
 use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, RefStatus, References};
 use crate::theme;
 use crate::ui::icons::{self, Icon};
@@ -92,7 +93,7 @@ pub fn reference_deck(ui: &mut Ui, id: Id, refs: &References, limits: &DeckLimit
   }
 
   if items.is_empty() {
-    let resp = add_tile(ui, id.with("empty"), "Reference", -6.0);
+    let resp = add_tile(ui, id.with("empty"), i18n::t("Reference"), -6.0);
     if resp.clicked() {
       actions.push(DeckAction::Upload { kinds: open_kinds.clone(), slot: ImageSlot::Reference });
     }
@@ -149,7 +150,7 @@ pub fn keyframe_cards(ui: &mut Ui, id: Id, refs: &References, show_last: bool, l
   let mut actions = Vec::new();
   ui.horizontal(|ui| {
     ui.spacing_mut().item_spacing.x = 0.0;
-    slot_card(ui, id.with("first"), refs.first_frame.as_ref(), "First frame", if show_last { -6.0 } else { 0.0 }, ImageSlot::FirstFrame, library, cache, &mut actions);
+    slot_card(ui, id.with("first"), refs.first_frame.as_ref(), i18n::t("First frame"), if show_last { -6.0 } else { 0.0 }, ImageSlot::FirstFrame, library, cache, &mut actions);
     if show_last {
       let both = refs.first_frame.is_some() && refs.last_frame.is_some();
       let (rect, _) = ui.allocate_exact_size(vec2(8.0, CARD), Sense::hover());
@@ -170,10 +171,10 @@ pub fn keyframe_cards(ui: &mut Ui, id: Id, refs: &References, show_last: bool, l
         Stroke::new(1.0, theme::fade(Color32::WHITE, if both { 0.2 } else { 0.1 })),
       );
       icons::paint(p, swap.shrink(5.0), Icon::ArrowLeftRight, theme::fade(Color32::WHITE, if both { 1.0 } else { 0.5 }));
-      if both && resp.on_hover_text("Swap frames").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+      if both && resp.on_hover_text(i18n::t("Swap frames")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
         actions.push(DeckAction::SwapFrames);
       }
-      slot_card(ui, id.with("last"), refs.last_frame.as_ref(), "Last frame", 6.0, ImageSlot::LastFrame, library, cache, &mut actions);
+      slot_card(ui, id.with("last"), refs.last_frame.as_ref(), i18n::t("Last frame"), 6.0, ImageSlot::LastFrame, library, cache, &mut actions);
     }
   });
   actions
@@ -220,9 +221,10 @@ fn expanded_panel(ui: &mut Ui, id: Id, refs: &References, items: &[&RefMedia], o
   if items.len() > 1 {
     ui.horizontal(|ui| {
       let n = items.len();
-      ui.label(egui::RichText::new(format!("{n} reference{}", if n == 1 { "" } else { "s" })).size(11.0).family(theme::medium()).color(theme::MUTED));
+      let count_text = i18n::fmt(if n == 1 { "{n} reference" } else { "{n} references" }, &[("n", &n.to_string())]);
+      ui.label(egui::RichText::new(count_text).size(11.0).family(theme::medium()).color(theme::MUTED));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let resp = ui.add(egui::Button::new(egui::RichText::new("Clear all").size(11.0)).frame(false));
+        let resp = ui.add(egui::Button::new(egui::RichText::new(i18n::t("Clear all")).size(11.0)).frame(false));
         if resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
           actions.push(DeckAction::ClearAll);
         }
@@ -357,7 +359,7 @@ fn remove_button(ui: &mut Ui, id: Id, card: Rect, card_hovered: bool) -> bool {
   let fill = if resp.hovered() { theme::fade(theme::DANGER, 0.7) } else { Color32::from_black_alpha(128) };
   ui.painter().circle_filled(rect.center(), 10.0, fill);
   icons::paint(ui.painter(), rect.shrink(5.0), Icon::X, Color32::WHITE);
-  resp.on_hover_text("Remove").on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
+  resp.on_hover_text(i18n::t("Remove")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
 
 /// The dashed "+" card that adds a reference (straightens and grows on hover).
@@ -447,7 +449,12 @@ fn hover_menu(ui: &Ui, id: Id, trigger: &Response, groups: &[MenuGroup], actions
       for group in groups {
         if show_groups {
           ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(group.kind.noun().to_uppercase()).size(10.0).family(theme::semibold()).color(theme::FAINT));
+            let title = match group.kind {
+              RefKind::Image => i18n::t("Image"),
+              RefKind::Video => i18n::t("Video"),
+              RefKind::Audio => i18n::t("Audio"),
+            };
+            ui.label(egui::RichText::new(title.to_uppercase()).size(10.0).family(theme::semibold()).color(theme::FAINT));
             if let Some(hint) = &group.hint {
               ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(egui::RichText::new(hint).size(10.0).family(theme::medium()).color(theme::FAINT));
@@ -455,11 +462,11 @@ fn hover_menu(ui: &Ui, id: Id, trigger: &Response, groups: &[MenuGroup], actions
             }
           });
         }
-        if menu_entry(ui, Icon::Upload, "Upload") {
+        if menu_entry(ui, Icon::Upload, i18n::t("Upload")) {
           actions.push(DeckAction::Upload { kinds: vec![group.kind], slot: group.slot });
           latch.close(ui);
         }
-        if group.library && menu_entry(ui, Icon::Library, if group.slot == ImageSlot::Reference { "From library" } else { "Pick from library" }) {
+        if group.library && menu_entry(ui, Icon::Library, i18n::t(if group.slot == ImageSlot::Reference { "From library" } else { "Pick from library" })) {
           actions.push(DeckAction::Library { kind: group.kind, slot: group.slot });
           latch.close(ui);
         }

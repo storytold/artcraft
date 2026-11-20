@@ -3,7 +3,7 @@
 
 use egui::{Color32, Rect, Response, Sense, Stroke, Ui, vec2};
 
-use crate::theme;
+use crate::{i18n, theme};
 
 /// How far in from the window's edges a drag resizes. Title bar controls leave this band alone.
 const RESIZE_EDGE: f32 = 5.0;
@@ -106,8 +106,10 @@ fn caption_button(ui: &mut Ui, button: Caption, height: f32) -> Response {
       "Close"
     },
   };
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
-  resp.on_hover_text(label)
+  let accessible = i18n::tl(label).to_owned();
+  let tip = i18n::t(label);
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
+  resp.on_hover_text(tip)
 }
 
 /// A hairline round the window, and resizing from its edges and corners (when not maximized).

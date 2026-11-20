@@ -5,12 +5,14 @@ use std::sync::Arc;
 
 use egui::{Align2, Color32, CornerRadius, FontId, Frame, Galley, Margin, Painter, Rect, Response, Sense, Stroke, Ui, pos2, vec2};
 
+use crate::i18n;
 use crate::theme;
 use crate::ui::icons::{self, Icon};
 
 /// `text` laid out upper case in `family`, `spacing` points between letters.
 pub fn caps(ui: &Ui, text: &str, size: f32, family: egui::FontFamily, spacing: f32, color: Color32) -> Arc<Galley> {
-  let format = egui::TextFormat { font_id: FontId::new(size, family), color, extra_letter_spacing: spacing, ..Default::default() };
+  let extra_letter_spacing = if i18n::is_rtl() { 0.0 } else { spacing };
+  let format = egui::TextFormat { font_id: FontId::new(size, family), color, extra_letter_spacing, ..Default::default() };
   ui.painter().layout_job(egui::text::LayoutJob::single_section(text.to_uppercase(), format))
 }
 
@@ -19,7 +21,8 @@ pub fn hud(ui: &mut Ui, text: &str, color: Color32) -> Response {
   let galley = caps(ui, text, theme::HUD_SIZE, theme::mono(), theme::HUD_SPACING, color);
   let (rect, resp) = ui.allocate_exact_size(galley.size(), Sense::hover());
   ui.painter().galley(rect.min, galley, color);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, text));
+  let accessible = i18n::logical_of(text).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Label, true, accessible.clone()));
   resp
 }
 
@@ -27,16 +30,18 @@ pub fn hud(ui: &mut Ui, text: &str, color: Color32) -> Response {
 pub fn section_label(ui: &mut Ui, text: &str, color: Color32) -> Response {
   let galley = caps(ui, text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, color);
   let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 32.0), Sense::hover());
-  let pos = pos2(rect.left() + 8.0, rect.center().y - galley.size().y / 2.0);
+  let x = if i18n::is_rtl() { rect.right() - 8.0 - galley.size().x } else { rect.left() + 8.0 };
+  let pos = pos2(x, rect.center().y - galley.size().y / 2.0);
   ui.painter().galley(pos, galley, color);
   resp
 }
 
 /// A small badge after a sidebar link ("BETA", "NEW"): 9 px mono in `color` on a tinted chip.
-pub fn badge(painter: &Painter, ui: &Ui, right_center: egui::Pos2, text: &str, color: Color32) {
+pub fn badge(painter: &Painter, ui: &Ui, edge_center: egui::Pos2, text: &str, color: Color32) {
   let galley = caps(ui, text, 9.0, theme::mono_bold(), 0.9, color);
   let size = galley.size() + vec2(10.0, 4.0);
-  let rect = Rect::from_min_size(pos2(right_center.x - size.x, right_center.y - size.y / 2.0), size);
+  let left = if i18n::is_rtl() { edge_center.x } else { edge_center.x - size.x };
+  let rect = Rect::from_min_size(pos2(left, edge_center.y - size.y / 2.0), size);
   painter.rect(rect, CornerRadius::same(2), theme::fade(color, 0.12), Stroke::new(1.0, theme::fade(color, 0.4)), egui::StrokeKind::Inside);
   painter.galley(rect.center() - galley.size() / 2.0, galley, color);
 }
@@ -57,6 +62,7 @@ pub enum Leading<'a> {
 /// as used for the model, aspect ratio, resolution and duration pickers.
 pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Response {
   let enabled = ui.is_enabled();
+  let rtl = i18n::is_rtl();
   let font = FontId::new(14.0, theme::medium());
   let galley = ui.painter().layout_no_wrap(label.to_owned(), font, theme::INK);
   let caption = match leading {
@@ -76,8 +82,15 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
   let stroke = if open { theme::LINE_STRONG } else { theme::LINE };
   p.rect(rect, theme::RADIUS, fill, Stroke::new(1.0, stroke), egui::StrokeKind::Inside);
   let ink = if enabled { theme::INK } else { theme::FAINT };
-  let mut x = rect.left() + 12.0;
-  let lead_rect = Rect::from_center_size(pos2(x + 7.0, rect.center().y), vec2(14.0, 14.0));
+  let (lead_cx, galley_x) = if rtl {
+    let lead_cx = rect.right() - 12.0 - 7.0;
+    let galley_x = rect.left() + 12.0;
+    (lead_cx, galley_x)
+  } else {
+    let x = rect.left() + 12.0;
+    (x + 7.0, x + lead_w)
+  };
+  let lead_rect = Rect::from_center_size(pos2(lead_cx, rect.center().y), vec2(14.0, 14.0));
   match leading {
     Leading::None => {},
     Leading::Icon(icon) => icons::paint(p, lead_rect, icon, ink),
@@ -87,13 +100,14 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
     },
     Leading::Caption(_) => {
       if let Some(c) = caption {
-        p.galley(pos2(x, rect.center().y - c.size().y / 2.0), c, theme::DIM);
+        let cx = if rtl { rect.right() - 12.0 - c.size().x } else { rect.left() + 12.0 };
+        p.galley(pos2(cx, rect.center().y - c.size().y / 2.0), c, theme::DIM);
       }
     },
   }
-  x += lead_w;
-  p.galley_with_override_text_color(pos2(x, rect.center().y - galley.size().y / 2.0), galley, ink);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, label));
+  p.galley_with_override_text_color(pos2(galley_x, rect.center().y - galley.size().y / 2.0), galley, ink);
+  let accessible = i18n::logical_of(label).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, accessible.clone()));
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
   } else {
@@ -105,6 +119,7 @@ pub fn pill(ui: &mut Ui, leading: Leading<'_>, label: &str, open: bool) -> Respo
 /// (`text-base-fg/50`, `hover:bg-white/5`): the count picker and clear-all.
 pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bool) -> Response {
   let enabled = ui.is_enabled();
+  let rtl = i18n::is_rtl();
   let galley = label.map(|l| ui.painter().layout_no_wrap(l.to_owned(), FontId::new(14.0, theme::medium()), theme::INK));
   let w = match &galley {
     Some(g) => 10.0 + 15.0 + 6.0 + g.size().x + 10.0,
@@ -123,13 +138,20 @@ pub fn ghost(ui: &mut Ui, icon: Icon, label: Option<&str>, tip: &str, active: bo
   };
   match galley {
     Some(g) => {
-      let icon_rect = Rect::from_center_size(pos2(rect.left() + 10.0 + 7.5, rect.center().y), vec2(15.0, 15.0));
+      let (icon_rect, text_x) = if rtl {
+        let ir = Rect::from_center_size(pos2(rect.right() - 10.0 - 7.5, rect.center().y), vec2(15.0, 15.0));
+        (ir, rect.left() + 10.0)
+      } else {
+        let ir = Rect::from_center_size(pos2(rect.left() + 10.0 + 7.5, rect.center().y), vec2(15.0, 15.0));
+        (ir, ir.right() + 6.0)
+      };
       icons::paint(p, icon_rect, icon, ink);
-      p.galley_with_override_text_color(pos2(icon_rect.right() + 6.0, rect.center().y - g.size().y / 2.0), g, ink);
+      p.galley_with_override_text_color(pos2(text_x, rect.center().y - g.size().y / 2.0), g, ink);
     },
     None => icons::paint(p, Rect::from_center_size(rect.center(), vec2(16.0, 16.0)), icon, ink),
   }
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, tip));
+  let accessible = i18n::logical_of(tip).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, accessible.clone()));
   let resp = resp.on_hover_text(tip);
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -147,7 +169,8 @@ pub fn overlay_icon(ui: &mut Ui, icon: Icon, tip: &str) -> Response {
   }
   let ink = if hovered { Color32::WHITE } else { Color32::from_white_alpha(217) };
   icons::paint(ui.painter(), Rect::from_center_size(rect.center(), vec2(14.0, 14.0)), icon, ink);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, tip));
+  let accessible = i18n::logical_of(tip).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
   resp.on_hover_text(tip).on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
@@ -168,7 +191,8 @@ pub fn generate_button(ui: &mut Ui, enabled: bool, loading: bool, tip: &str) -> 
   } else {
     icons::paint(ui.painter(), inner, Icon::ArrowUp, ink);
   }
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, "Generate"));
+  let accessible = i18n::tl("Generate").to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, accessible.clone()));
   let resp = resp.on_hover_text(tip);
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
@@ -211,12 +235,20 @@ pub fn button(ui: &mut Ui, icon: Option<Icon>, text: &str, kind: Kind, width: f3
   p.rect(rect, theme::RADIUS, dim(fill), Stroke::new(stroke.width, dim(stroke.color)), egui::StrokeKind::Inside);
   let content_w = icon_w + galley.size().x;
   let mut x = rect.center().x - content_w / 2.0;
-  if let Some(icon) = icon {
-    icons::paint(p, Rect::from_center_size(pos2(x + 6.5, rect.center().y), vec2(13.0, 13.0)), icon, dim(ink));
-    x += icon_w;
+  if i18n::is_rtl() {
+    p.galley_with_override_text_color(pos2(x, rect.center().y - galley.size().y / 2.0), galley, dim(ink));
+    if let Some(icon) = icon {
+      icons::paint(p, Rect::from_center_size(pos2(rect.center().x + content_w / 2.0 - 6.5, rect.center().y), vec2(13.0, 13.0)), icon, dim(ink));
+    }
+  } else {
+    if let Some(icon) = icon {
+      icons::paint(p, Rect::from_center_size(pos2(x + 6.5, rect.center().y), vec2(13.0, 13.0)), icon, dim(ink));
+      x += icon_w;
+    }
+    p.galley_with_override_text_color(pos2(x, rect.center().y - galley.size().y / 2.0), galley, dim(ink));
   }
-  p.galley_with_override_text_color(pos2(x, rect.center().y - galley.size().y / 2.0), galley, dim(ink));
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, text));
+  let accessible = i18n::logical_of(text).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, accessible.clone()));
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
   } else {
@@ -242,7 +274,8 @@ pub fn popover_frame() -> Frame {
 pub fn menu_header(ui: &mut Ui, text: &str) {
   let galley = caps(ui, text, theme::HUD_SIZE, theme::mono_bold(), theme::LABEL_SPACING, theme::fade(theme::INK, 0.5));
   let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 28.0), Sense::hover());
-  ui.painter().galley(pos2(rect.left() + 8.0, rect.center().y - galley.size().y / 2.0), galley, theme::INK);
+  let x = if i18n::is_rtl() { rect.right() - 8.0 - galley.size().x } else { rect.left() + 8.0 };
+  ui.painter().galley(pos2(x, rect.center().y - galley.size().y / 2.0), galley, theme::INK);
 }
 
 /// What a [`menu_row`] shows at its left.
@@ -260,6 +293,7 @@ pub enum RowLead<'a> {
 /// `selected` (or a chevron when `submenu`). Highlights on hover or when `highlighted`.
 pub fn menu_row(ui: &mut Ui, lead: RowLead<'_>, title: &str, subtitle: Option<&str>, selected: bool, submenu: bool, highlighted: bool) -> Response {
   let enabled = ui.is_enabled();
+  let rtl = i18n::is_rtl();
   let h = if subtitle.is_some() { 48.0 } else { 34.0 };
   let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), h), Sense::click());
   let on = (resp.hovered() && enabled) || highlighted;
@@ -268,46 +302,55 @@ pub fn menu_row(ui: &mut Ui, lead: RowLead<'_>, title: &str, subtitle: Option<&s
     p.rect_filled(rect, theme::RADIUS, theme::WASH_HOVER);
   }
   let ink = if enabled { theme::INK } else { theme::FAINT };
-  let mut x = rect.left() + 8.0;
+  let lead_step = match lead {
+    RowLead::None => 0.0,
+    RowLead::Logo(_) => 46.0,
+    _ => 26.0,
+  };
+  let lead_anchor = if rtl { rect.right() - 8.0 } else { rect.left() + 8.0 };
   match lead {
     RowLead::None => {},
     RowLead::Icon(icon) => {
-      icons::paint(p, Rect::from_center_size(pos2(x + 8.0, rect.center().y), vec2(15.0, 15.0)), icon, ink);
-      x += 26.0;
+      let cx = if rtl { lead_anchor - 8.0 } else { lead_anchor + 8.0 };
+      icons::paint(p, Rect::from_center_size(pos2(cx, rect.center().y), vec2(15.0, 15.0)), icon, ink);
     },
     RowLead::Aspect(ratio) => {
-      icons::paint_aspect(p, Rect::from_center_size(pos2(x + 8.0, rect.center().y), vec2(16.0, 16.0)), ratio, ink);
-      x += 26.0;
+      let cx = if rtl { lead_anchor - 8.0 } else { lead_anchor + 8.0 };
+      icons::paint_aspect(p, Rect::from_center_size(pos2(cx, rect.center().y), vec2(16.0, 16.0)), ratio, ink);
     },
     RowLead::Logo(texture) => {
-      let tile = Rect::from_center_size(pos2(x + 18.0, rect.center().y), vec2(36.0, 36.0));
+      let cx = if rtl { lead_anchor - 18.0 } else { lead_anchor + 18.0 };
+      let tile = Rect::from_center_size(pos2(cx, rect.center().y), vec2(36.0, 36.0));
       let (fill, border) = if selected { (theme::WASH_HOVER, Color32::WHITE) } else { (theme::WASH, theme::LINE) };
       p.rect(tile, theme::RADIUS, fill, Stroke::new(1.0, border), egui::StrokeKind::Inside);
       egui::Image::new(texture).tint(ink).paint_at(ui, Rect::from_center_size(tile.center(), vec2(18.0, 18.0)));
-      x += 46.0;
     },
     RowLead::SmallLogo(texture) => {
-      egui::Image::new(texture).tint(ink).paint_at(ui, Rect::from_center_size(pos2(x + 8.0, rect.center().y), vec2(15.0, 15.0)));
-      x += 26.0;
+      let cx = if rtl { lead_anchor - 8.0 } else { lead_anchor + 8.0 };
+      egui::Image::new(texture).tint(ink).paint_at(ui, Rect::from_center_size(pos2(cx, rect.center().y), vec2(15.0, 15.0)));
     },
   }
+  let text_x = if rtl { lead_anchor - lead_step } else { lead_anchor + lead_step };
+  let align = if rtl { Align2::RIGHT_CENTER } else { Align2::LEFT_CENTER };
   let title_font = FontId::new(13.5, theme::medium());
   match subtitle {
     Some(sub) => {
-      p.text(pos2(x, rect.center().y - 8.0), Align2::LEFT_CENTER, title, title_font, ink);
-      p.text(pos2(x, rect.center().y + 8.0), Align2::LEFT_CENTER, sub, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
+      p.text(pos2(text_x, rect.center().y - 8.0), align, title, title_font, ink);
+      p.text(pos2(text_x, rect.center().y + 8.0), align, sub, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
     },
     None => {
-      p.text(pos2(x, rect.center().y), Align2::LEFT_CENTER, title, title_font, ink);
+      p.text(pos2(text_x, rect.center().y), align, title, title_font, ink);
     },
   }
-  let trail = Rect::from_center_size(pos2(rect.right() - 14.0, rect.center().y), vec2(13.0, 13.0));
+  let trail_x = if rtl { rect.left() + 14.0 } else { rect.right() - 14.0 };
+  let trail = Rect::from_center_size(pos2(trail_x, rect.center().y), vec2(13.0, 13.0));
   if selected {
     icons::paint(p, trail, Icon::Check, theme::INK);
   } else if submenu {
-    icons::paint(p, trail, Icon::ChevronRight, theme::DIM);
+    icons::paint(p, trail, if rtl { Icon::ChevronLeft } else { Icon::ChevronRight }, theme::DIM);
   }
-  resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, title));
+  let accessible = i18n::logical_of(title).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::selected(egui::WidgetType::Button, enabled, selected, accessible.clone()));
   if enabled {
     resp.on_hover_cursor(egui::CursorIcon::PointingHand)
   } else {

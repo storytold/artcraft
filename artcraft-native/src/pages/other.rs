@@ -6,6 +6,7 @@ use egui::{Color32, Id, Rect, Sense, Ui, pos2, vec2};
 use crate::feed::grid::{self, FeedAction, FeedView};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 use crate::pages::common::{AppRequest, Env, FeedKey};
 use crate::shell::{Page, WEB_APP_URL};
 use crate::theme;
@@ -15,18 +16,21 @@ use crate::ui::widgets;
 /// Home: what ArtCraft does and where to start. Returns a page to open.
 pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Option<Page> {
   let mut open = None;
+  let rtl = i18n::is_rtl();
   let area = ui.max_rect();
   let width = (area.width() - 64.0).min(960.0);
-  let mut col = ui.new_child(egui::UiBuilder::new().max_rect(Rect::from_min_size(pos2(area.center().x - width / 2.0, area.top() + 56.0), vec2(width, area.height() - 56.0))));
+  let layout = egui::Layout::top_down(i18n::align_for_text(rtl));
+  let mut col = ui.new_child(egui::UiBuilder::new().max_rect(Rect::from_min_size(pos2(area.center().x - width / 2.0, area.top() + 56.0), vec2(width, area.height() - 56.0))).layout(layout));
   let ui = &mut col;
   widgets::hud(ui, "01 / ArtCraft", theme::FAINT);
   ui.add_space(10.0);
-  ui.label(widgets::heading("Capable tools for artists.", 52.0));
+  ui.label(widgets::heading(i18n::t("Capable tools for artists."), 52.0));
   ui.add_space(10.0);
-  ui.label(egui::RichText::new("Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.").size(17.0).color(theme::MUTED));
+  i18n::wrapped_label(ui, "Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.", |r| r.size(17.0).color(theme::MUTED));
   ui.add_space(28.0);
   ui.horizontal(|ui| {
     ui.spacing_mut().item_spacing.x = 16.0;
+    // In RTL, top_down(Align::Max) already causes ui.horizontal to place children right-to-left.
     let cards = [(Page::CreateImage, Icon::Image, "Create Image", "Describe anything. See it in seconds."), (Page::CreateVideo, Icon::Video, "Create Video", "Describe a scene. See it in motion."), (Page::CreateAudio, Icon::Music, "Create Audio", "Describe a song, a sound, or a sample.")];
     let card_w = (width - 16.0 * (cards.len() - 1) as f32) / cards.len() as f32;
     for (page, icon, title, text) in cards {
@@ -37,7 +41,7 @@ pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Opt
   });
   if !signed_in {
     ui.add_space(24.0);
-    if widgets::button(ui, Some(Icon::LogIn), "Sign in to start", widgets::Kind::Primary, 0.0, 44.0).clicked() {
+    if widgets::button(ui, Some(Icon::LogIn), i18n::t("Sign in to start"), widgets::Kind::Primary, 0.0, 44.0).clicked() {
       requests.push(AppRequest::SignIn);
     }
   }
@@ -47,16 +51,19 @@ pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Opt
 fn card(ui: &mut Ui, width: f32, icon: Icon, title: &str, text: &str) -> bool {
   let (rect, resp) = ui.allocate_exact_size(vec2(width, 180.0), Sense::click());
   let hovered = resp.hovered();
+  let rtl = i18n::is_rtl();
   let p = ui.painter();
   p.rect(rect, 0.0, if hovered { Color32::from_rgba_unmultiplied(242, 241, 238, 8) } else { Color32::from_rgba_unmultiplied(242, 241, 238, 4) }, egui::Stroke::new(1.0, if hovered { theme::LINE_STRONG } else { theme::LINE }), egui::StrokeKind::Inside);
   widgets::corner_marks(p, rect);
-  icons::paint(p, Rect::from_min_size(rect.min + vec2(24.0, 24.0), vec2(26.0, 26.0)), icon, theme::INK);
+  let icon_pos = if rtl { pos2(rect.right() - 24.0 - 26.0, rect.top() + 24.0) } else { rect.min + vec2(24.0, 24.0) };
+  icons::paint(p, Rect::from_min_size(icon_pos, vec2(26.0, 26.0)), icon, theme::INK);
   let body = Rect::from_min_max(pos2(rect.left() + 24.0, rect.top() + 76.0), pos2(rect.right() - 24.0, rect.bottom() - 16.0));
-  let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(body).layout(egui::Layout::top_down(egui::Align::Min)));
-  inner.label(widgets::heading(title, 26.0));
+  let mut inner = ui.new_child(egui::UiBuilder::new().max_rect(body).layout(egui::Layout::top_down(i18n::align_for_text(rtl))));
+  inner.label(widgets::heading(i18n::t(title), 26.0));
   inner.add_space(4.0);
-  inner.label(egui::RichText::new(text).size(14.0).color(theme::MUTED));
-  icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.right() - 28.0, rect.top() + 36.0), vec2(16.0, 16.0)), Icon::ChevronRight, if hovered { theme::INK } else { theme::FAINT });
+  i18n::wrapped_label(&mut inner, text, |r| r.size(14.0).color(theme::MUTED));
+  let chev_x = if rtl { rect.left() + 28.0 } else { rect.right() - 28.0 };
+  icons::paint(ui.painter(), Rect::from_center_size(pos2(chev_x, rect.top() + 36.0), vec2(16.0, 16.0)), if rtl { Icon::ChevronLeft } else { Icon::ChevronRight }, if hovered { theme::INK } else { theme::FAINT });
   resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
 
@@ -117,13 +124,13 @@ fn placeholder(ui: &mut Ui, area: Rect, title: &str, text: &str, web_url: Option
   let section = Rect::from_center_size(area.center(), vec2(width, if web_url.is_some() { 240.0 } else { 180.0 }));
   ui.painter().rect(section, 0.0, Color32::from_rgba_unmultiplied(242, 241, 238, 4), egui::Stroke::new(1.0, Color32::from_rgba_unmultiplied(242, 241, 238, 51)), egui::StrokeKind::Inside);
   widgets::corner_marks(ui.painter(), section);
-  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 44.0))));
-  child.label(widgets::heading(title, 44.0));
+  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 44.0))).layout(egui::Layout::top_down(i18n::align_for_text(i18n::is_rtl()))));
+  child.label(widgets::heading(i18n::t(title), 44.0));
   child.add_space(10.0);
-  child.label(egui::RichText::new(text).size(15.0).color(theme::MUTED));
+  i18n::wrapped_label(&mut child, text, |r| r.size(15.0).color(theme::MUTED));
   if let Some(url) = web_url {
     child.add_space(20.0);
-    if widgets::button(&mut child, Some(Icon::ExternalLink), "Open in web app", widgets::Kind::Primary, 0.0, 40.0).clicked() {
+    if widgets::button(&mut child, Some(Icon::ExternalLink), i18n::t("Open in web app"), widgets::Kind::Primary, 0.0, 40.0).clicked() {
       child.ctx().open_url(egui::OpenUrl::new_tab(url));
     }
   }

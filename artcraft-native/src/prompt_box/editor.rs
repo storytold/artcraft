@@ -5,7 +5,7 @@
 use egui::text::{CCursor, CCursorRange, LayoutJob};
 use egui::{Align2, Color32, FontFamily, FontId, Id, Key, KeyboardShortcut, Modifiers, Order, Rect, Sense, Stroke, TextBuffer, TextFormat, Ui, pos2, vec2};
 
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 
 /// `text-md`.
@@ -139,7 +139,10 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
   let output = scroll
     .show(&mut child, |ui| {
       let min_h = height.unwrap_or(MIN_HEIGHT);
-      egui::TextEdit::multiline(prompt).id(id).frame(egui::Frame::NONE).font(FontId::new(FONT_SIZE, FontFamily::Proportional)).hint_text(egui::RichText::new(opts.placeholder).color(theme::MUTED).size(FONT_SIZE)).desired_width(text_width).desired_rows(1).min_size(vec2(text_width, min_h)).return_key(return_key).layouter(&mut layouter).show(ui)
+      let hint_font = FontId::new(FONT_SIZE, FontFamily::Proportional);
+      let logical_hint = i18n::logical_of(opts.placeholder);
+      let shown_hint = if i18n::is_rtl() && i18n::has_rtl_script(logical_hint) { i18n::wrapped_visual_lines(ui.ctx(), i18n::current(), logical_hint, &hint_font, text_width) } else { opts.placeholder.to_owned() };
+      egui::TextEdit::multiline(prompt).id(id).frame(egui::Frame::NONE).font(hint_font).hint_text(egui::RichText::new(shown_hint).color(theme::MUTED).size(FONT_SIZE)).desired_width(text_width).desired_rows(1).min_size(vec2(text_width, min_h)).return_key(return_key).layouter(&mut layouter).show(ui)
     })
     .inner;
   let used_h = child.min_rect().height().clamp(MIN_HEIGHT, max_h);
@@ -168,7 +171,7 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
 
   if opts.fullscreen_button {
     let button = Rect::from_min_size(pos2(field_rect.right() - 24.0, field_rect.top()), vec2(24.0, 24.0));
-    let resp = ui.interact(button, id.with("fullscreen"), Sense::click()).on_hover_text("Focus mode").on_hover_cursor(egui::CursorIcon::PointingHand);
+    let resp = ui.interact(button, id.with("fullscreen"), Sense::click()).on_hover_text(i18n::t("Focus mode")).on_hover_cursor(egui::CursorIcon::PointingHand);
     let p = ui.painter();
     p.rect_filled(button, theme::RADIUS, if resp.hovered() { theme::WASH_HOVER } else { theme::WASH });
     icons::paint(p, button.shrink(6.0), Icon::Maximize, if resp.hovered() { theme::INK } else { theme::DIM });
@@ -304,7 +307,7 @@ fn mention_dropdown(ui: &Ui, id: Id, field: Rect, prompt: &mut String, state: &m
   egui::Area::new(id.with("mentions")).order(Order::Foreground).fixed_pos(rect.min).show(ui.ctx(), |ui| {
     let p = ui.painter();
     p.rect(rect, theme::RADIUS, theme::CONTROLS, theme::hairline(), egui::StrokeKind::Inside);
-    p.text(pos2(rect.left() + 12.0, rect.top() + 14.0), Align2::LEFT_CENTER, "MENTIONS", FontId::new(11.0, theme::mono_bold()), theme::fade(theme::INK, 0.5));
+    p.text(pos2(rect.left() + 12.0, rect.top() + 14.0), Align2::LEFT_CENTER, i18n::t("MENTIONS"), FontId::new(11.0, theme::mono_bold()), theme::fade(theme::INK, 0.5));
     for (i, item) in filtered.iter().enumerate() {
       let row = Rect::from_min_size(pos2(rect.left(), rect.top() + 28.0 + row_h * i as f32), vec2(rect.width(), row_h));
       let resp = ui.interact(row, id.with(("mention", i)), Sense::click());

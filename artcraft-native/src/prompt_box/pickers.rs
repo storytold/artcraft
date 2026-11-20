@@ -4,7 +4,7 @@
 use egui::{Popup, PopupCloseBehavior};
 use egui::{Id, RectAlign, Response, Ui};
 
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::Icon;
 use crate::ui::widgets::{self, Leading, RowLead};
 
@@ -102,9 +102,9 @@ pub fn popover_pill(ui: &mut Ui, id: Id, lead: Leading<'_>, label: &str, tooltip
 /// model's minimum and maximum. Returns the new value.
 pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) -> Option<u32> {
   let mut value = current;
-  popover_pill(ui, id, Leading::Icon(Icon::Clock), &format!("{current}s"), "Duration", |ui| {
+  popover_pill(ui, id, Leading::Icon(Icon::Clock), &format!("{current}s"), i18n::t("Duration"), |ui| {
     ui.set_width(240.0);
-    widgets::menu_header(ui, "Duration");
+    widgets::menu_header(ui, i18n::t("Duration"));
     ui.add_space(4.0);
     ui.horizontal(|ui| {
       ui.add_space(8.0);

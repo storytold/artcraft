@@ -9,7 +9,7 @@ use crate::backend::video::{self, VideoPlayer};
 use crate::backend::wire::Prompt;
 use crate::feed::grid::ModelNames;
 use crate::feed::types::{FeedItem, MediaKind};
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 use crate::ui::{creator_icons, waveform, widgets};
 
@@ -56,11 +56,16 @@ impl Lightbox {
 
     let typing = ctx.memory(|m| m.focused().is_some());
     if !typing && !self.confirm_delete {
-      let (left, right) = ctx.input(|i| (i.key_pressed(Key::ArrowLeft) || i.key_pressed(Key::ArrowUp), i.key_pressed(Key::ArrowRight) || i.key_pressed(Key::ArrowDown)));
-      if let (true, Some(t)) = (left, &prev) {
+      let rtl = i18n::is_rtl();
+      let (go_prev, go_next) = ctx.input(|i| {
+        let horiz_prev = if rtl { i.key_pressed(Key::ArrowRight) } else { i.key_pressed(Key::ArrowLeft) };
+        let horiz_next = if rtl { i.key_pressed(Key::ArrowLeft) } else { i.key_pressed(Key::ArrowRight) };
+        (horiz_prev || i.key_pressed(Key::ArrowUp), horiz_next || i.key_pressed(Key::ArrowDown))
+      });
+      if let (true, Some(t)) = (go_prev, &prev) {
         actions.push(LightboxAction::Navigate(t.clone()));
       }
-      if let (true, Some(t)) = (right, &next) {
+      if let (true, Some(t)) = (go_next, &next) {
         actions.push(LightboxAction::Navigate(t.clone()));
       }
     }
@@ -68,14 +73,25 @@ impl Lightbox {
     let close = widgets::modal(ctx, Id::new("lightbox"), size.x, |ui| {
       ui.set_height(size.y - 32.0);
       ui.horizontal_top(|ui| {
-        let media_rect = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width() - SIDE_WIDTH - 16.0, size.y - 32.0));
-        ui.allocate_rect(media_rect, Sense::hover());
-        self.media(ui, media_rect, item, cache, audio, &prev, &next, &mut actions);
-        ui.add_space(16.0);
-        ui.vertical(|ui| {
-          ui.set_width(SIDE_WIDTH);
-          self.side(ui, item, prompt, names, cache, &mut actions);
-        });
+        if i18n::is_rtl() {
+          ui.vertical(|ui| {
+            ui.set_width(SIDE_WIDTH);
+            self.side(ui, item, prompt, names, cache, &mut actions);
+          });
+          ui.add_space(16.0);
+          let media_rect = Rect::from_min_size(ui.cursor().min, vec2((ui.available_width()).max(1.0), size.y - 32.0));
+          ui.allocate_rect(media_rect, Sense::hover());
+          self.media(ui, media_rect, item, cache, audio, &prev, &next, &mut actions);
+        } else {
+          let media_rect = Rect::from_min_size(ui.cursor().min, vec2(ui.available_width() - SIDE_WIDTH - 16.0, size.y - 32.0));
+          ui.allocate_rect(media_rect, Sense::hover());
+          self.media(ui, media_rect, item, cache, audio, &prev, &next, &mut actions);
+          ui.add_space(16.0);
+          ui.vertical(|ui| {
+            ui.set_width(SIDE_WIDTH);
+            self.side(ui, item, prompt, names, cache, &mut actions);
+          });
+        }
       });
     });
     if close && !self.confirm_delete {
@@ -127,12 +143,12 @@ impl Lightbox {
         icons::paint_spinner(ui, Rect::from_center_size(rect.center(), vec2(32.0, 32.0)), theme::MUTED);
       },
       _ => {
-        ui.painter().text(rect.center(), Align2::CENTER_CENTER, "Image not available", FontId::new(14.0, egui::FontFamily::Proportional), theme::FAINT);
+        ui.painter().text(rect.center(), Align2::CENTER_CENTER, i18n::t("Image not available"), FontId::new(14.0, egui::FontFamily::Proportional), theme::FAINT);
       },
     }
     if item.kind == MediaKind::Video {
       let play = Rect::from_center_size(rect.center(), vec2(72.0, 72.0));
-      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text("Play in your video player").on_hover_cursor(egui::CursorIcon::PointingHand);
+      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text(i18n::t("Play in your video player")).on_hover_cursor(egui::CursorIcon::PointingHand);
       ui.painter().circle_filled(play.center(), 36.0, Color32::from_black_alpha(if resp.hovered() { 200 } else { 150 }));
       icons::paint(ui.painter(), play.shrink(22.0).translate(vec2(3.0, 0.0)), Icon::Play, Color32::WHITE);
       if resp.clicked() {
@@ -145,13 +161,16 @@ impl Lightbox {
   /// Previous / next arrows at the media's sides (shown while hovering it).
   fn nav_buttons(&self, ui: &mut Ui, rect: Rect, prev: &Option<String>, next: &Option<String>, actions: &mut Vec<LightboxAction>) {
     let hovering = ui.rect_contains_pointer(rect);
-    for (target, left, tip) in [(prev, true, "Previous item"), (next, false, "Next item")] {
+    let rtl = i18n::is_rtl();
+    for (target, left, tip_key) in [(prev, !rtl, "Previous item"), (next, rtl, "Next item")] {
       let Some(token) = target else {
         continue;
       };
       let x = if left { rect.left() + 28.0 } else { rect.right() - 28.0 };
       let button = Rect::from_center_size(pos2(x, rect.center().y), vec2(40.0, 40.0));
-      let resp = ui.interact(button, Id::new(("lightbox-nav", tip)), Sense::click()).on_hover_text(tip).on_hover_cursor(egui::CursorIcon::PointingHand);
+      let resp = ui.interact(button, Id::new(("lightbox-nav", tip_key)), Sense::click()).on_hover_text(i18n::t(tip_key)).on_hover_cursor(egui::CursorIcon::PointingHand);
+      let accessible = i18n::tl(tip_key).to_owned();
+      resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
       if hovering || resp.hovered() {
         ui.painter().circle_filled(button.center(), 20.0, Color32::from_black_alpha(if resp.hovered() { 210 } else { 140 }));
         icons::paint(ui.painter(), button.shrink(11.0), if left { Icon::ChevronLeft } else { Icon::ChevronRight }, Color32::WHITE);
@@ -164,9 +183,9 @@ impl Lightbox {
 
   fn side(&mut self, ui: &mut Ui, item: &FeedItem, prompt: Option<&Prompt>, names: &dyn ModelNames, cache: &mut MediaCache, actions: &mut Vec<LightboxAction>) {
     ui.horizontal(|ui| {
-      widgets::hud(ui, item.kind.label(), theme::MUTED);
+      widgets::hud(ui, item.kind.display_label(), theme::MUTED);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
           actions.push(LightboxAction::Close);
         }
       });
@@ -174,10 +193,10 @@ impl Lightbox {
     ui.add_space(8.0);
     let text = prompt.and_then(|p| p.maybe_positive_prompt.clone()).filter(|t| !t.is_empty());
     ui.horizontal(|ui| {
-      widgets::hud(ui, "Prompt", theme::FAINT);
+      widgets::hud(ui, i18n::t("Prompt"), theme::FAINT);
       if let Some(t) = &text {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if ui.add(egui::Button::new(egui::RichText::new("Copy").size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+          if ui.add(egui::Button::new(egui::RichText::new(i18n::t("Copy")).size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
             actions.push(LightboxAction::CopyPrompt(t.clone()));
           }
         });
@@ -193,7 +212,7 @@ impl Lightbox {
         let clipped = galley.elided;
         ui.label(galley);
         if clipped || self.prompt_expanded {
-          let label = if self.prompt_expanded { "Hide" } else { "See all" };
+          let label = if self.prompt_expanded { i18n::t("Hide") } else { i18n::t("See all") };
           if ui.add(egui::Button::new(egui::RichText::new(label).size(11.5).color(theme::ACCENT_INK)).frame(false)).clicked() {
             self.prompt_expanded = !self.prompt_expanded;
           }
@@ -204,11 +223,11 @@ impl Lightbox {
         icons::paint_spinner(ui, rect, theme::FAINT);
       },
       _ => {
-        ui.label(egui::RichText::new("No prompt").size(13.0).color(theme::FAINT));
+        ui.label(egui::RichText::new(i18n::t("No prompt")).size(13.0).color(theme::FAINT));
       },
     }
     ui.add_space(14.0);
-    widgets::hud(ui, "Information", theme::FAINT);
+    widgets::hud(ui, i18n::t("Information"), theme::FAINT);
     ui.add_space(4.0);
     if let Some(model) = item.model_id.as_deref() {
       info_row(ui, "Model", |ui| {
@@ -250,21 +269,21 @@ impl Lightbox {
     ui.add_space(16.0);
     let w = (ui.available_width() - 8.0) / 2.0;
     // Audio can't be recreated yet (`Audio v1`).
-    if item.prompt_token.is_some() && item.kind != MediaKind::Audio && widgets::button(ui, Some(Icon::RotateCw), "Recreate", widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
+    if item.prompt_token.is_some() && item.kind != MediaKind::Audio && widgets::button(ui, Some(Icon::RotateCw), i18n::t("Recreate"), widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
       actions.push(LightboxAction::Recreate);
     }
     ui.horizontal_wrapped(|ui| {
       ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
-      if item.kind == MediaKind::Image && widgets::button(ui, Some(Icon::Video), "Make Video", widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
+      if item.kind == MediaKind::Image && widgets::button(ui, Some(Icon::Video), i18n::t("Make Video"), widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::MakeVideo);
       }
-      if widgets::button(ui, Some(Icon::Download), "Download", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Download), i18n::t("Download"), widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Download);
       }
-      if widgets::button(ui, Some(Icon::Link), "Share", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Link), i18n::t("Share"), widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Share);
       }
-      if widgets::button(ui, Some(Icon::Trash), "Delete", widgets::Kind::Danger, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Trash), i18n::t("Delete"), widgets::Kind::Danger, w, theme::CONTROL_H).clicked() {
         self.confirm_delete = true;
       }
     });
@@ -273,15 +292,15 @@ impl Lightbox {
   fn confirm(&mut self, ctx: &egui::Context, actions: &mut Vec<LightboxAction>) {
     let mut choice = None;
     let close = widgets::modal(ctx, Id::new("lightbox-delete"), 420.0, |ui| {
-      ui.label(widgets::heading("Delete this media?", 20.0));
+      ui.label(widgets::heading(i18n::t("Delete this media?"), 20.0));
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("This will permanently remove the media from your library. This action cannot be undone.").color(theme::MUTED));
+      i18n::wrapped_label(ui, "This will permanently remove the media from your library. This action cannot be undone.", |r| r.color(theme::MUTED));
       ui.add_space(16.0);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::button(ui, None, "Delete", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, i18n::t("Delete"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
           choice = Some(true);
         }
-        if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, i18n::t("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
           choice = Some(false);
         }
       });
@@ -309,7 +328,7 @@ fn audio_panel(ui: &mut Ui, rect: Rect, item: &FeedItem, audio: &mut AudioPlayer
 fn info_row(ui: &mut Ui, label: &str, value: impl FnOnce(&mut Ui)) {
   ui.horizontal(|ui| {
     let (rect, _) = ui.allocate_exact_size(vec2(96.0, 20.0), Sense::hover());
-    ui.painter().text(rect.left_center(), Align2::LEFT_CENTER, label, FontId::new(12.0, egui::FontFamily::Proportional), theme::MUTED);
+    ui.painter().text(rect.left_center(), Align2::LEFT_CENTER, i18n::t(label), FontId::new(12.0, egui::FontFamily::Proportional), theme::MUTED);
     value(ui);
   });
 }
