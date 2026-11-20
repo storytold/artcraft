@@ -32,17 +32,20 @@ export interface RefAudio {
 
 // ----- 2D Prompt Box Store -----
 type AspectRatio = "wide" | "tall" | "square";
+// Editors can also keep the shape of the image being edited.
+type EditAspectRatio = "auto" | AspectRatio;
 type Resolution = "1k" | "2k" | "4k";
 
 export interface Prompt2DStore {
+  sourceImageDimensions?: { width: number; height: number };
   prompt: string;
-  aspectRatio: AspectRatio;
+  aspectRatio: EditAspectRatio;
   resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   generationCount: number;
   setPrompt: (prompt: string) => void;
-  setAspectRatio: (ratio: AspectRatio) => void;
+  setAspectRatio: (ratio: EditAspectRatio) => void;
   setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
@@ -51,7 +54,7 @@ export interface Prompt2DStore {
 
 export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   prompt: "",
-  aspectRatio: "wide",
+  aspectRatio: "auto",
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
@@ -285,8 +288,6 @@ export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
 }));
 
 // ----- Edit Prompt Box Store -----
-type EditAspectRatio = "auto" | "wide" | "tall" | "square";
-
 interface PromptEditStore {
   referenceImages: RefImage[];
   aspectRatio: EditAspectRatio;
