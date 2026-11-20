@@ -4,7 +4,6 @@
 // entry points get the same busy-guarding and camera handling.
 
 import type Editor from "../engine/editor";
-import { recordTimeline } from "../engine/recording/TimelineRecorder";
 import { usePageSceneStore } from "../PageSceneStore";
 
 // Snapshot the composed frame → hand to the review modal, which previews it
@@ -50,6 +49,10 @@ export async function recordVideo(editor: Editor): Promise<void> {
   const cancelSignal = { cancelled: false };
   store.setEncodeCancelSignal(cancelSignal);
   try {
+    const { recordTimeline } = await import("../engine/recording/TimelineRecorder");
+    // The user can cancel or leave the scene while the encoder loads.
+    if (cancelSignal.cancelled || !editor.isLive) return;
+
     const result = await recordTimeline(editor, {
       signal: cancelSignal,
       onProgress: (pct) =>
