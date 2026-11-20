@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: storytold/craft-common-actions/actions/install-apt-packages@main
         with:
-          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libclang-dev libasound2-dev libxdo-dev libdbus-1-dev build-essential clang file jq perl cmake nasm rpm zsync gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
+          packages: libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libclang-dev libasound2-dev libxdo-dev libdbus-1-dev build-essential clang file jq perl cmake nasm rpm zsync gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav xdg-utils
       - uses: storytold/craft-common-actions/actions/install-riscv64-cross@main
         if: matrix.arch == 'riscv64'
       - name: Remove conflicting host Pango development files
