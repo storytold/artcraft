@@ -87,7 +87,7 @@ export default {
       indigo: colors.indigo,
       lime: colors.lime,
       primary: {
-        DEFAULT: "#2d81ff",
+        DEFAULT: "rgb(var(--st-accent-rgb, 45 129 255) / <alpha-value>)",
         "50": "#eef6ff",
         "100": "#d9ebff",
         "200": "#bcdcff",
@@ -116,7 +116,7 @@ export default {
       },
       "brand-primary": {
         //sunglo
-        DEFAULT: "#2d81ff", //=500
+        DEFAULT: "rgb(var(--st-accent-rgb, 45 129 255) / <alpha-value>)", //=500
         "50": "#eef6ff",
         "100": "#d9ebff",
         "200": "#bcdcff",
@@ -160,7 +160,7 @@ export default {
       },
       danger: {
         //copper rust
-        DEFAULT: "#8f4951", //=700
+        DEFAULT: "rgb(var(--st-danger-rgb, 143 73 81) / <alpha-value>)", //=700
         "50": "#fbf5f5",
         "100": "#f7ecec",
         "200": "#efdcdc",
@@ -173,6 +173,7 @@ export default {
         "900": "#64373f",
         "950": "#361b1e",
       },
+      warning: "rgb(var(--st-warning-rgb, 250 204 21) / <alpha-value>)",
       success: {
         //apple
         DEFAULT: "#40ad48", //=500
@@ -267,7 +268,7 @@ export default {
         "controls-border": "var(--st-controls-border)",
         divider: "var(--st-divider)",
         ink: "rgb(var(--st-fg-rgb) / <alpha-value>)",
-        "accent-ink": "#74aaff",
+        "accent-ink": "rgb(var(--st-accent-rgb, 116 170 255) / <alpha-value>)",
         sunken: "var(--st-sunken)",
       },
       "base-fg": "rgb(var(--st-fg-rgb) / <alpha-value>)",

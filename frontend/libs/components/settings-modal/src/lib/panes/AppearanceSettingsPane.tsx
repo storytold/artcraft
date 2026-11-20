@@ -1,44 +1,11 @@
 import { CheckIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { Label } from "@storyteller/ui-label";
-import { useEffect, useMemo, useState } from "react";
-
-type AppTheme = "light" | "gray" | "black" | "aurora" | "sunset";
-
-const THEME_STORAGE_KEY = "st-theme";
-
-function getStoredTheme(): AppTheme {
-  const value = (localStorage.getItem(THEME_STORAGE_KEY) || "").trim();
-  if (
-    value === "light" ||
-    value === "gray" ||
-    value === "black" ||
-    value === "aurora" ||
-    value === "sunset" ||
-    value === "gradient" /* backward compat */
-  ) {
-    return value === "gradient" ? "aurora" : (value as AppTheme);
-  }
-  return "gray";
-}
-
-function applyTheme(theme: AppTheme) {
-  const root = document.documentElement;
-  const toRemove: string[] = [];
-  root.classList.forEach((c) => {
-    if (c.startsWith("theme-")) toRemove.push(c);
-  });
-  toRemove.forEach((c) => root.classList.remove(c));
-  root.classList.add(`theme-${theme}`);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
-}
+import { useMemo } from "react";
+import { useAppTheme } from "../themes/app-theme";
 
 export const AppearanceSettingsPane = () => {
-  const [selected, setSelected] = useState<AppTheme>(getStoredTheme());
-
-  useEffect(() => {
-    applyTheme(selected);
-  }, [selected]);
+  const { theme: selected, message, select } = useAppTheme();
 
   const themes = useMemo(
     () => [
@@ -71,6 +38,11 @@ export const AppearanceSettingsPane = () => {
           <Swatch background="radial-gradient(28px 14px at 20% 10%, #8b5cf6, transparent), radial-gradient(32px 20px at 80% 80%, #fb923c, transparent), #140b12" />
         ),
       },
+      {
+        id: "custom" as const,
+        label: "Custom",
+        swatch: <Swatch background="var(--st-panel)" />,
+      },
     ],
     [],
   );
@@ -95,7 +67,8 @@ export const AppearanceSettingsPane = () => {
                   ? "border-base-fg/70 bg-base-fg/10"
                   : "border-ui-panel-border bg-base-fg/[0.03] hover:border-base-fg/30 hover:bg-base-fg/[0.06]",
               )}
-              onClick={() => setSelected(t.id)}
+              onClick={() => select(t.id)}
+              type="button"
               aria-pressed={isSelected}
             >
               {t.swatch}
@@ -109,6 +82,18 @@ export const AppearanceSettingsPane = () => {
           );
         })}
       </div>
+      {selected === "custom" && (
+        <div className="space-y-1 text-xs opacity-70">
+          <p>
+            Edit theme.json in your desktop app’s configuration directory (on
+            Linux: $XDG_CONFIG_HOME/ai.artcraft.app, or
+            ~/.config/ai.artcraft.app).
+          </p>
+          <p role="status" aria-live="polite">
+            {message}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
