@@ -1,5 +1,5 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import wasm from 'vite-plugin-wasm';
@@ -30,6 +30,14 @@ const EXTRA_EXTERNAL_PREFIXES = [
   'react-resizable-panels',
 ];
 
+// vite-plugin-wasm inlines a .wasm asset as base64 only when it finds a plugin
+// named "vitest" in the resolved config; otherwise it emits a dev-server URL.
+// Vitest registers that plugin on the root config alone, and in projects mode
+// each project only sees "vitest:project", so the detection misses and the
+// smoke tests fail with "Failed to parse URL from /@fs/.../opencut_wasm_bg.wasm".
+// A marker plugin by that name keeps the inline path under test.
+const vitestMarker = (): Plugin => ({ name: 'vitest' });
+
 function isExternal(id: string): boolean {
   if (baseIsExternal(id)) return true;
   for (const prefix of EXTRA_EXTERNAL_PREFIXES) {
@@ -41,7 +49,7 @@ function isExternal(id: string): boolean {
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../../node_modules/.vite/libs/components/video-editor',
-  plugins: [react(), wasm(), dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') })],
+  plugins: [react(), ...(process.env.VITEST ? [vitestMarker()] : []), wasm(), dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') })],
   build: {
     outDir: './dist',
     emptyOutDir: true,
