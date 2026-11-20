@@ -22,6 +22,7 @@ errors.workspace = true
 # KEEP THIS TO A MINIMUM OR NIL.
 log.workspace = true
 walkdir.workspace = true
+tempfile.workspace = true
 
 [dev-dependencies]
 test_utils = { path = "../../../testing/test_utils" }
