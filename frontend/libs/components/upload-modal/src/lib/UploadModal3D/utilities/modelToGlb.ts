@@ -29,6 +29,16 @@ const PLY_HEADER_SNIFF_BYTES = 64 * 1024;
 // vertex and face counts: a 50 MB binary STL is about one million triangles.
 export const MAX_CONVERTIBLE_MODEL_BYTES = 50 * 1000 * 1000;
 
+// Binary STL: an 80-byte header, a uint32 facet count, then 50 bytes per
+// facet (normal, three vertices, attribute byte count).
+const STL_BINARY_HEADER_BYTES = 84;
+const STL_BINARY_FACET_BYTES = 50;
+
+// "solid", the first word of an ASCII STL.
+const STL_ASCII_MAGIC = [115, 111, 108, 105, 100];
+
+const TRUNCATED_FILE_MESSAGE = "The file looks truncated or corrupted.";
+
 export function assertConvertibleModelSize(byteLength: number): void {
   if (byteLength === 0) throw new Error("The file is empty.");
   if (byteLength > MAX_CONVERTIBLE_MODEL_BYTES) {
@@ -66,7 +76,7 @@ export async function convertModelBufferToGlb(
     // The loaders read binary bodies with DataView, so a header that
     // promises more data than the file holds ends in a bare RangeError.
     if (error instanceof RangeError) {
-      throw new Error("The file looks truncated or corrupted.");
+      throw new Error(TRUNCATED_FILE_MESSAGE);
     }
     throw error;
   }
@@ -130,6 +140,7 @@ function parseObj(buffer: ArrayBuffer): THREE.Object3D {
 }
 
 function parseStl(buffer: ArrayBuffer): THREE.Object3D {
+  assertStlFacetCountFits(buffer);
   const geometry = new STLLoader().parse(buffer);
   if (!geometry.getAttribute("position")?.count) {
     throw new Error("No triangles found in this STL file.");
@@ -155,6 +166,36 @@ function parsePly(buffer: ArrayBuffer): THREE.Object3D {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────
+
+// STLLoader sizes its position and normal arrays from the facet count at
+// byte 80 before it reads a single facet, and it reads any file that doesn't
+// start with "solid" as binary. An 84-byte file declaring ten million facets
+// would make it ask for about 720 MB before the read fails. Refuse a count
+// the file has no room for, so the arrays stay within a small multiple of
+// the file size (itself capped by MAX_CONVERTIBLE_MODEL_BYTES).
+function assertStlFacetCountFits(buffer: ArrayBuffer): void {
+  // Too short for a facet count: the loader fails on it without allocating.
+  if (buffer.byteLength < STL_BINARY_HEADER_BYTES) return;
+  const facets = new DataView(buffer).getUint32(80, true);
+  const declaredBytes =
+    STL_BINARY_HEADER_BYTES + facets * STL_BINARY_FACET_BYTES;
+  if (declaredBytes <= buffer.byteLength) return;
+  // In an ASCII file those four bytes are text, not a count.
+  if (startsWithStlAsciiMagic(buffer)) return;
+  throw new Error(TRUNCATED_FILE_MESSAGE);
+}
+
+// The same test STLLoader uses to tell ASCII from binary: "solid" within the
+// first five bytes, since an encoding prefix such as a BOM may come first.
+function startsWithStlAsciiMagic(buffer: ArrayBuffer): boolean {
+  const bytes = new Uint8Array(buffer, 0, STL_ASCII_MAGIC.length + 5);
+  for (let offset = 0; offset < 5; offset++) {
+    if (STL_ASCII_MAGIC.every((code, i) => bytes[offset + i] === code)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function meshFromGeometry(geometry: THREE.BufferGeometry): THREE.Mesh {
   // Many STL writers leave every facet normal at 0 0 0; the exporter would

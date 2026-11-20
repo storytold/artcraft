@@ -4,8 +4,9 @@ import {
 } from "./modelToGlb";
 
 // Runs the CPU-heavy model parse + GLTF export off the main thread so big
-// files can't freeze the UI. One message in ({ id, buffer, ext, name }) →
-// one message out ({ id, ok, glb } or { id, ok: false, error }); the GLB
+// files can't freeze the UI. Announces itself with { ready: true } once the
+// script has loaded, then one message in ({ id, buffer, ext, name }) → one
+// message out ({ id, ok, glb } or { id, ok: false, error }); the GLB
 // buffer is transferred, not copied. Texture processing (rare for Mixamo
 // files) uses OffscreenCanvas inside GLTFExporter, which our Chromium
 // targets support.
@@ -18,6 +19,7 @@ interface ConvertRequest {
 }
 
 type ConvertResponse =
+  | { ready: true }
   | { id: number; ok: true; glb: ArrayBuffer }
   | { id: number; ok: false; error: string };
 
@@ -43,3 +45,7 @@ const convert = async (event: MessageEvent<ConvertRequest>) => {
 scope.onmessage = (event) => {
   void convert(event);
 };
+
+// Lets the main thread tell a script that never loaded (it falls back to
+// converting there) from a file that crashed a working worker (it doesn't).
+scope.postMessage({ ready: true });

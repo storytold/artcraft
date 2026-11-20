@@ -20,10 +20,13 @@ import ConvertModelToGlbWorker from "./convertModelToGlb.worker?worker&inline";
 // (parsing lives in modelToGlb.ts).
 //
 // The parse + export are synchronous CPU work, so they run in a Web Worker
-// (convertModelToGlb.worker.ts) to keep the UI responsive; the worker handles
-// jobs one at a time, which also stops a multi-file pick from
-// oversubscribing cores. If the worker can't start (bundler/environment),
-// conversion falls back to the main thread — same result, just jankier.
+// (convertModelToGlb.worker.ts) to keep the UI responsive; it gets one file
+// at a time, which also stops a multi-file pick from oversubscribing cores.
+// A file that outlives CONVERSION_TIMEOUT_MS, or takes the worker down, is
+// failed and the worker replaced. If the worker can't start at all
+// (bundler/environment), conversion falls back to the main thread — same
+// result, just jankier, and with no time limit: synchronous work on the UI
+// thread can't be interrupted.
 //
 // Caveats (fine for the current use cases, revisit if needed):
 // - Embedded/relative-path textures may not survive (OBJ .mtl files are not
@@ -47,42 +50,89 @@ export function isConvertibleModelFile(file: File): boolean {
 
 // ─── worker plumbing ──────────────────────────────────────────────────────
 
-// Signals "the worker itself is broken" (script failed to load/crash), as
-// opposed to a legitimate conversion failure of one file — only the former
-// falls back to the main thread.
+// How long one file may spend in the worker. Meshes at the 50 MB cap convert
+// in about a second; the budget leaves room for slower machines and for FBX
+// files with embedded textures, and still ends a job that is stuck.
+export const CONVERSION_TIMEOUT_MS = 120_000;
+
+// Signals "the worker never started" (script failed to load), as opposed to
+// a failure of one file — only the former falls back to the main thread.
 class WorkerUnavailableError extends Error {}
 
-interface PendingJob {
+interface ConversionJob {
+  id: number;
+  buffer: ArrayBuffer;
+  ext: ConvertibleModelExtension;
+  name: string;
   resolve: (glb: ArrayBuffer) => void;
   reject: (error: Error) => void;
 }
 
-// undefined = not attempted yet; null = unavailable (fall back permanently).
+type WorkerMessage =
+  | { ready: true }
+  | { id: number; ok: true; glb: ArrayBuffer }
+  | { id: number; ok: false; error: string };
+
+// undefined = not started yet; null = unavailable (fall back permanently).
 let worker: Worker | null | undefined;
+// Set by the worker's first message. An error before it means the script
+// never ran; an error after it means a file took down a working worker.
+let workerReady = false;
 let nextJobId = 0;
-const pendingJobs = new Map<number, PendingJob>();
+// Files wait here and go to the worker one at a time, so the timer covers a
+// single file and replacing the worker costs only the file that was running.
+const queuedJobs: ConversionJob[] = [];
+let activeJob: ConversionJob | null = null;
+let activeJobTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function convert(
   file: File,
   ext: ConvertibleModelExtension,
   name: string,
 ): Promise<ArrayBuffer> {
-  const workerInstance = getWorker();
-  if (workerInstance) {
+  if (getWorker()) {
     try {
-      // The buffer is transferred (detached) to the worker, so the fallback
-      // below re-reads it from the File.
-      return await convertInWorker(
-        workerInstance,
-        await file.arrayBuffer(),
-        ext,
-        name,
-      );
+      return await convertInWorker(await file.arrayBuffer(), ext, name);
     } catch (error) {
       if (!(error instanceof WorkerUnavailableError)) throw error;
     }
   }
+  // The buffer above may already be transferred (detached) to the worker,
+  // so the fallback reads the File again.
   return convertModelBufferToGlb(await file.arrayBuffer(), ext, name);
+}
+
+function convertInWorker(
+  buffer: ArrayBuffer,
+  ext: ConvertibleModelExtension,
+  name: string,
+): Promise<ArrayBuffer> {
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    queuedJobs.push({ id: nextJobId++, buffer, ext, name, resolve, reject });
+    startNextJob();
+  });
+}
+
+function startNextJob(): void {
+  if (activeJob || queuedJobs.length === 0) return;
+  const workerInstance = getWorker();
+  if (!workerInstance) {
+    for (const job of queuedJobs.splice(0)) {
+      job.reject(new WorkerUnavailableError());
+    }
+    return;
+  }
+  const job = queuedJobs.shift() as ConversionJob;
+  activeJob = job;
+  activeJobTimer = setTimeout(() => {
+    replaceWorker(
+      new Error(
+        `Conversion took longer than ${CONVERSION_TIMEOUT_MS / 1000} seconds and was stopped.`,
+      ),
+    );
+  }, CONVERSION_TIMEOUT_MS);
+  const { id, buffer, ext, name } = job;
+  workerInstance.postMessage({ id, buffer, ext, name }, [buffer]);
 }
 
 function getWorker(): Worker | null {
@@ -92,56 +142,72 @@ function getWorker(): Worker | null {
     return worker;
   }
   try {
-    worker = new ConvertModelToGlbWorker();
-    worker.onmessage = (event) => {
-      const data = event.data as
-        | { id: number; ok: true; glb: ArrayBuffer }
-        | { id: number; ok: false; error: string };
-      const job = pendingJobs.get(data.id);
-      if (!job) return;
-      pendingJobs.delete(data.id);
+    const instance = new ConvertModelToGlbWorker();
+    // Each handler ignores a worker that has already been replaced.
+    instance.onmessage = (event) => {
+      if (worker !== instance) return;
+      const data = event.data as WorkerMessage;
+      if ("ready" in data) {
+        workerReady = true;
+        return;
+      }
+      if (activeJob?.id !== data.id) return;
+      const job = takeActiveJob() as ConversionJob;
       if (data.ok) job.resolve(data.glb);
       else job.reject(new Error(data.error));
+      startNextJob();
     };
-    worker.onerror = () => {
-      // The worker script itself failed — retire it and push in-flight jobs
-      // onto the main-thread fallback.
-      const jobs = [...pendingJobs.values()];
-      pendingJobs.clear();
-      worker?.terminate();
-      worker = null;
-      for (const job of jobs) job.reject(new WorkerUnavailableError());
-    };
-    worker.onmessageerror = () => {
-      // A message failed structured-clone deserialization. Without this the
-      // affected job would hang forever — entry stuck on "converting",
-      // Upload stuck at "Converting...". We can't tell WHICH message died,
-      // so fail every pending job into a retryable error (a plain Error,
-      // not WorkerUnavailableError: the worker itself still works, so no
-      // main-thread fallback).
-      const jobs = [...pendingJobs.values()];
-      pendingJobs.clear();
-      for (const job of jobs) {
-        job.reject(
-          new Error("Conversion result failed to decode — please retry."),
+    instance.onerror = () => {
+      if (worker !== instance) return;
+      if (workerReady) {
+        replaceWorker(
+          new Error(
+            "The converter stopped unexpectedly. The file may be too large or complex to convert.",
+          ),
         );
+        return;
       }
+      // The worker script itself failed to load — retire it and push every
+      // waiting file onto the main-thread fallback.
+      const jobs = [takeActiveJob(), ...queuedJobs.splice(0)];
+      instance.terminate();
+      worker = null;
+      for (const job of jobs) job?.reject(new WorkerUnavailableError());
     };
+    instance.onmessageerror = () => {
+      if (worker !== instance) return;
+      // A message failed structured-clone deserialization. Without this the
+      // running job would hang until the timer — entry stuck on
+      // "converting", Upload stuck at "Converting...". Fail it into a
+      // retryable error (a plain Error, not WorkerUnavailableError: the
+      // worker itself still works, so no main-thread fallback).
+      takeActiveJob()?.reject(
+        new Error("Conversion result failed to decode — please retry."),
+      );
+      startNextJob();
+    };
+    worker = instance;
   } catch {
     worker = null;
   }
   return worker;
 }
 
-function convertInWorker(
-  workerInstance: Worker,
-  buffer: ArrayBuffer,
-  ext: ConvertibleModelExtension,
-  name: string,
-): Promise<ArrayBuffer> {
-  return new Promise<ArrayBuffer>((resolve, reject) => {
-    const id = nextJobId++;
-    pendingJobs.set(id, { resolve, reject });
-    workerInstance.postMessage({ id, buffer, ext, name }, [buffer]);
-  });
+// The running file hung or took the worker down. Fail that one file — it is
+// not run again on the UI thread, where the same input would freeze the app
+// — and start a fresh worker for the files queued behind it.
+function replaceWorker(error: Error): void {
+  const job = takeActiveJob();
+  worker?.terminate();
+  worker = undefined;
+  workerReady = false;
+  job?.reject(error);
+  startNextJob();
+}
+
+function takeActiveJob(): ConversionJob | null {
+  clearTimeout(activeJobTimer);
+  const job = activeJob;
+  activeJob = null;
+  return job;
 }

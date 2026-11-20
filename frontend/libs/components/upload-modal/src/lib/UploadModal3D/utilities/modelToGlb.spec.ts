@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import {
   MAX_CONVERTIBLE_MODEL_BYTES,
   convertModelBufferToGlb,
@@ -191,6 +192,36 @@ describe("convertModelBufferToGlb", () => {
       await expect(
         convertModelBufferToGlb(buffer, "stl", "truncated"),
       ).rejects.toThrow("truncated or corrupted");
+    });
+
+    // The loader allocates for the declared count before it reads a facet,
+    // so the count has to be refused without calling it.
+    it("rejects a forged facet count before calling the loader", async () => {
+      const parse = vi.spyOn(STLLoader.prototype, "parse");
+      try {
+        const buffer = binaryStl(0);
+        new DataView(buffer).setUint32(80, 10_000_000, true);
+        await expect(
+          convertModelBufferToGlb(buffer, "stl", "forged"),
+        ).rejects.toThrow("truncated or corrupted");
+        expect(parse).not.toHaveBeenCalled();
+      } finally {
+        parse.mockRestore();
+      }
+    });
+
+    it("exports a binary STL whose header starts with solid", async () => {
+      const buffer = binaryStl(2);
+      new Uint8Array(buffer).set(new TextEncoder().encode("solid exported"));
+      const meshes = await convertAndReload(buffer, "stl");
+      expect(triangleCount(meshes[0])).toBe(2);
+    });
+
+    it("exports a binary STL with bytes after the last facet", async () => {
+      const buffer = new ArrayBuffer(84 + 50 * 2 + 16);
+      new Uint8Array(buffer).set(new Uint8Array(binaryStl(2)));
+      const meshes = await convertAndReload(buffer, "stl");
+      expect(triangleCount(meshes[0])).toBe(2);
     });
   });
 
