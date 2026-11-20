@@ -176,6 +176,53 @@ describe("convertModelToGlb", () => {
     expect(FakeWorker.instances).toHaveLength(1);
     expect(convertOnMainThread).toHaveBeenCalledTimes(3);
   });
+
+  it("reads one file at a time on the main thread after the worker fails to start", async () => {
+    const firstRead = deferredRead();
+    const secondFile = modelFile("second.stl");
+    const readSecondFile = vi.spyOn(secondFile, "arrayBuffer");
+    const first = convertModelToGlb(firstRead.file("first.stl"));
+    const second = convertModelToGlb(secondFile);
+    await settle();
+
+    FakeWorker.instances[0].onerror?.();
+    await settle();
+    // Both files are on the fallback now, and the first is still being read.
+    expect(readSecondFile).not.toHaveBeenCalled();
+
+    firstRead.finish();
+    expect((await first).name).toBe("first.glb");
+    expect((await second).name).toBe("second.glb");
+    expect(readSecondFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads one file at a time on the main thread when workers don't exist", async () => {
+    vi.stubGlobal("Worker", undefined);
+    const firstRead = deferredRead();
+    const secondFile = modelFile("second.stl");
+    const readSecondFile = vi.spyOn(secondFile, "arrayBuffer");
+    const first = convertModelToGlb(firstRead.file("first.stl"));
+    const second = convertModelToGlb(secondFile);
+    await settle();
+    expect(readSecondFile).not.toHaveBeenCalled();
+
+    firstRead.finish();
+    expect((await first).name).toBe("first.glb");
+    expect((await second).name).toBe("second.glb");
+    expect(FakeWorker.instances).toHaveLength(0);
+  });
+
+  it("keeps converting on the main thread after a file fails there", async () => {
+    vi.stubGlobal("Worker", undefined);
+    convertOnMainThread.mockRejectedValueOnce(new Error("Not a valid mesh."));
+    const broken = convertModelToGlb(modelFile("broken.stl"));
+    const waiting = convertModelToGlb(modelFile("waiting.stl"));
+    const brokenResult = expect(broken).rejects.toThrow("Not a valid mesh");
+    await settle();
+    await brokenResult;
+
+    expect((await waiting).name).toBe("waiting.glb");
+  });
 });
 
 // ─── helpers ──────────────────────────────────────────────────────────────
@@ -185,6 +232,19 @@ function modelFile(name: string): File {
   return Object.assign(new File(["mesh"], name), {
     arrayBuffer: async () => new ArrayBuffer(4),
   });
+}
+
+// A file whose read stays pending until the test finishes it.
+function deferredRead(): { file: (name: string) => File; finish: () => void } {
+  let finish = (): void => undefined;
+  const read = new Promise<ArrayBuffer>((resolve) => {
+    finish = () => resolve(new ArrayBuffer(4));
+  });
+  return {
+    file: (name) =>
+      Object.assign(new File(["mesh"], name), { arrayBuffer: () => read }),
+    finish: () => finish(),
+  };
 }
 
 // Lets the file reads finish so the queued jobs reach the worker.

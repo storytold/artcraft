@@ -25,8 +25,8 @@ import ConvertModelToGlbWorker from "./convertModelToGlb.worker?worker&inline";
 // A file that outlives CONVERSION_TIMEOUT_MS, or takes the worker down, is
 // failed and the worker replaced. If the worker can't start at all
 // (bundler/environment), conversion falls back to the main thread — same
-// result, just jankier, and with no time limit: synchronous work on the UI
-// thread can't be interrupted.
+// result, still one file at a time, just jankier, and with no time limit:
+// synchronous work on the UI thread can't be interrupted.
 //
 // Caveats (fine for the current use cases, revisit if needed):
 // - Embedded/relative-path textures may not survive (OBJ .mtl files are not
@@ -86,6 +86,9 @@ let nextJobId = 0;
 const queuedJobs: ConversionJob[] = [];
 let activeJob: ConversionJob | null = null;
 let activeJobTimer: ReturnType<typeof setTimeout> | undefined;
+// The main-thread fallback's own line: settles when the last file sent there
+// has finished, whether it converted or failed.
+let mainThreadQueue: Promise<void> = Promise.resolve();
 
 async function convert(
   file: File,
@@ -99,9 +102,28 @@ async function convert(
       if (!(error instanceof WorkerUnavailableError)) throw error;
     }
   }
-  // A buffer read for the worker went with it (transferred, or dropped
-  // unused), so the fallback reads the File itself.
-  return convertModelBufferToGlb(await file.arrayBuffer(), ext, name);
+  return convertOnMainThread(file, ext, name);
+}
+
+// When the worker fails to start, every waiting file lands here at once.
+// Each one is read only after the file before it has finished, so the
+// fallback holds one input buffer at a time, like the worker queue. A buffer
+// read for the worker went with it (transferred, or dropped unused), so the
+// File is read again here.
+function convertOnMainThread(
+  file: File,
+  ext: ConvertibleModelExtension,
+  name: string,
+): Promise<ArrayBuffer> {
+  const glb = mainThreadQueue.then(async () =>
+    convertModelBufferToGlb(await file.arrayBuffer(), ext, name),
+  );
+  // A file that fails must not fail the files behind it.
+  mainThreadQueue = glb.then(
+    () => undefined,
+    () => undefined,
+  );
+  return glb;
 }
 
 function convertInWorker(
