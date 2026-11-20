@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -185,7 +185,7 @@ it("mounts when reading the optional timestamp throws", () => {
   ).toBeTruthy();
 });
 
-it("keeps the task queue usable when persisting the opened timestamp throws", () => {
+it("clears unread state in memory when persisting the opened timestamp throws", async () => {
   const originalSetItem = Storage.prototype.setItem;
   const setItemSpy = vi
     .spyOn(Storage.prototype, "setItem")
@@ -200,12 +200,33 @@ it("keeps the task queue usable when persisting the opened timestamp throws", ()
       originalSetItem.call(this, key, value);
     });
 
+  mocks.getTaskQueue.mockResolvedValue({
+    tasks: [
+      {
+        id: "completed-task",
+        task_status: "complete_success",
+        task_type: "image",
+        model_type: "test-model",
+        provider: null,
+        created_at: new Date("2026-11-20T12:00:00Z"),
+        updated_at: new Date("2026-11-20T12:01:00Z"),
+        completed_at: new Date("2026-11-20T12:01:00Z"),
+        completed_item: null,
+      } as never,
+    ],
+  });
+
   render(<TaskQueue />);
   const toggle = screen.getByRole("button", { name: "Toggle task queue" });
 
-  expect(() => fireEvent.click(toggle)).not.toThrow();
+  await waitFor(() => expect(screen.getByText("1")).toBeTruthy());
+  expect(setItemSpy).not.toHaveBeenCalled();
+
+  fireEvent.click(toggle);
+
   expect(setItemSpy).toHaveBeenCalledWith(LAST_READ_AT_KEY, expect.any(String));
-  expect(screen.getByText("No tasks yet")).toBeTruthy();
+  await waitFor(() => expect(screen.queryByText("1")).toBeNull());
+  expect(screen.getByText("Completed")).toBeTruthy();
 });
 
 it.each(["", "not-a-timestamp", "123bad", "123\n", "-1", "9007199254740992"])(
