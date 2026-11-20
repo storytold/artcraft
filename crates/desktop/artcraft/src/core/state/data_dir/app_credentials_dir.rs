@@ -21,6 +21,18 @@ impl DataSubdir for AppCredentialsDir {
 }
 
 impl AppCredentialsDir {
+  /// Restrict the credentials directory to the current user (0700) on Unix.
+  /// A 0700 directory blocks other local users from every file inside it.
+  /// On Windows the directory inherits the user profile's owner-only ACL, so this is a no-op.
+  pub fn restrict_permissions(&self) -> anyhow::Result<()> {
+    #[cfg(unix)]
+    {
+      use std::os::unix::fs::PermissionsExt;
+      std::fs::set_permissions(&self.path, std::fs::Permissions::from_mode(0o700))?;
+    }
+    Ok(())
+  }
+
   pub fn get_grok_state_path(&self) -> PathBuf {
     self.path.join("grok_state.json")
   }
