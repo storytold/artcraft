@@ -84,4 +84,17 @@ mod tests {
     assert_eq!(ext.extension_without_period(), "jpg");
     Ok(())
   }
+
+  #[test]
+  fn probes_png_webp_and_gif_bytes() -> anyhow::Result<()> {
+    use craft_image_codecs::{ChannelLayout, EncodeOptions, Format, Image, SampleType};
+    let src = Image::from_raw(4, 3, ChannelLayout::Rgba, SampleType::U8, vec![200; 4 * 3 * 4]).unwrap();
+    for (format, expected_mime) in [(Format::Png, "image/png"), (Format::WebP, "image/webp"), (Format::Gif, "image/gif")] {
+      let bytes = craft_image_codecs::encode(&src, format, &EncodeOptions::default())?;
+      let info = ImageInfo::decode_image_from_bytes(&bytes)?;
+      assert_eq!(info.dimensions(), (4, 3));
+      assert_eq!(info.mime_type(), expected_mime);
+    }
+    Ok(())
+  }
 }

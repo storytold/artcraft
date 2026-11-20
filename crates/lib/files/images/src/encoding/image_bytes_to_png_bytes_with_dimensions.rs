@@ -27,5 +27,12 @@ mod tests {
     let res = image_bytes_to_png_bytes_with_dimensions(&jpeg).unwrap();
     assert_eq!((res.width, res.height), (3, 2));
     assert_eq!(craft_image_codecs::probe_size(&res.png_bytes).unwrap(), (3, 2));
+
+    for format in [Format::Png, Format::WebP, Format::Gif] {
+      let encoded = craft_image_codecs::encode(&src, format, &EncodeOptions::default()).unwrap();
+      let res = image_bytes_to_png_bytes_with_dimensions(&encoded).unwrap();
+      assert_eq!((res.width, res.height), (3, 2));
+      assert_eq!(craft_image_codecs::probe_size(&res.png_bytes).unwrap(), (3, 2));
+    }
   }
 }
