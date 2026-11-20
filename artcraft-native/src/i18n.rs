@@ -199,6 +199,7 @@ pub fn resolve_posix_env_lang(get: impl Fn(&str) -> Option<String>) -> Option<La
 }
 
 /// Select the first supported catalog language from an ordered list of preferred language tags.
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
 pub fn first_supported_lang<S: AsRef<str>>(tags: impl IntoIterator<Item = S>) -> Option<Lang> {
   tags.into_iter().take(32).find_map(|tag| Lang::from_tag(tag.as_ref()))
 }
