@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginModal } from "./login-modal";
 import { useLoginModalStore } from "./useLoginModalStore";
@@ -7,7 +8,7 @@ const { native, forbiddenFetch } = vi.hoisted(() => ({ native: vi.fn(), forbidde
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native }));
 vi.mock("@storyteller/api", () => { throw new Error("Authentication UI must not import API clients"); });
 vi.mock("@storyteller/tauri-utils", () => ({ FetchProxy: forbiddenFetch }));
-vi.mock("@headlessui/react", () => ({ Transition: ({ show, children }: any) => show ? children : null, TransitionChild: ({ children }: any) => children }));
+vi.mock("@headlessui/react", () => ({ Dialog: ({ children, onClose, ...props }: any) => <div role="dialog" {...props}>{children}</div>, Transition: ({ show, children }: any) => show ? children : null, TransitionChild: ({ children }: any) => children }));
 vi.mock("@storyteller/icons", () => ({ DynamicIcon: () => null, DiscordIcon: () => null }));
 vi.mock("@storyteller/ui-button", () => ({ Button: ({ children, variant, icon, iconFlip, ...props }: any) => <button {...props}>{children}</button> }));
 vi.mock("@storyteller/ui-input", () => ({ Input: ({ inputClassName, ...props }: any) => <input {...props} /> }));
@@ -137,6 +138,20 @@ describe("native login modal integration", () => {
       await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
       expect(useLoginModalStore.getState().isOpen).toBe(false);
     }
+  });
+
+  it.each([false, true])("moves focus through the form fields with Tab (signup=%s)", async (signup) => {
+    vi.useRealTimers(); // user-event awaits real timers internally
+    const user = userEvent.setup();
+    await act(async () => { render(<LoginModal isSignUp={signup} />); });
+    const order = (signup ? ["Username", "you@example.com", "Min. 8 characters", "Re-enter password"] : ["you@example.com or username", "Min. 8 characters"]).map((text) => screen.getByPlaceholderText(text));
+    order[0].focus();
+    for (const field of order.slice(1)) {
+      await user.tab();
+      expect(document.activeElement).toBe(field);
+    }
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getAllByRole("button", { name: signup ? "Sign up" : "Log in" }).find((button) => button.getAttribute("type") === "submit"));
   });
 
   it("dismisses the confirmation once even when callbacks change", async () => {
