@@ -34,13 +34,13 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@v2.22.4
         with:
           egress-policy: audit
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - name: install Rust stable
-        uses: step-security/dtolnay-rust-toolchain@8dd607977d06adf4ed49b190381e74c17a9dd25f # v1.0.0
+        uses: step-security/dtolnay-rust-toolchain@v1.0.0
         with:
           toolchain: stable
 
@@ -54,7 +54,7 @@ jobs:
         shell: cmd
 
       - name: setup node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: lts/*
 
@@ -107,7 +107,7 @@ jobs:
           $config | ConvertTo-Json -Depth 10 | Set-Content tauri.conf.json
 
       - name: build and publish
-        uses: step-security/tauri-action@dc662d498edbd35ec8ed564b45d44e955444d1bc # v1.0.0
+        uses: step-security/tauri-action@v1.0.0
         env:
           # NB(bt): This is needed by wreq. Hopefully it doesn't kill Tauri
           RUSTFLAGS: "-C target-feature=+crt-static"
