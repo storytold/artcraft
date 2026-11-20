@@ -19,6 +19,15 @@ const SLEEP_THIRD_PARTY_JOBS_SEEN: Duration = Duration::from_secs(2);
 const SLEEP_BETWEEN_FAL_POLLS: Duration = Duration::from_secs(1);
 const SLEEP_ON_ERROR: Duration = Duration::from_secs(30);
 
+/// Providers whose tasks are completed by their own threads: this poller neither polls nor reports them.
+const PROVIDERS_WITH_OWN_THREADS: [GenerationProvider; 5] = [
+  GenerationProvider::Grok,
+  GenerationProvider::Midjourney,
+  GenerationProvider::Sora,
+  GenerationProvider::WorldLabs,
+  GenerationProvider::Local,
+];
+
 pub async fn third_party_task_polling_thread(
   app_handle: AppHandle,
   app_env_configs: AppEnvConfigs,
@@ -61,7 +70,9 @@ async fn poll_iteration(
     task_statuses: &TASK_DATABASE_PENDING_STATUSES,
   }).await?;
 
-  let tasks = task_list.tasks;
+  let tasks: Vec<Task> = task_list.tasks.into_iter()
+    .filter(|t| !PROVIDERS_WITH_OWN_THREADS.contains(&t.provider))
+    .collect();
 
   if tasks.is_empty() {
     let sleep_duration = if *has_ever_seen_third_party_jobs {

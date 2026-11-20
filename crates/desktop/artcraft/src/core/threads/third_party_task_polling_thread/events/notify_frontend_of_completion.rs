@@ -1,5 +1,7 @@
+use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
+use crate::core::utils::enum_conversion::task_model_type::to_generation_model;
+use crate::core::utils::enum_conversion::task_type::to_generation_action;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::events::functional_events::canvas_background_removal_complete_event::CanvasBackgroundRemovalCompleteEvent;
 use crate::core::events::functional_events::gaussian_generation_complete_event::{GaussianGenerationCompleteEvent, GeneratedGaussian};
@@ -12,9 +14,7 @@ use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::utils::api_host::ApiHost;
-use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info, warn};
 use sqlite_tasks::queries::task::Task;
@@ -54,9 +54,9 @@ pub async fn notify_frontend_of_completion(
   completion: &CompletionData,
 ) {
   // Fire the generic generation-complete event (for the task queue UI).
-  let generation_action = task_type_to_generation_action(task.task_type);
-  let generation_model = task.model_type.clone().and_then(task_model_type_to_generation_model);
-  let generation_service = provider_to_generation_service(task.provider);
+  let generation_action = to_generation_action(task.task_type);
+  let generation_model = task.model_type.clone().and_then(to_generation_model);
+  let generation_service = to_generation_service_provider(task.provider);
 
   let complete_event = GenerationCompleteEvent {
     action: Some(generation_action),
@@ -255,95 +255,4 @@ async fn collect_generated_images(
     cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
     maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
   }]
-}
-
-fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
-  match task_type {
-    TaskType::ImageGeneration => GenerationAction::GenerateImage,
-    TaskType::VideoGeneration => GenerationAction::GenerateVideo,
-    TaskType::AudioGeneration => GenerationAction::GenerateAudio,
-    TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
-    TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
-    TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
-    TaskType::ImageInpaintEdit => GenerationAction::ImageInpaintEdit,
-  }
-}
-
-fn provider_to_generation_service(provider: GenerationProvider) -> GenerationServiceProvider {
-  match provider {
-    GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
-    GenerationProvider::Fal => GenerationServiceProvider::Fal,
-    GenerationProvider::Grok => GenerationServiceProvider::Grok,
-    GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
-    GenerationProvider::Sora => GenerationServiceProvider::Sora,
-    GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
-    GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
-    GenerationProvider::Krea => GenerationServiceProvider::Krea,
-    GenerationProvider::Leonardo => GenerationServiceProvider::Leonardo,
-    GenerationProvider::Magnific => GenerationServiceProvider::Magnific,
-    GenerationProvider::Openart => GenerationServiceProvider::Openart,
-    GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
-    GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
-    GenerationProvider::Runway => GenerationServiceProvider::Runway,
-  }
-}
-
-fn task_model_type_to_generation_model(model: TaskModelType) -> Option<GenerationModel> {
-  match model {
-    TaskModelType::Unknown(model) => Some(GenerationModel::Unknown(model)),
-    TaskModelType::Flux1Dev => Some(GenerationModel::Flux1Dev),
-    TaskModelType::Flux1Schnell => Some(GenerationModel::Flux1Schnell),
-    TaskModelType::FluxPro1 => Some(GenerationModel::FluxPro1),
-    TaskModelType::FluxPro11 => Some(GenerationModel::FluxPro11),
-    TaskModelType::FluxPro11Ultra => Some(GenerationModel::FluxPro11Ultra),
-    TaskModelType::FluxProKontextMax => Some(GenerationModel::FluxProKontextMax),
-    TaskModelType::FluxDevJuggernaut => Some(GenerationModel::FluxDevJuggernaut),
-    TaskModelType::Flux2LoraAngles => Some(GenerationModel::Flux2LoraAngles),
-    TaskModelType::GptImage1 => Some(GenerationModel::GptImage1),
-    TaskModelType::GptImage1p5 => Some(GenerationModel::GptImage1p5),
-    TaskModelType::GptImage2 => Some(GenerationModel::GptImage2),
-    TaskModelType::GptImage2p5Flare => Some(GenerationModel::GptImage2p5Flare),
-    TaskModelType::GptImage2p5Sunburst => Some(GenerationModel::GptImage2p5Sunburst),
-    TaskModelType::NanoBanana => Some(GenerationModel::NanoBanana),
-    TaskModelType::NanoBanana2 => Some(GenerationModel::NanoBanana2),
-    TaskModelType::NanoBananaPro => Some(GenerationModel::NanoBananaPro),
-    TaskModelType::Seedream4 => Some(GenerationModel::Seedream4),
-    TaskModelType::Seedream4p5 => Some(GenerationModel::Seedream4p5),
-    TaskModelType::Seedream5Lite => Some(GenerationModel::Seedream5Lite),
-    TaskModelType::QwenEdit2511Angles => Some(GenerationModel::QwenEdit2511Angles),
-    TaskModelType::GrokImage => Some(GenerationModel::GrokImage),
-    TaskModelType::Recraft3 => Some(GenerationModel::Recraft3),
-    TaskModelType::Midjourney7 => Some(GenerationModel::Midjourney7),
-    TaskModelType::Midjourney7Niji => Some(GenerationModel::Midjourney7Niji),
-    TaskModelType::Midjourney8 => Some(GenerationModel::Midjourney8),
-    TaskModelType::GrokVideo => Some(GenerationModel::GrokVideo),
-    TaskModelType::GrokImagineVideo1p5 => Some(GenerationModel::GrokImagineVideo1p5),
-    TaskModelType::Kling16Pro => Some(GenerationModel::Kling1_6),
-    TaskModelType::Kling21Pro => Some(GenerationModel::Kling21Pro),
-    TaskModelType::Kling21Master => Some(GenerationModel::Kling21Master),
-    TaskModelType::Kling2p5TurboPro => Some(GenerationModel::Kling2p5TurboPro),
-    TaskModelType::Kling2p6Pro => Some(GenerationModel::Kling2p6Pro),
-    TaskModelType::Kling3p0Standard => Some(GenerationModel::Kling3p0Standard),
-    TaskModelType::Kling3p0Pro => Some(GenerationModel::Kling3p0Pro),
-    TaskModelType::HappyHorse1p0 => Some(GenerationModel::HappyHorse1p0),
-    TaskModelType::Seedance10Lite => Some(GenerationModel::Seedance10Lite),
-    TaskModelType::Seedance1p5Pro => Some(GenerationModel::Seedance1p5Pro),
-    TaskModelType::Seedance2p0 => Some(GenerationModel::Seedance2p0),
-    TaskModelType::Seedance2p0Fast => Some(GenerationModel::Seedance2p0Fast),
-    TaskModelType::Sora2 => Some(GenerationModel::Sora2),
-    TaskModelType::Sora2Pro => Some(GenerationModel::Sora2Pro),
-    TaskModelType::Veo2 => Some(GenerationModel::Veo2),
-    TaskModelType::Veo3 => Some(GenerationModel::Veo3),
-    TaskModelType::Veo3Fast => Some(GenerationModel::Veo3Fast),
-    TaskModelType::Veo3p1 => Some(GenerationModel::Veo3p1),
-    TaskModelType::Veo3p1Fast => Some(GenerationModel::Veo3p1Fast),
-    TaskModelType::Hunyuan3d2_0 => Some(GenerationModel::Hunyuan3d2_0),
-    TaskModelType::Hunyuan3d2_1 => Some(GenerationModel::Hunyuan3d2_1),
-    TaskModelType::Hunyuan3d3 => Some(GenerationModel::Hunyuan3d3),
-    TaskModelType::Midjourney => Some(GenerationModel::Midjourney),
-    TaskModelType::Gemini25Flash => Some(GenerationModel::Gemini25Flash),
-    TaskModelType::WorldlabsMarble => Some(GenerationModel::WorldlabsMarble),
-    TaskModelType::WorldlabsMarble0p1Mini => Some(GenerationModel::WorldlabsMarble0p1Mini),
-    TaskModelType::WorldlabsMarble0p1Plus => Some(GenerationModel::WorldlabsMarble0p1Plus),
-  }
 }

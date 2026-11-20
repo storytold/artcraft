@@ -14,6 +14,7 @@ const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCr
   [GenerationProvider.Krea]: ModelCreator.Krea,
   [GenerationProvider.Openart]: ModelCreator.OpenArt,
   [GenerationProvider.Runway]: ModelCreator.Runway,
+  [GenerationProvider.Local]: ModelCreator.Local,
 };
 
 export const getProviderIcon = (
@@ -39,6 +40,8 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
   switch (provider) {
     case GenerationProvider.Artcraft:
       return "ArtCraft";
+    case GenerationProvider.Local:
+      return "Local";
     case GenerationProvider.Fal:
       return "FAL";
     case GenerationProvider.Grok:

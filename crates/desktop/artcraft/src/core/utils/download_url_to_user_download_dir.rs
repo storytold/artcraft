@@ -45,21 +45,40 @@ pub fn suggested_download_filename(
 /// complete file atomically. Never overwrite another download, even if two
 /// generations finish in the same second or use the same custom name.
 pub async fn download_url_with_filename(url: &Url, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
-  check_url_file_name_for_downloadability(filename)?;
-  tokio::fs::create_dir_all(directory).await?;
-  let temporary = NamedTempFile::new_in(directory)?;
-  let mut file = tokio::fs::File::from_std(temporary.reopen()?);
+  let (temporary, mut file) = open_download(directory, filename).await?;
   let client = reqwest::Client::builder().connect_timeout(Duration::from_secs(30)).timeout(Duration::from_secs(600)).build()?;
   let mut response = client.get(url.clone()).send().await?.error_for_status()?;
   while let Some(chunk) = response.chunk().await? {
     file.write_all(&chunk).await?;
   }
+  let path = finish_download(temporary, file, directory, filename).await?;
+  info!("Downloaded generation to {:?}", path);
+  Ok(path)
+}
+
+/// Like `download_url_with_filename`, for bytes already in hand (same name checks, same no-overwrite publish).
+pub async fn save_bytes_with_filename(bytes: &[u8], directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
+  let (temporary, mut file) = open_download(directory, filename).await?;
+  file.write_all(bytes).await?;
+  let path = finish_download(temporary, file, directory, filename).await?;
+  info!("Saved generation to {:?}", path);
+  Ok(path)
+}
+
+/// A temporary file in the destination directory, plus an async handle to write it.
+async fn open_download(directory: &Path, filename: &str) -> Result<(NamedTempFile, tokio::fs::File), ArtcraftError> {
+  check_url_file_name_for_downloadability(filename)?;
+  tokio::fs::create_dir_all(directory).await?;
+  let temporary = NamedTempFile::new_in(directory)?;
+  let file = tokio::fs::File::from_std(temporary.reopen()?);
+  Ok((temporary, file))
+}
+
+async fn finish_download(temporary: NamedTempFile, mut file: tokio::fs::File, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {
   file.flush().await?;
   file.sync_all().await?;
   drop(file);
-  let path = persist_download(temporary, directory, filename)?;
-  info!("Downloaded generation to {:?}", path);
-  Ok(path)
+  persist_download(temporary, directory, filename)
 }
 
 fn persist_download(mut file: NamedTempFile, directory: &Path, filename: &str) -> Result<PathBuf, ArtcraftError> {

@@ -24,8 +24,10 @@ use enums::common::generation_provider::GenerationProvider;
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use sqlite_tasks::error::SqliteTasksError;
 use tauri::{AppHandle, Manager};
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::sqlite::tasks::TaskId;
 use uuid_utils::uuid::generate_random_uuid;
 
 #[derive(Deserialize, Serialize)]
@@ -38,15 +40,7 @@ pub type OmniResult = Response<OmniResponse, String, ()>;
 
 pub async fn generate(request: OmniRequest, modality: Modality, app: &AppHandle) -> OmniResult {
   let configs = app.state::<AppEnvConfigs>();
-  let manager = app.state::<StorytellerCredentialManager>();
-  let maybe_creds = manager.get_credentials().map_err(local_error)?;
-  let creds = match maybe_creds {
-    Some(creds) => creds,
-    None => {
-      notify_frontend_of_errors(app, &GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials)).await;
-      return Err(command_error(CommandErrorStatus::Unauthorized, "needs_storyteller_credentials", "You need to be logged into ArtCraft.".into()));
-    },
-  };
+  let creds = require_credentials(app).await?;
   let mut fields = request.api_fields(modality);
   if modality == Modality::Image {
     resolve_image_inputs(&mut fields, Some(&creds), &configs.storyteller_host).await?;
@@ -73,17 +67,37 @@ pub async fn generate(request: OmniRequest, modality: Modality, app: &AppHandle)
     return Err(local_error("The API accepted generation but returned no job tokens."));
   }
   record_usage(app, &request, modality, job_tokens.len());
-  let database = app.state::<TaskDatabase>();
   for job_token in job_tokens {
     let success = TaskEnqueueSuccess { task_type: modality.task_type(), model: model.clone().map(GenerationModel::Unknown), provider: GenerationProvider::Artcraft, provider_job_id: Some(job_token), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token: None };
-    if let Err(err) = success.insert_into_task_database_with_frontend_payload(&database, request.frontend_caller, request.frontend_subscriber_id.as_deref(), request.frontend_subscriber_payload.as_deref()).await {
+    if let Err(err) = insert_enqueued_task(app, &request, &success).await {
       // Generation has already been accepted. Do not encourage duplicate retries.
       error!("Could not persist accepted Omni generation: {:?}", err);
     }
-    GenerationEnqueueSuccessEvent { action: success.to_frontend_event_action(), service: success.to_frontend_event_service(), model: success.model }.send_infallible(app);
+    send_enqueue_success(app, success);
   }
   CreditsBalanceChangedEvent {}.send_infallible(app);
   Ok(response.into())
+}
+
+/// The ArtCraft login, or (after telling the frontend to ask for one) an Unauthorized error.
+pub async fn require_credentials(app: &AppHandle) -> Result<StorytellerCredentialSet, CommandErrorResponseWrapper<String, ()>> {
+  match app.state::<StorytellerCredentialManager>().get_credentials().map_err(local_error)? {
+    Some(creds) => Ok(creds),
+    None => {
+      notify_frontend_of_errors(app, &GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials)).await;
+      Err(command_error(CommandErrorStatus::Unauthorized, "needs_storyteller_credentials", "You need to be logged into ArtCraft.".into()))
+    },
+  }
+}
+
+/// Stores an accepted job in the task database, with the caller's frontend payload.
+pub async fn insert_enqueued_task(app: &AppHandle, request: &OmniRequest, success: &TaskEnqueueSuccess) -> Result<TaskId, SqliteTasksError> {
+  let database = app.state::<TaskDatabase>();
+  success.insert_into_task_database_with_frontend_payload(&database, request.frontend_caller, request.frontend_subscriber_id.as_deref(), request.frontend_subscriber_payload.as_deref()).await
+}
+
+pub fn send_enqueue_success(app: &AppHandle, success: TaskEnqueueSuccess) {
+  GenerationEnqueueSuccessEvent { action: success.to_frontend_event_action(), service: success.to_frontend_event_service(), model: success.model }.send_infallible(app);
 }
 
 pub async fn estimate(request: OmniRequest, modality: Modality, app: &AppHandle) -> OmniResult {
@@ -129,11 +143,13 @@ fn api_message(body: &str) -> String {
   serde_json::from_str::<Value>(body).ok().and_then(|value| value.get("error_message").or_else(|| value.get("message")).and_then(Value::as_str).map(str::to_owned)).unwrap_or_else(|| body.to_owned())
 }
 
-fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
+pub(crate) fn command_error(status: CommandErrorStatus, kind: &str, message: String) -> CommandErrorResponseWrapper<String, ()> {
   CommandErrorResponseWrapper { status, error_type: Some(kind.into()), error_message: Some(message), error_details: None }
 }
 
-async fn resolve_image_inputs(fields: &mut Map<String, Value>, maybe_creds: Option<&StorytellerCredentialSet>, host: &ApiHost) -> Result<(), CommandErrorResponseWrapper<String, ()>> {
+/// Uploads raw canvas/scene/mask bytes and folds the canvas and scene images into `image_media_tokens`
+/// (canvas, scene, then the request's own references). Without credentials, only checks presence.
+pub(crate) async fn resolve_image_inputs(fields: &mut Map<String, Value>, maybe_creds: Option<&StorytellerCredentialSet>, host: &ApiHost) -> Result<(), CommandErrorResponseWrapper<String, ()>> {
   let mut refs = Vec::new();
   for name in ["canvas_image", "scene_image", "inpainting_mask_image"] {
     let token_key = format!("{}_media_token", name);
