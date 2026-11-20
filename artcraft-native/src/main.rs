@@ -10,6 +10,7 @@ mod overlays;
 mod pages;
 mod prompt_box;
 mod shell;
+mod system_fonts;
 mod theme;
 mod ui;
 
