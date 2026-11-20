@@ -37,7 +37,9 @@ export class WaveformCache {
       sourceFile,
       audioUrl,
     }).catch((error) => {
-      this.summaries.delete(sourceKey);
+      if (this.summaries.get(sourceKey) === promise) {
+        this.summaries.delete(sourceKey);
+      }
       throw error;
     });
 
