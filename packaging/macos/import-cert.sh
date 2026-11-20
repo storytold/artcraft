@@ -40,10 +40,14 @@ rm -f "$CERT"
 # Allow codesign to access the private key without a GUI prompt.
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" "$KEYCHAIN" >/dev/null
 # Put it on the search list alongside existing user keychains.
+if ! keychain_list="$(security list-keychains -d user)"; then
+  echo "error: failed to read existing user keychains" >&2
+  exit 1
+fi
 existing_keychains=()
 while IFS= read -r line; do
   [ -n "$line" ] && existing_keychains+=("$line")
-done < <(security list-keychains -d user | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//')
+done < <(printf '%s\n' "$keychain_list" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//')
 security list-keychains -d user -s "$KEYCHAIN" ${existing_keychains[@]+"${existing_keychains[@]}"}
 
 IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | awk '/Developer ID Application/ { print $2; exit }')"
