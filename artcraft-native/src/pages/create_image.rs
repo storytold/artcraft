@@ -18,7 +18,7 @@ use crate::pages::common::{self, AppRequest, CostState, Env};
 use crate::pages::toolbar;
 use crate::prompt_box::deck::{DeckAction, DeckLimits};
 use crate::prompt_box::model_selector::model_selector;
-use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, References};
+use crate::prompt_box::refs::{validate_reference_list, ImageSlot, RefKind, RefMedia, References};
 use crate::prompt_box::{self, DeckMode, PromptBoxAction, PromptBoxProps, PromptBoxState, Slot, editor};
 
 const PLACEHOLDER: &str = "Describe what you want in the image...";
@@ -225,6 +225,10 @@ impl CreateImagePage {
     }
     if self.refs.any_uploading() {
       env.toasts.error("Please wait for your references to finish uploading");
+      return;
+    }
+    if let Err(message) = validate_reference_list(&self.refs.images, RefKind::Image, model.image_refs_max, None) {
+      env.toasts.error(message);
       return;
     }
     // Other providers take the references as links (when the model takes references there).

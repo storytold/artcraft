@@ -141,6 +141,27 @@ impl References {
   }
 }
 
+/// Validate the references that will actually be submitted against the active
+/// model, including library picks and references retained after a model change.
+pub fn validate_reference_list(items: &[RefMedia], kind: RefKind, maximum: usize, maybe_max_secs: Option<u16>) -> Result<(), String> {
+  if items.len() > maximum {
+    return Err(if maximum == 0 { format!("This model does not support {} references. Remove them before generating.", kind.noun()) } else { format!("This model accepts at most {maximum} {} references. Remove the extras before generating.", kind.noun()) });
+  }
+  if items.iter().any(|item| item.kind != kind || item.status != RefStatus::Ready || item.token.as_deref().is_none_or(|token| token.trim().is_empty())) {
+    return Err("A reference is not ready. Please finish uploading or attach it again.".into());
+  }
+  if let Some(max) = maybe_max_secs {
+    if items.iter().any(|item| !item.duration_secs.is_finite() || item.duration_secs <= 0.0) {
+      return Err(format!("A {} reference has no known duration. Please attach it again from your library.", kind.noun()));
+    }
+    let total: f32 = items.iter().map(|item| item.duration_secs).sum();
+    if !total.is_finite() || total > f32::from(max) + 0.5 {
+      return Err(format!("Total {} reference duration cannot exceed {max}s", kind.noun()));
+    }
+  }
+  Ok(())
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
