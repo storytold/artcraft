@@ -9,7 +9,6 @@ use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use log::info;
 use sqlite_tasks::queries::task::Task;
-use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use tauri::AppHandle;
 use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
@@ -29,13 +28,17 @@ pub async fn handle_failed_job(
   
   let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
-  update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
+  let updated = update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     status: TaskStatus::CompleteFailure,
     maybe_failure_type,
     maybe_failure_message,
   }).await?;
+
+  if !updated {
+    return Ok(());
+  }
 
   let service = to_generation_service_provider(task.provider);
   let action = to_generation_action(task.task_type);
