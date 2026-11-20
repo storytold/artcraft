@@ -1,0 +1,32 @@
+{
+  "name": "artcraft_set_tags",
+  "description": "Add, replace, or clear tags on a media file (max 32 tags, 64 chars each).",
+  "inputSchema": {
+    "properties": {
+      "action": {
+        "description": "'add' merges tags, 'set' replaces all tags, 'clear' removes all tags",
+        "enum": [
+          "add",
+          "set",
+          "clear"
+        ],
+        "type": "string"
+      },
+      "media_token": {
+        "type": "string"
+      },
+      "tags": {
+        "description": "Tag names to add or set (not needed for clear)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "media_token",
+      "action"
+    ],
+    "type": "object"
+  }
+}

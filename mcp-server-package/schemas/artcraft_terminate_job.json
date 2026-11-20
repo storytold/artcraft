@@ -1,0 +1,20 @@
+{
+  "name": "artcraft_terminate_job",
+  "description": "Cancel/delete a running or pending job. This is a DESTRUCTIVE action; it requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm termination.",
+        "type": "boolean"
+      },
+      "job_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "job_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

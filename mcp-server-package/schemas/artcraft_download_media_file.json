@@ -1,0 +1,28 @@
+{
+  "name": "artcraft_download_media_file",
+  "description": "Download a media file to local disk (max 512 MB). The filename must be a plain file name (no directories); download_dir must be inside the user's home directory (or ARTCRAFT_MCP_ALLOWED_DIRS). If the target file already exists, confirm: true is required to overwrite it.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Required (true) only when overwriting an existing file.",
+        "type": "boolean"
+      },
+      "download_dir": {
+        "description": "Optional local directory under home/temp/ARTCRAFT_MCP_ALLOWED_DIRS. Defaults to ~/Artcraft/downloads or the user downloads folder.",
+        "type": "string"
+      },
+      "filename": {
+        "description": "Optional plain file name with extension (no path separators, max 128 chars)",
+        "type": "string"
+      },
+      "media_token": {
+        "description": "Media file token to download",
+        "type": "string"
+      }
+    },
+    "required": [
+      "media_token"
+    ],
+    "type": "object"
+  }
+}

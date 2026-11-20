@@ -1,0 +1,24 @@
+{
+  "name": "artcraft_remove_background",
+  "description": "Remove the background from an image.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

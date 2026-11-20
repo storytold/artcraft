@@ -1,0 +1,110 @@
+{
+  "name": "artcraft_generate_video",
+  "description": "Generate videos using ArtCraft's unified OmniGen API. PAID action (spends credits); requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "aspect_ratio": {
+        "description": "Aspect ratio: 'wide_16_9', 'tall_9_16', 'square', etc.",
+        "type": "string"
+      },
+      "bitrate": {
+        "description": "Bitrate quality",
+        "enum": [
+          "normal",
+          "high"
+        ],
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "duration_seconds": {
+        "description": "Duration in seconds (1-600)",
+        "type": "integer"
+      },
+      "end_frame_image_media_token": {
+        "description": "Ending keyframe image token",
+        "type": "string"
+      },
+      "generate_audio": {
+        "description": "Whether to generate native sound",
+        "type": "boolean"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "model": {
+        "description": "Model id (e.g., 'minimax_h3', 'seedance_2p5', 'kling_3p0_pro', 'sora_2_pro', 'veo_3p1', 'vidu_q3')",
+        "type": "string"
+      },
+      "negative_prompt": {
+        "description": "Negative prompt (max 8000 chars)",
+        "type": "string"
+      },
+      "output_format": {
+        "description": "Container format",
+        "enum": [
+          "mp4",
+          "mov"
+        ],
+        "type": "string"
+      },
+      "prompt": {
+        "description": "Text prompt (max 8000 chars)",
+        "type": "string"
+      },
+      "quality": {
+        "description": "Quality: 'low', 'medium', 'high', 'xhigh', 'max', 'auto'",
+        "type": "string"
+      },
+      "reference_audio_media_tokens": {
+        "description": "Reference audio tokens (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "reference_character_tokens": {
+        "description": "Reference character tokens (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "reference_image_media_tokens": {
+        "description": "Reference image tokens (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "reference_video_media_tokens": {
+        "description": "Reference video tokens (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "resolution": {
+        "description": "Resolution preset ('one_k'-'four_k', '480p'-'1080p')",
+        "type": "string"
+      },
+      "start_frame_image_media_token": {
+        "description": "Starting keyframe image token",
+        "type": "string"
+      },
+      "video_batch_count": {
+        "description": "Number of videos (1-8, default 1)",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "model",
+      "prompt",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

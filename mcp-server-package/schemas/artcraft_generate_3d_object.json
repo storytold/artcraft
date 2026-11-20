@@ -1,0 +1,104 @@
+{
+  "name": "artcraft_generate_3d_object",
+  "description": "Generate 3D meshes via OmniGen Mesh (Hunyuan 3D v2/v3/v3.1, Tripo3D). PAID action; requires confirm: true.",
+  "inputSchema": {
+    "properties": {
+      "back_image_media_token": {
+        "description": "Back view",
+        "type": "string"
+      },
+      "confirm": {
+        "description": "Must be true to confirm this paid generation.",
+        "type": "boolean"
+      },
+      "enable_pbr": {
+        "description": "Enable PBR materials",
+        "type": "boolean"
+      },
+      "enable_texture": {
+        "description": "Enable textures",
+        "type": "boolean"
+      },
+      "front_image_media_token": {
+        "description": "Front view",
+        "type": "string"
+      },
+      "geometry_quality": {
+        "description": "Geometry quality",
+        "enum": [
+          "standard",
+          "detailed"
+        ],
+        "type": "string"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "description": "Primary input image",
+        "type": "string"
+      },
+      "input_mesh_media_file_token": {
+        "description": "Input mesh for retopology/parts",
+        "type": "string"
+      },
+      "left_image_media_token": {
+        "description": "Left view",
+        "type": "string"
+      },
+      "model": {
+        "description": "'hunyuan_3d_2p0', 'hunyuan_3d_2p1', 'hunyuan_3d_3', 'hunyuan_3d_3_sketch', 'hunyuan_3d_3p1_pro', 'hunyuan_3d_3p1_rapid', 'hunyuan_3d_3p1_part', 'hunyuan_3d_3p1_topology', 'tripo_3d_h3p1' (default: hunyuan_3d_3)",
+        "type": "string"
+      },
+      "output_type": {
+        "description": "Mesh output type",
+        "enum": [
+          "normal",
+          "low_poly",
+          "geometry"
+        ],
+        "type": "string"
+      },
+      "polygon_type": {
+        "description": "Polygon type",
+        "enum": [
+          "triangle",
+          "quad"
+        ],
+        "type": "string"
+      },
+      "prompt": {
+        "description": "Text prompt for text-to-3D (max 8000 chars)",
+        "type": "string"
+      },
+      "reference_image_media_tokens": {
+        "description": "Additional reference images (max 16)",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "right_image_media_token": {
+        "description": "Right view",
+        "type": "string"
+      },
+      "target_face_count": {
+        "description": "Target face count (100-10000000)",
+        "type": "integer"
+      },
+      "texture_quality": {
+        "description": "Texture quality",
+        "enum": [
+          "standard",
+          "detailed"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

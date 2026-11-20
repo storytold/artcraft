@@ -1,0 +1,15 @@
+{
+  "name": "artcraft_get_weight",
+  "description": "Get details of a specific weight.",
+  "inputSchema": {
+    "properties": {
+      "weight_token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "weight_token"
+    ],
+    "type": "object"
+  }
+}

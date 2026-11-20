@@ -1,0 +1,28 @@
+{
+  "name": "artcraft_search_weights",
+  "description": "Search model weights by keyword.",
+  "inputSchema": {
+    "properties": {
+      "ietf_language_subtag": {
+        "description": "BCP-47 language subtag (default: en)",
+        "type": "string"
+      },
+      "query": {
+        "description": "Search text (max 200 chars)",
+        "type": "string"
+      },
+      "weight_category": {
+        "description": "Optional category filter: image_generation, text_to_speech, vocoder, voice_conversion, workflow_config (default: text_to_speech)",
+        "type": "string"
+      },
+      "weight_type": {
+        "description": "Optional type filter: tt2, vall_e, hifigan_tt2, so_vits_svc, rvc_v2, sdxl, sd_1.5, loRA, comfy_ui (default: tt2)",
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object"
+  }
+}
