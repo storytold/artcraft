@@ -236,7 +236,7 @@ impl CreateVideoPage {
     let model = common::selected_model(&env.catalog.video_page, self.settings.model.as_deref(), DEFAULT_VIDEO_MODEL).cloned();
     for path in paths {
       let Some(kind) = RefKind::from_path(path) else {
-        env.toasts.error(format!("{} isn't a supported file", common::file_name(path)));
+        env.toasts.error(crate::i18n::tf("{} isn't a supported file", &[common::file_name(path).to_string()]));
         continue;
       };
       match (self.settings.input_mode, kind) {
@@ -247,7 +247,7 @@ impl CreateVideoPage {
             None => env.toasts.error(frames_full_message(model.as_ref())),
           }
         },
-        (InputMode::Keyframe, _) => env.toasts.error(format!("{} references aren't available here", if kind == RefKind::Video { "Video" } else { "Audio" })),
+        (InputMode::Keyframe, _) => env.toasts.error(crate::i18n::tf("{} references aren't available here", &[crate::i18n::t(if kind == RefKind::Video { "Video" } else { "Audio" })])),
         (InputMode::Reference, _) => {
           let Some(l) = limits else {
             continue;
@@ -258,7 +258,7 @@ impl CreateVideoPage {
             RefKind::Audio => l.max_audios,
           };
           if max == 0 {
-            env.toasts.error(format!("{}{} references aren't available here", kind.noun()[..1].to_uppercase(), &kind.noun()[1..]));
+            env.toasts.error(crate::i18n::tf("{} references aren't available here", &[crate::i18n::t(kind.noun())]));
           } else if free_slots(&self.refs, kind, l) == 0 {
             let secs = if kind == RefKind::Video { l.max_video_secs } else { l.max_audio_secs };
             env.toasts.error(max_message(kind, max, secs.filter(|_| kind != RefKind::Image)));
@@ -281,7 +281,7 @@ impl CreateVideoPage {
       };
       if self.refs.list(kind).iter().any(|r| r.id == ref_id) && self.refs.total_secs(kind) > f32::from(max) + 0.5 {
         self.refs.remove(ref_id);
-        env.toasts.error(format!("Total {} duration cannot exceed {max}s", kind.noun()));
+        env.toasts.error(crate::i18n::tf("Total {} duration cannot exceed {}s", &[crate::i18n::t(kind.noun()), max.to_string()]));
       }
     }
   }
@@ -304,7 +304,7 @@ impl CreateVideoPage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(format!("Prompt exceeds the {} character limit for this model", limit.unwrap_or_default()));
+      env.toasts.error(crate::i18n::tf("Prompt exceeds the {} character limit for this model", &[limit.unwrap_or_default().to_string()]));
       return;
     }
     if self.needs_start_frame(model) {
@@ -602,10 +602,10 @@ fn max_message(kind: RefKind, max: usize, secs: Option<f32>) -> String {
     RefKind::Video => "video",
     RefKind::Audio => "audio clip",
   };
-  let plural = if max == 1 { "" } else { "s" };
+  let plural = if max == 1 || crate::i18n::is_arabic() { "" } else { "s" };
   match secs {
-    Some(s) => format!("Max {max} {noun}{plural} / {}s total", s.round() as i64),
-    None => format!("Max {max} {noun}{plural}"),
+    Some(s) => crate::i18n::tf("Max {} {}{} / {}s total", &[max.to_string(), crate::i18n::t(noun), plural.to_string(), (s.round() as i64).to_string()]),
+    None => crate::i18n::tf("Max {} {}{}", &[max.to_string(), crate::i18n::t(noun), plural.to_string()]),
   }
 }
 

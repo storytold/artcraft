@@ -5,6 +5,7 @@
 mod app;
 mod backend;
 mod feed;
+mod i18n;
 mod models;
 mod overlays;
 mod pages;

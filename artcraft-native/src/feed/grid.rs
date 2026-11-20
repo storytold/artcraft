@@ -183,7 +183,7 @@ fn pending_card(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn
   if job.batch_count > 1 {
     let banner = Rect::from_min_max(rect.min + vec2(8.0, 8.0), pos2(rect.right() - 8.0, rect.top() + 34.0));
     p.rect_filled(banner, 0.0, Color32::from_black_alpha(153));
-    p.text(banner.center(), Align2::CENTER_CENTER, format!("Generating {} {} \u{b7} Results may appear one at a time", job.batch_count, job.kind.plural()), FontId::new(10.0, FontFamily::Proportional), theme::fade(Color32::WHITE, 0.7));
+    p.text(banner.center(), Align2::CENTER_CENTER, crate::i18n::tf("Generating {} {} \u{b7} Results may appear one at a time", &[job.batch_count.to_string(), crate::i18n::t(job.kind.plural())]), FontId::new(10.0, FontFamily::Proportional), theme::fade(Color32::WHITE, 0.7));
   }
   let c = rect.center() - vec2(0.0, 18.0);
   icons::paint_spinner(ui, Rect::from_center_size(c, vec2(26.0, 26.0)), theme::fade(Color32::WHITE, 0.2));
@@ -367,7 +367,7 @@ fn item_actions<'a>(view: &FeedView<'_>, item: &FeedItem, prompt: Option<&String
 
 /// What an item is called without its prompt: its title, else "Audio Generation" and the like.
 fn fallback_title(item: &FeedItem) -> String {
-  item.title.clone().unwrap_or_else(|| format!("{} Generation", item.kind.label()))
+  item.title.clone().unwrap_or_else(|| crate::i18n::tf("{} Generation", &[crate::i18n::t(item.kind.label())]))
 }
 
 fn kind_icon(kind: MediaKind) -> Icon {
@@ -393,11 +393,11 @@ fn pending_row(ui: &mut Ui, rect: Rect, job: &PendingJob, now: i64, names: &dyn 
   let meta_y = thumb.top() + gh + 14.0;
   let mx = model_chip(ui, pos2(x, meta_y), job.model_id.as_deref().unwrap_or_default(), names, 12.0, theme::MUTED);
   if job.batch_count > 1 {
-    ui.painter().text(pos2(mx + 8.0, meta_y), Align2::LEFT_CENTER, format!("\u{b7} {} {}", job.batch_count, job.kind.plural()), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
+    ui.painter().text(pos2(mx + 8.0, meta_y), Align2::LEFT_CENTER, crate::i18n::tf("\u{b7} {} {}", &[job.batch_count.to_string(), crate::i18n::t(job.kind.plural())]), FontId::new(12.0, FontFamily::Proportional), theme::MUTED);
   }
   let bar = Rect::from_min_size(pos2(x, meta_y + 16.0), vec2(w.min(320.0), 4.0));
   widgets::progress_bar(ui.painter(), bar, progress as f32 / 100.0);
-  ui.painter().text(pos2(bar.right() + 10.0, bar.center().y), Align2::LEFT_CENTER, format!("{progress}% \u{b7} {label}"), FontId::new(11.0, FontFamily::Monospace), theme::FAINT);
+  ui.painter().text(pos2(bar.right() + 10.0, bar.center().y), Align2::LEFT_CENTER, crate::i18n::tf("{}% \u{b7} {}", &[progress.to_string(), label.to_string()]), FontId::new(11.0, FontFamily::Monospace), theme::FAINT);
   row_divider(ui, rect);
 }
 

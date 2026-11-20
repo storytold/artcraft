@@ -49,13 +49,13 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
       });
     });
     ui.add_space(6.0);
-    ui.label(widgets::heading(&format!("Set up {name}"), 26.0));
+    ui.label(widgets::heading(&crate::i18n::tf("Set up {}", &[name.to_string()]), 26.0));
     ui.add_space(4.0);
-    ui.label(egui::RichText::new(format!("Add your {name} account to ArtCraft!")).size(14.0).family(theme::medium()));
+    ui.label(egui::RichText::new(crate::i18n::tf("Add your {} account to ArtCraft!", &[name.to_string()])).size(14.0).family(theme::medium()));
     ui.add_space(10.0);
     let description = match provider {
-      Provider::Fal => format!("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
-      _ => format!("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
+      Provider::Fal => crate::i18n::tf("Paste your {} API key to generate with your own {} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.", &[name.to_string(), name.to_string()]),
+      _ => crate::i18n::tf("You can add your {} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.", &[name.to_string()]),
     };
     ui.label(egui::RichText::new(description).size(13.0).color(theme::MUTED));
     ui.add_space(16.0);
@@ -64,7 +64,7 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
       ui.add_space(10.0);
     }
     let ready = provider != Provider::Fal || !fal_key.trim().is_empty();
-    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &format!("Set up {name}"), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
+    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &crate::i18n::tf("Set up {}", &[name.to_string()]), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
       action = Some(if provider == Provider::Fal { SetupAction::SaveFalKey } else { SetupAction::ConnectMidjourney });
     }
   });
@@ -179,7 +179,7 @@ impl MidjourneyLogin {
         Some(err) => {
           let mut note = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(24.0)).layout(egui::Layout::top_down(egui::Align::Center)));
           note.add_space(rect.height() / 2.0 - 48.0);
-          note.label(egui::RichText::new(format!("Couldn't open the sign-in window: {err}")).size(13.0).color(theme::BAD));
+          note.label(egui::RichText::new(crate::i18n::tf("Couldn't open the sign-in window: {}", &[err.to_string()])).size(13.0).color(theme::BAD));
         },
         None => icons::paint_spinner(ui, Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), theme::MUTED),
       }

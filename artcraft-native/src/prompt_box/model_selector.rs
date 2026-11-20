@@ -37,7 +37,7 @@ pub fn model_selector(ui: &mut Ui, id: Id, models: &[ModelInfo], selected: Optio
       None => widgets::pill(ui, Leading::Icon(icons::Icon::Sparkles), label, open),
     }
   });
-  let resp = resp.inner.on_hover_text("Model");
+  let resp = resp.inner.on_hover_text(crate::i18n::t("Model"));
   let rows = Rows { id, selected, show_badges, providers };
   let mut picked = None;
   let hovered_family_id = id.with("family");
@@ -132,7 +132,7 @@ impl Rows<'_> {
       (true, true) => None,
       (false, true) => Some(m.description.clone()),
       (true, false) => Some(badges),
-      (false, false) => Some(format!("{} \u{b7} {badges}", m.description)),
+      (false, false) => Some(crate::i18n::tf("{} \u{b7} {}", &[m.description.to_string(), badges.to_string()])),
     };
     let allowed = Provider::for_model(&m.id);
     let Some(picks) = self.providers.filter(|_| allowed.len() > 1) else {

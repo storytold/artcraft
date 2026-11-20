@@ -23,7 +23,7 @@ pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Opt
   ui.add_space(10.0);
   ui.label(widgets::heading("Capable tools for artists.", 52.0));
   ui.add_space(10.0);
-  ui.label(egui::RichText::new("Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.").size(17.0).color(theme::MUTED));
+  ui.label(egui::RichText::new(crate::i18n::t("Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.")).size(17.0).color(theme::MUTED));
   ui.add_space(28.0);
   ui.horizontal(|ui| {
     ui.spacing_mut().item_spacing.x = 16.0;
