@@ -13,7 +13,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { toast } from "@storyteller/ui-toaster";
-import { clickOnEnterOrSpace } from "@storyteller/common";
+import { clickOnEnterOrSpace, isLocalGeneration } from "@storyteller/common";
 
 type ModalMode = "select" | "view";
 
@@ -62,6 +62,7 @@ interface GalleryDraggableItemProps {
   onRemoveFromFolder?: (itemIds: string[]) => void;
 }
 
+/** Render a gallery tile with preview and selection actions; local items cannot enter server-backed drag flows. */
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   item,
   mode,
@@ -98,6 +99,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // Audio tiles are click-only: there is no canvas drop target for audio, so
   // they never start a gallery drag.
   const isAudio = item.mediaClass === "audio";
+  // Images kept on this computer have no library media token, so they can't be
+  // picked or dragged onto library drop targets (references, scene, folders).
+  const isLocal = isLocalGeneration(item.id);
+  const unpickable = disabled || (mode === "select" && isLocal);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
@@ -190,6 +195,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [ctxMenu]);
 
+  /** Start drag tracking only for eligible primary-pointer remote media, leaving touch gestures to scroll. */
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     // Left button only — right/middle click must not trigger the click→lightbox
     // (right-click opens the context menu via onContextMenu instead).
@@ -197,7 +203,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // No drag tracking on touch: a finger drag should scroll the page, and a
     // tap still clicks via the button's onClick.
     if (event.pointerType === "touch") return;
-    if (isAudio) return;
+    if (isAudio || isLocal) return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -226,9 +232,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
 
   // Single click path for the whole tile surface: open the lightbox, or toggle
   // selection when bulk-selecting / in select mode (handled by the host's onClick).
+  /** Dispatch an eligible tile click only when neither local nor global drag handling consumed it. */
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
-    if (disabled) return;
+    if (unpickable) return;
     if (dragStarted.current) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
@@ -242,21 +249,22 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   const itemButton = (
     <button
       type="button"
+      disabled={unpickable}
       tabIndex={-1}
       className={twMerge(
         "w-full group relative overflow-visible border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
-          : disabled
+          : unpickable
             ? "border-transparent"
             : disableTooltipAndBadge
               ? "border-transparent hover:border-primary/80"
               : "border-transparent hover:border-primary",
-        disabled
+        unpickable
           ? "cursor-not-allowed opacity-40"
           : mode === "select"
             ? "cursor-pointer"
-            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
+            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio || isLocal
               ? "cursor-pointer"
               : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}

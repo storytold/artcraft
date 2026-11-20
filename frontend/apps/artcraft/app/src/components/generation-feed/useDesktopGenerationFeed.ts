@@ -6,6 +6,7 @@ import type { TaskQueueItem } from "@storyteller/tauri-api";
 import {
   useTextToImageGenerationCompleteEvent,
   useVideoGenerationCompleteEvent,
+  useMediaFileDeletedEvent,
 } from "@storyteller/tauri-events";
 import { MediaFilesApi } from "@storyteller/api";
 import {
@@ -63,6 +64,7 @@ const FAILURE_REASON_LABEL: Record<string, string> = {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
+/** Track desktop tasks of one media type and expose pending, failed, and newly completed gallery entries. */
 export function useDesktopGenerationFeed(options: {
   mediaType: "image" | "video";
 }) {
@@ -80,6 +82,7 @@ export function useDesktopGenerationFeed(options: {
   // Locally dismissed failed tasks — hides them until the server-side
   // dismissal lands in the next poll.
   const dismissedRef = useRef<Set<string>>(new Set());
+  const deletedMediaIdsRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -135,7 +138,9 @@ export function useDesktopGenerationFeed(options: {
       if (expandedNewItems.length > 0) {
         setNewlyCompleted((prev) => {
           const existingIds = new Set(prev.map((i) => i.id));
-          const fresh = expandedNewItems.filter((i) => !existingIds.has(i.id));
+          const fresh = expandedNewItems.filter((i) =>
+            !existingIds.has(i.id) && !deletedMediaIdsRef.current.has(i.id),
+          );
           return [...fresh, ...prev];
         });
       }
@@ -151,11 +156,18 @@ export function useDesktopGenerationFeed(options: {
     if (items.length === 0) return;
     setNewlyCompleted((prev) => {
       const existingIds = new Set(prev.map((i) => i.id));
-      const fresh = items.filter((i) => !existingIds.has(i.id));
+      const fresh = items.filter((i) =>
+        !existingIds.has(i.id) && !deletedMediaIdsRef.current.has(i.id),
+      );
       if (fresh.length === 0) return prev;
       return [...fresh, ...prev];
     });
   }, []);
+
+  useMediaFileDeletedEvent(async (event) => {
+    deletedMediaIdsRef.current.add(event.media_file_token);
+    setNewlyCompleted((prev) => prev.filter((item) => item.id !== event.media_file_token));
+  });
 
   // Push-style completion: the Rust backend emits typed completion events
   // carrying the generated media inline, so results appear instantly instead
@@ -225,10 +237,11 @@ export function useDesktopGenerationFeed(options: {
       }
     };
 
+    /** Retry missing remote video previews within the grace period, never requesting local IDs from the media API. */
     const lookUpMissingThumbnailsOnce = async () => {
       const now = Date.now();
       const missing = newlyCompletedRef.current.filter((item) => {
-        if (item.thumbnail) return false;
+        if (item.thumbnail || item.id.startsWith("local_file_")) return false;
         const since = missingThumbnailSinceRef.current.get(item.id) ?? now;
         missingThumbnailSinceRef.current.set(item.id, since);
         return now - since < MISSING_THUMBNAIL_GIVE_UP_MS;

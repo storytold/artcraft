@@ -11,6 +11,7 @@ export * from "./lib/GalleryAutoplayToggle";
 export * from "./lib/GallerySelectToggle";
 export * from "./lib/SelectionActionBar";
 export * from "./lib/useGalleryData";
+export * from "./lib/localGalleryItems";
 export * from "./lib/useSessionMediaByClass";
 export * from "./lib/useGalleryEntries";
 export * from "./lib/useGenerationJobs";

@@ -16,8 +16,9 @@ import {
   ModelPage,
   useSelectedVideoModel,
   useSelectedProviderForModel,
+  useClassyModelSelectorStore,
 } from "@storyteller/ui-model-selector";
-import { VideoModel } from "@storyteller/model-list";
+import { VideoModel, videoModelForProvider } from "@storyteller/model-list";
 import { useImageToVideoStore } from "./ImageToVideoStore";
 import {
   useVideoGenerationCompleteEvent,
@@ -40,11 +41,16 @@ import {
   useGalleryData,
   useLastViewedGenerationStore,
   type GalleryItem,
+  localGenerationsToGalleryItems,
 } from "@storyteller/ui-generation-list";
 import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
+import { useLocalGenerations } from "@storyteller/tauri-api";
+import { useSignals } from "@preact/signals-react/runtime";
+import { authentication } from "~/signals";
+import { AUTH_STATUS } from "~/enums";
 
 const PAGE_ID: ModelPage = ModelPage.ImageToVideo;
 
@@ -55,7 +61,10 @@ interface ImageToVideoProps {
   imageUrl?: string;
 }
 
+/** Compose video generation and local/cloud history while gating account-dependent media references on sign-in. */
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
+  useSignals();
+  const isSignedIn = authentication.status.value === AUTH_STATUS.LOGGED_IN;
   const imageToVideoModelList = useImageToVideoPageModelList();
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
@@ -109,10 +118,13 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   // queue, completed history from the library (like the webapp list view).
   const username = useDesktopUsername();
   const feed = useDesktopGenerationFeed({ mediaType: "video" });
+  const localGenerations = useLocalGenerations();
+  const localItems = useMemo(() => localGenerationsToGalleryItems(localGenerations), [localGenerations]);
   const gallery = useGalleryData({
     username,
     filterMediaClasses: VIDEO_FILTER,
     excludeUploads: true,
+    localItems,
   });
 
   // Content only — while the gallery is still loading the shell keeps the
@@ -208,7 +220,20 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
         <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
           <div ref={promptContentRef}>
             <PromptBoxErrorBoundary>
+              {!isSignedIn && (
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded border border-ui-panel-border bg-ui-panel p-3 text-sm text-base-fg/70">
+                  Generate videos with your WaveSpeed key. Results stay on this computer. Sign in to attach media.
+                  {selectedProvider !== GenerationProvider.WaveSpeed && <button type="button" className="min-h-9 shrink-0 cursor-pointer rounded px-3 py-2 text-primary hover:bg-ui-controls focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onClick={() => {
+                    const model = imageToVideoModelList.find((item) => item.model instanceof VideoModel && item.model.getProviders().includes(GenerationProvider.WaveSpeed) && !videoModelForProvider(item.model, GenerationProvider.WaveSpeed)?.requiresImage)?.model;
+                    if (!model) return;
+                    const store = useClassyModelSelectorStore.getState();
+                    store.setSelectedModel(PAGE_ID, model);
+                    store.setSelectedProvider(PAGE_ID, model.id, GenerationProvider.WaveSpeed);
+                  }}>Use WaveSpeed</button>}
+                </div>
+              )}
               <PromptBoxVideo
+                canUseReferenceMedia={isSignedIn}
                 useJobContext={() => jobContext}
                 selectedModel={selectedVideoModel}
                 selectedProvider={selectedProvider}

@@ -2,6 +2,7 @@ use crate::client::router_midjourney_client::RouterMidjourneyClient;
 use crate::client::multi_router_client::MultiRouterClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
+use crate::client::router_wavespeed_client::RouterWaveSpeedClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
@@ -13,6 +14,7 @@ pub enum RouterClient {
   Artcraft(RouterArtcraftClient),
   Midjourney(RouterMidjourneyClient),
   Fal(RouterFalClient),
+  WaveSpeed(RouterWaveSpeedClient),
   GmiCloud(RouterGmiCloudClient),
   GrokApi(RouterGrokApiClient),
   KinoviWeb(RouterKinoviWebClient),
@@ -20,6 +22,14 @@ pub enum RouterClient {
 }
 
 impl RouterClient {
+  pub fn get_wavespeed_client_ref(&self) -> Result<&RouterWaveSpeedClient, ClientError> {
+    match self {
+      Self::WaveSpeed(client) => Ok(client),
+      Self::Multi(multi) => multi.get_wavespeed_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::WaveSpeed)),
+    }
+  }
+
   pub fn get_midjourney_client_ref(&self) -> Result<&RouterMidjourneyClient, ClientError> {
     match self {
       Self::Midjourney(client) => Ok(client),

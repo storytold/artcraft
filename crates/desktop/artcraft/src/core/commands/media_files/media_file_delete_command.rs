@@ -7,6 +7,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::utils::local_generations;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use errors::AnyhowResult;
@@ -36,8 +37,8 @@ pub async fn media_file_delete_command(
   request: MediaFileDeleteRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
+  app_data_root: State<'_, AppDataRoot>,
 ) -> ResponseOrErrorMessage<MediaFileDeleteSuccessResponse> {
-
   info!("media_file_delete_command called");
 
   let result = handle_request(
@@ -45,11 +46,12 @@ pub async fn media_file_delete_command(
     &app,
     &app_env_configs,
     &storyteller_creds_manager,
+    &app_data_root,
   ).await;
 
   if let Err(err) = result {
     error!("media_file_delete_command failed: {:?}", err);
-    return Err("delete failed".into())
+    return Err("delete failed".into());
   }
 
   Ok(MediaFileDeleteSuccessResponse {
@@ -62,7 +64,15 @@ pub async fn handle_request(
   app: &AppHandle,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
+  app_data_root: &AppDataRoot,
 ) -> AnyhowResult<()> {
+  if local_generations::is_local_token(request.media_file_token.as_str()) {
+    let root = app_data_root.clone();
+    let id = request.media_file_token.as_str().to_string();
+    tauri::async_runtime::spawn_blocking(move || local_generations::delete(&root, &id)).await??;
+    MediaFileDeletedEvent { media_file_token: request.media_file_token }.send_infallible(app);
+    return Ok(());
+  }
 
   let creds = storyteller_creds_manager.get_credentials()?;
 

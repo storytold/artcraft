@@ -1,5 +1,8 @@
 pub mod clear_all_webview_cookies;
 pub mod auto_download;
+pub mod local_generations;
+pub mod provider_image_context;
+pub mod provider_submission;
 pub mod download_media_file_to_temp_dir;
 pub mod download_url_to_temp_dir;
 pub mod download_url_to_user_download_dir;
@@ -14,3 +17,4 @@ pub mod simple_http_download_to_tempfile;
 pub mod task_database_pending_statuses;
 pub mod upload_bytes_to_media_file;
 pub mod window;
+pub mod read_bounded_file;

@@ -1,9 +1,24 @@
 import { GenerationProvider } from "@storyteller/api-enums";
+import { WAVESPEED_VIDEO_MODELS } from "../classes/waveSpeedVideoModels.js";
 import { VideoModel } from "../classes/VideoModel.js";
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { SizeIconOption } from "../classes/metadata/SizeOption.js";
 
 export const VIDEO_MODELS: VideoModel[] = [
+  new VideoModel({
+    id: "minimax_h3", tauriId: "minimax_h3", fullName: "MiniMax H3",
+    category: "video", creator: ModelCreator.Hailuo, selectorName: "MiniMax H3",
+    selectorDescription: "2K video with starting and ending frames", selectorBadges: [],
+    startFrame: true, endFrame: true, requiresImage: false,
+    providers: [GenerationProvider.WaveSpeed],
+  }),
+  new VideoModel({
+    id: "seedance_2p5", tauriId: "seedance_2p5", fullName: "Seedance 2.5",
+    category: "video", creator: ModelCreator.Bytedance, selectorName: "Seedance 2.5",
+    selectorDescription: "Video up to 30 seconds with native audio", selectorBadges: [],
+    startFrame: true, endFrame: true, requiresImage: false,
+    providers: [GenerationProvider.WaveSpeed],
+  }),
   new VideoModel({
     id: "grok_video",
     tauriId: "grok_imagine_video",
@@ -612,7 +627,9 @@ export const VIDEO_MODELS: VideoModel[] = [
     progressBarTime: 5 * 60 * 1000,
     maxPromptLength: 2000,
   }),
-];
+].map((model) => WAVESPEED_VIDEO_MODELS[model.tauriId]
+  ? new VideoModel({ ...model, providers: Array.from(new Set([...model.getProviders(), GenerationProvider.WaveSpeed])) })
+  : model);
 
 export const VIDEO_MODELS_BY_ID: Map<string, VideoModel> = new Map(
   VIDEO_MODELS.map((model) => [model.id, model]),

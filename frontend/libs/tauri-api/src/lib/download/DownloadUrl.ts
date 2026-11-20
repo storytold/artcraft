@@ -12,6 +12,7 @@ export interface DownloadOptions {
   model?: string;
   batch_index?: number;
   directory?: string;
+  filename?: string;
 }
 
 export const GetDownloadPath = (url: string, options: DownloadOptions = {}): Promise<{ filename: string; path: string }> =>

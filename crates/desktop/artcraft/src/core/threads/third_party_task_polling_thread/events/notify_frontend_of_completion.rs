@@ -25,6 +25,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 /// Data about a successfully completed third-party generation.
 pub struct CompletionData {
+  pub local_images: Option<Vec<GeneratedImage>>,
   /// The primary media file token (first uploaded file).
   pub primary_media_file_token: MediaFileToken,
 
@@ -47,7 +48,7 @@ pub struct CompletionData {
 /// This is the cross-cutting equivalent of the Storyteller-specific
 /// `maybe_handle_frontend_caller_notification` — it works for any provider.
 pub async fn notify_frontend_of_completion(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -97,7 +98,7 @@ pub async fn notify_frontend_of_completion(
 // ── Per-type handlers ──
 
 async fn notify_image_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -120,7 +121,7 @@ async fn notify_image_generation(
 }
 
 async fn notify_image_edit(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   task: &Task,
@@ -147,7 +148,7 @@ async fn notify_image_edit(
 }
 
 fn notify_video_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -166,7 +167,7 @@ fn notify_video_generation(
 }
 
 fn notify_object_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -185,7 +186,7 @@ fn notify_object_generation(
 }
 
 fn notify_gaussian_generation(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -204,7 +205,7 @@ fn notify_gaussian_generation(
 }
 
 fn notify_background_removal(
-  app: &AppHandle,
+  app: &AppHandle<impl tauri::Runtime>,
   task: &Task,
   completion: &CompletionData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -228,6 +229,9 @@ async fn collect_generated_images(
   maybe_creds: Option<&StorytellerCredentialSet>,
   completion: &CompletionData,
 ) -> Vec<GeneratedImage> {
+  if let Some(images) = &completion.local_images {
+    return images.clone();
+  }
   // If we have a batch token, try to fetch all files in the batch.
   if let Some(batch_token) = &completion.maybe_batch_token {
     match list_batch_generated_redux_media_files(api_host, maybe_creds, batch_token).await {
@@ -273,6 +277,7 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
   match provider {
     GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
     GenerationProvider::Fal => GenerationServiceProvider::Fal,
+    GenerationProvider::WaveSpeed => GenerationServiceProvider::WaveSpeed,
     GenerationProvider::Grok => GenerationServiceProvider::Grok,
     GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
     GenerationProvider::Sora => GenerationServiceProvider::Sora,
@@ -345,5 +350,20 @@ fn task_model_type_to_generation_model(model: TaskModelType) -> Option<Generatio
     TaskModelType::WorldlabsMarble => Some(GenerationModel::WorldlabsMarble),
     TaskModelType::WorldlabsMarble0p1Mini => Some(GenerationModel::WorldlabsMarble0p1Mini),
     TaskModelType::WorldlabsMarble0p1Plus => Some(GenerationModel::WorldlabsMarble0p1Plus),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[tokio::test]
+  async fn local_images_skip_cloud_batch_lookup_even_when_batch_is_present() {
+    let local = GeneratedImage { media_token: MediaFileToken::new_from_str("local_file_test"), cdn_url: Url::parse("asset://localhost/local.png").unwrap(), maybe_thumbnail_template: None };
+    let completion = CompletionData { local_images: Some(vec![local.clone()]), primary_media_file_token: local.media_token.clone(), maybe_cdn_url: None, maybe_thumbnail_url_template: None, maybe_batch_token: Some(BatchGenerationToken::generate()), media_class: TaskMediaFileClass::Image };
+    let images = collect_generated_images(&ApiHost::Localhost { port: 1 }, None, &completion).await;
+    assert_eq!(images.len(), 1);
+    assert_eq!(images[0].media_token, local.media_token);
+    assert_eq!(images[0].cdn_url, local.cdn_url);
   }
 }

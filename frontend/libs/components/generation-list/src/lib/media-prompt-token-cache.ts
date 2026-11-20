@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MediaFilesApi } from "@storyteller/api";
+import { isLocalGeneration } from "@storyteller/common";
 
 // Workaround until the profile media-list endpoint returns prompt tokens:
 // resolve media token → prompt token via the batch media-files endpoint
@@ -69,6 +70,7 @@ async function fetchMissing(mediaTokens: readonly string[]): Promise<void> {
 // absent from the map is still resolving (use `.has()` to distinguish that
 // from a resolved-but-promptless item). Triggers a batched fetch for any not
 // yet resolved.
+/** Resolve remote prompt tokens in batches; local IDs resolve to an empty prompt token without API calls. */
 export function useMediaPromptTokens(
   mediaTokens: readonly (string | null | undefined)[],
 ): Map<string, string> {
@@ -84,7 +86,7 @@ export function useMediaPromptTokens(
 
   const cleaned: string[] = [];
   for (const t of mediaTokens) {
-    if (t) cleaned.push(t);
+    if (t && !isLocalGeneration(t)) cleaned.push(t);
   }
   // Stable cache key for the effect's dep list, order-independent.
   const key = [...new Set(cleaned)].sort((a, b) => a.localeCompare(b)).join(",");
@@ -94,6 +96,9 @@ export function useMediaPromptTokens(
   }, [key]);
 
   const result = new Map<string, string>();
+  for (const token of mediaTokens) {
+    if (token && isLocalGeneration(token)) result.set(token, "");
+  }
   for (const t of cleaned) {
     const promptToken = tokenCache.get(t);
     // Include "" entries so callers can tell "resolved, no prompt" (present)

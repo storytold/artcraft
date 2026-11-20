@@ -1,4 +1,6 @@
 pub mod create_task;
+pub mod create_task_once;
+pub mod get_task_status;
 pub mod dismiss_all_tasks;
 pub mod list_non_artcraft_pending_tasks;
 pub mod get_task_by_provider_and_provider_job_id;
@@ -12,3 +14,4 @@ pub mod update_successful_task_status_with_metadata;
 pub mod update_successful_task_status_with_metadata_by_provider;
 pub mod update_task_status;
 pub mod update_task_status_with_rich_failure;
+pub mod list_task_statuses;

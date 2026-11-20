@@ -1,4 +1,5 @@
 import { GenerationProvider } from "@storyteller/api-enums";
+import { WAVESPEED_IMAGE_MODELS } from "../classes/waveSpeedImageModels.js";
 import { ImageModel } from "../classes/ImageModel.js";
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { ModelTag } from "../classes/metadata/ModelTag.js";
@@ -119,6 +120,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     providers: [
       GenerationProvider.Artcraft,
       GenerationProvider.Fal,
+      GenerationProvider.WaveSpeed,
     ],
     selectorName: "Flux 1 Dev",
     selectorDescription: "Fast, but lower quality",
@@ -149,6 +151,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     providers: [
       GenerationProvider.Artcraft,
       GenerationProvider.Fal,
+      GenerationProvider.WaveSpeed,
     ],
     selectorName: "Flux 1 Schnell",
     selectorDescription: "Fastest image gen, but lowest quality",
@@ -680,7 +683,9 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 10000,
     canChangeAspectRatio: true,
   }),
-];
+].map((model) => WAVESPEED_IMAGE_MODELS[model.tauriId]
+  ? new ImageModel({ ...model, providers: Array.from(new Set([...model.getProviders(), GenerationProvider.WaveSpeed])) })
+  : model);
 
 export const IMAGE_MODELS_BY_ID: Map<string, ImageModel> = new Map(
   IMAGE_MODELS.map((model) => [model.id, model]),

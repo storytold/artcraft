@@ -61,6 +61,7 @@ export const INPAINT_LAYER_ID = "invis-mask-layer";
 export const BG_LAYER_ID = "bg-layer";
 export const DRAW_LAYER_ID = "draw-layer";
 
+/** Render editable canvas imagery and synchronize its dimensions as generated or selected images change. */
 export const PaintSurface = ({
   drawNodes,
   inpaintLineNodes,
@@ -90,6 +91,7 @@ export const PaintSurface = ({
   const selector = useMemo(
     () => (s: SceneState) => ({
       baseImageBitmap: s.baseImageBitmap,
+      outputAspectRatio: s.outputAspectRatio,
       brushOpacity: s.brushOpacity,
       currentShape: s.currentShape,
       shapeColor: s.shapeColor,

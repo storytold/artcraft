@@ -5,6 +5,7 @@ pub mod request_mismatch_mitigation_strategy;
 pub mod router_artcraft_client;
 pub mod router_client;
 pub mod router_fal_client;
+pub mod router_wavespeed_client;
 pub mod router_gmicloud_client;
 pub mod router_grok_api_client;
 pub mod router_kinovi_web_client;

@@ -13,11 +13,13 @@ import {
   RefImage,
   useEnterToGenerateStore,
 } from "./promptStore";
-import { ImageModel } from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import { AspectRatioPicker } from "./common/AspectRatioPicker";
+import { ResolutionPicker } from "./common/ResolutionPicker";
 import {
   PromptFullscreenModal,
   useFullscreenPrompt,
@@ -28,7 +30,7 @@ import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
-export type AspectRatio = "wide" | "tall" | "square";
+export type AspectRatio = "wide" | "tall" | "square" | CommonAspectRatio;
 
 export interface PromptBox2DProps {
   uploadImage?: UploadImageFn;
@@ -56,6 +58,7 @@ export interface PromptBox2DProps {
   modelSelector?: React.ReactNode;
 }
 
+/** Render canvas-generation controls with provider-specific image options and reference limits. */
 export const PromptBox2D = ({
   uploadImage,
   selectedImageModel,
@@ -100,6 +103,16 @@ export const PromptBox2D = ({
   const setAspectRatio = usePrompt2DStore((s) => s.setAspectRatio);
   const resolution = usePrompt2DStore((s) => s.resolution);
   const setResolution = usePrompt2DStore((s) => s.setResolution);
+  const isWaveSpeed = selectedProvider === GenerationProvider.WaveSpeed;
+  const [commonAspectRatio, setCommonAspectRatio] = useState<CommonAspectRatio>();
+  const [commonResolution, setCommonResolution] = useState<CommonResolution>();
+  const effectiveAspectRatio = commonAspectRatio && selectedImageModel?.aspectRatios.includes(commonAspectRatio)
+    ? commonAspectRatio : selectedImageModel?.defaultAspectRatio;
+  const effectiveResolution = commonResolution && selectedImageModel?.resolutions.includes(commonResolution)
+    ? commonResolution : selectedImageModel?.defaultResolution;
+  useEffect(() => {
+    onAspectRatioChange?.(isWaveSpeed ? effectiveAspectRatio ?? CommonAspectRatio.Auto : aspectRatio);
+  }, [isWaveSpeed, effectiveAspectRatio, aspectRatio, onAspectRatioChange]);
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
 
   const referenceImages = usePrompt2DStore((s) => s.referenceImages);
@@ -160,10 +173,9 @@ export const PromptBox2D = ({
   }, [resolution]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isImageRowVisible =
-    showImagePrompts ||
-    (selectedImageModel?.canUseImagePrompt && referenceImages.length > 0) ||
-    false;
+  const canAddImagePrompts = !!selectedImageModel?.canUseImagePrompt && (selectedImageModel.maxImagePromptCount ?? 0) > 0;
+  const visibleReferenceCount = Math.max(referenceImages.length, canAddImagePrompts ? selectedImageModel?.maxImagePromptCount ?? 1 : 0);
+  const isImageRowVisible = referenceImages.length > 0 || (canAddImagePrompts && showImagePrompts);
 
   useEffect(() => {
     if (isExpanded) return;
@@ -173,9 +185,9 @@ export const PromptBox2D = ({
     }
   });
 
+  /** Update both the legacy aspect-ratio value and the picker selection state. */
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value = selectedItem.label.toLowerCase() as AspectRatio;
-    onAspectRatioChange?.(value);
+    const value = selectedItem.label.toLowerCase() as "wide" | "tall" | "square";
     setAspectRatio(value);
     setAspectRatioList((prev) =>
       prev.map((item) => ({
@@ -279,9 +291,14 @@ export const PromptBox2D = ({
     setReferenceImages([]);
   };
 
+  /** Validate prompt and reference limits, then pass effective provider options to the canvas generation callback. */
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
+    if (isWaveSpeed && referenceImages.length > (selectedImageModel?.maxImagePromptCount ?? 0)) {
+      toast.error(`This model supports at most ${selectedImageModel?.maxImagePromptCount ?? 0} additional image references`);
+      return;
+    }
     if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
@@ -295,8 +312,8 @@ export const PromptBox2D = ({
     try {
       await Promise.resolve(
         onGenerateClick(prompt, {
-          aspectRatio,
-          resolution,
+          aspectRatio: isWaveSpeed ? effectiveAspectRatio : aspectRatio,
+          resolution: isWaveSpeed ? effectiveResolution : resolution,
           images: referenceImages,
           selectedProvider: selectedProvider,
         }),
@@ -364,14 +381,11 @@ export const PromptBox2D = ({
         {content}
       </Modal>
       <div className="absolute bottom-4 left-1/2 flex w-[90vw] max-w-5xl -translate-x-1/2 flex-col gap-3">
-        {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
+        {isImageRowVisible && (
           <ImagePromptRow
             visible={true}
-            maxImagePromptCount={Math.max(
-              1,
-              selectedImageModel?.maxImagePromptCount ?? 1,
-            )}
-            allowUpload={true}
+            maxImagePromptCount={visibleReferenceCount}
+            allowUpload={canAddImagePrompts}
             referenceImages={referenceImages}
             setReferenceImages={setReferenceImages}
             uploadImage={uploadImage as any}
@@ -390,13 +404,12 @@ export const PromptBox2D = ({
         <div
           className={twMerge(
             "glass relative w-full p-4",
-            selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
+            isImageRowVisible &&
               "rounded-t-none",
           )}
         >
           <div className="flex gap-3">
-            {selectedImageModel?.canUseImagePrompt && (
+            {canAddImagePrompts && (
               <Tooltip
                 content="Add Image"
                 position="top"
@@ -449,7 +462,13 @@ export const PromptBox2D = ({
           <div className="mt-3.5 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {modelSelector}
-              {selectedImageModel?.canChangeAspectRatio && (
+              {isWaveSpeed && selectedImageModel ? (
+                <AspectRatioPicker
+                  model={selectedImageModel}
+                  currentAspectRatio={effectiveAspectRatio}
+                  handleCommonAspectRatioSelect={setCommonAspectRatio}
+                />
+              ) : selectedImageModel?.canChangeAspectRatio && (
                 <Tooltip
                   content="Aspect ratio"
                   position="top"
@@ -471,7 +490,13 @@ export const PromptBox2D = ({
                   />
                 </Tooltip>
               )}
-              {selectedImageModel?.canChangeResolution && (
+              {isWaveSpeed && selectedImageModel?.supportsNewResolution() ? (
+                <ResolutionPicker
+                  model={selectedImageModel}
+                  currentResolution={effectiveResolution}
+                  handleCommonResolutionSelect={setCommonResolution}
+                />
+              ) : !isWaveSpeed && selectedImageModel?.canChangeResolution && (
                 <Tooltip
                   content="Resolution"
                   position="top"
@@ -566,14 +591,11 @@ export const PromptBox2D = ({
           />
         }
         imagePromptRow={
-          selectedImageModel?.canUseImagePrompt ? (
+          canAddImagePrompts || referenceImages.length > 0 ? (
             <ImagePromptRow
               visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedImageModel?.maxImagePromptCount ?? 1,
-              )}
-              allowUpload={true}
+              maxImagePromptCount={visibleReferenceCount}
+              allowUpload={canAddImagePrompts}
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage as any}

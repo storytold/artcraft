@@ -1,4 +1,6 @@
 import { GenerationProvider } from "@storyteller/api-enums";
+import { WAVESPEED_IMAGE_MODELS } from "../classes/waveSpeedImageModels.js";
+import { WAVESPEED_VIDEO_MODELS } from "../classes/waveSpeedVideoModels.js";
 // Builds the picker model lists FROM the backend omni listing (the Tauri
 // command response). Membership + order come from the backend, and every
 // capability the API expresses is mapped 1:1 — the static overlay lists
@@ -163,6 +165,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
 
 // ── 1:1 merge constructors (API capability > overlay; presentation ← overlay)
 
+/** Merge server image capabilities with frontend presentation and append supported desktop-native providers. */
 const mergedImageModel = (
   m: ListingImageModel,
   tauriId: string,
@@ -198,7 +201,9 @@ const mergedImageModel = (
     // Desktop-native provider knowledge.
     providers: ["midjourney_7", "midjourney_7_niji", "midjourney_8"].includes(tauriId)
       ? [GenerationProvider.Artcraft, GenerationProvider.Midjourney]
-      : o?.getProviders(),
+      : WAVESPEED_IMAGE_MODELS[tauriId]
+        ? Array.from(new Set([...(o?.getProviders() ?? [GenerationProvider.Artcraft]), GenerationProvider.WaveSpeed]))
+        : o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.
@@ -227,6 +232,7 @@ const mergedImageModel = (
   });
 };
 
+/** Merge server video capabilities with frontend presentation and append supported desktop-native providers. */
 const mergedVideoModel = (
   m: ListingVideoModel,
   tauriId: string,
@@ -254,7 +260,9 @@ const mergedVideoModel = (
     supportsSystemPrompt: o?.supportsSystemPrompt,
 
     // Desktop-native provider knowledge.
-    providers: o?.getProviders(),
+    providers: WAVESPEED_VIDEO_MODELS[tauriId]
+      ? Array.from(new Set([...(o?.getProviders() ?? [GenerationProvider.Artcraft]), GenerationProvider.WaveSpeed]))
+      : o?.getProviders(),
 
     // Capabilities — served by the API, overlay only as a transitional
     // fallback where the backend config leaves a field unset.

@@ -23,6 +23,7 @@ kinovi_web_client.workspace = true
 tokens.workspace = true
 url_utils.workspace = true
 worldlabs_api_client.workspace = true
+wavespeed_client.workspace = true
 
 # External
 anyhow.workspace = true

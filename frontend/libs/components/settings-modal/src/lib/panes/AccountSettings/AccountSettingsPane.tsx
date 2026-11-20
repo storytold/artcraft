@@ -1,4 +1,5 @@
 import { ArtcraftAccountBlock } from "./ArtcraftAccountBlock";
+import { WaveSpeedAccountBlock } from "./WaveSpeedAccountBlock";
 import { ProviderAccountBlock } from "./ProviderAccountBlock";
 import { GrokGetCredentialInfo, MidjourneyGetCredentialInfo } from "@storyteller/tauri-api";
 
@@ -6,6 +7,7 @@ interface AccountSettingsPaneProps {
   globalAccountLogoutCallback: () => void;
 }
 
+/** Render Artcraft and supported direct-provider account controls, including WaveSpeed key management. */
 export const AccountSettingsPane = ({
   globalAccountLogoutCallback,
 }: AccountSettingsPaneProps) => {
@@ -26,6 +28,8 @@ export const AccountSettingsPane = ({
         commandPrefix="midjourney"
         getCredentialInfo={MidjourneyGetCredentialInfo}
       />
+      <hr className="border-ui-panel-border" />
+      <WaveSpeedAccountBlock />
     </div>
   );
 };

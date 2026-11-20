@@ -24,6 +24,7 @@ import {
   SizeIconOption,
   SizeOption,
   VideoModel,
+  videoModelForProvider,
 } from "@storyteller/model-list";
 import {
   usePromptVideoStore,
@@ -92,6 +93,7 @@ const DEFAULT_RESOLUTIONS: SizeOption[] = [
 ];
 
 interface PromptBoxVideoProps {
+  canUseReferenceMedia?: boolean;
   useJobContext: () => JobContextType;
   onEnqueuePressed?: (
     prompt: string,
@@ -111,10 +113,12 @@ interface PromptBoxVideoProps {
   modelSelector?: React.ReactNode;
 }
 
+/** Compose video generation controls using provider-specific keyframe, reference, editing, and duration capabilities. */
 export const PromptBoxVideo = ({
+  canUseReferenceMedia = true,
   useJobContext,
   onEnqueuePressed,
-  selectedModel,
+  selectedModel: catalogModel,
   selectedProvider,
   imageMediaId,
   url,
@@ -125,6 +129,13 @@ export const PromptBoxVideo = ({
   modelSelector,
 }: PromptBoxVideoProps) => {
   useSignals();
+  const [waveSpeedMode, setWaveSpeedMode] = useState<"reference" | "edit" | "extend">("reference");
+  const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
+  const resolution = usePromptVideoStore((s) => s.resolution);
+  const selectedModel = useMemo(
+    () => videoModelForProvider(catalogModel, selectedProvider, !!endFrameImage, resolution),
+    [catalogModel, selectedProvider, endFrameImage, resolution],
+  );
 
   // for the image media id and url, we need to set the reference image gallery panel.
   useEffect(() => {
@@ -145,7 +156,6 @@ export const PromptBoxVideo = ({
   const setGenerateWithSound = usePromptVideoStore(
     (s) => s.setGenerateWithSound,
   );
-  const resolution = usePromptVideoStore((s) => s.resolution);
   const setResolution = usePromptVideoStore((s) => s.setResolution);
   const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
   const setAspectRatio = usePromptVideoStore((s) => s.setAspectRatio);
@@ -241,7 +251,6 @@ export const PromptBoxVideo = ({
 
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
-  const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
   const setEndFrameImage = usePromptVideoStore((s) => s.setEndFrameImage);
   const referenceVideos = usePromptVideoStore((s) => s.referenceVideos);
   const setReferenceVideos = usePromptVideoStore((s) => s.setReferenceVideos);
@@ -437,7 +446,7 @@ export const PromptBoxVideo = ({
   };
 
   const resolutionPickerOptions: PopoverItem[] | null =
-    selectedModel?.resolutionOptions
+    selectedModel?.resolutionOptions?.length
       ? selectedModel.resolutionOptions.map((r) => ({
           label: r,
           selected: r === resolution,
@@ -449,7 +458,7 @@ export const PromptBoxVideo = ({
   };
 
   const inputModeOptions: PopoverItem[] | null =
-    selectedModel?.supportsReferenceMode
+    canUseReferenceMedia && selectedModel?.supportsReferenceMode
       ? [
           {
             label: "Keyframe",
@@ -472,19 +481,22 @@ export const PromptBoxVideo = ({
     if (mode === "reference") {
       setEndFrameImage(undefined);
     } else {
+      setReferenceImages(referenceImages.slice(0, 1));
       setReferenceVideos([]);
       setReferenceAudios([]);
     }
   };
 
-  const isReferenceMode =
+  const isReferenceMode = canUseReferenceMedia &&
     inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
-  const maxImageCount = isReferenceMode
+  const isWaveSpeedReference = isReferenceMode && selectedProvider === GenerationProvider.WaveSpeed;
+  const maxImageCount = isWaveSpeedReference && waveSpeedMode === "extend" ? 0 : isReferenceMode
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
 
-  const maxVideoCount = selectedModel?.maxReferenceVideos ?? 3;
-  const maxAudioCount = selectedModel?.maxReferenceAudios ?? 2;
+  const maxVideoCount = isWaveSpeedReference && waveSpeedMode !== "reference" ? 1 : selectedModel?.maxReferenceVideos ?? 3;
+  const maxAudioCount = isWaveSpeedReference && waveSpeedMode === "extend" ? 0 : selectedModel?.maxReferenceAudios ?? 2;
+  const maxVideoTotalSec = isWaveSpeedReference && waveSpeedMode !== "reference" ? Infinity : selectedModel?.maxVideoRefDuration ?? 15;
 
   const deck = useDeckMedia({
     referenceImages,
@@ -495,7 +507,7 @@ export const PromptBoxVideo = ({
     referenceVideos,
     setReferenceVideos,
     maxVideos: maxVideoCount,
-    maxVideoTotalSec: selectedModel?.maxVideoRefDuration ?? 15,
+    maxVideoTotalSec,
     referenceAudios,
     setReferenceAudios,
     maxAudios: maxAudioCount,
@@ -513,7 +525,9 @@ export const PromptBoxVideo = ({
   const dropAcceptsVideos = isReferenceMode && maxVideoCount > 0;
   const dropAcceptsAudio = isReferenceMode && maxAudioCount > 0;
 
+  /** Route dropped media into available keyframes or reference decks while honoring reference access gates. */
   const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+    if (!canUseReferenceMedia) return;
     if (images.length > 0) {
       if (!isReferenceMode) {
         // Fill the empty keyframe slots in order: first frame, then last.
@@ -546,7 +560,7 @@ export const PromptBoxVideo = ({
   };
 
   const drop = usePromptBoxDrop({
-    acceptsImages: maxImageCount > 0,
+    acceptsImages: canUseReferenceMedia && maxImageCount > 0,
     acceptsVideos: dropAcceptsVideos,
     acceptsAudio: dropAcceptsAudio,
     onDropFiles: handleDroppedFiles,
@@ -556,7 +570,7 @@ export const PromptBoxVideo = ({
   const dropOverlay = (
     <PromptBoxDropOverlay
       dragState={drop.dragState}
-      acceptsImages={maxImageCount > 0}
+      acceptsImages={canUseReferenceMedia && maxImageCount > 0}
       acceptsVideos={dropAcceptsVideos}
       acceptsAudio={dropAcceptsAudio}
       keyframeMode={!isReferenceMode}
@@ -688,7 +702,6 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const maxVideoTotalSec = selectedModel?.maxVideoRefDuration ?? 15;
   const maxAudioTotalSec = selectedModel?.maxAudioRefDuration ?? 15;
   const totalVideoRefSeconds = referenceVideos.reduce(
     (sum, video) => sum + video.duration,
@@ -701,7 +714,7 @@ export const PromptBoxVideo = ({
 
   const refDeckGroupHints = {
     image: `${referenceImages.length}/${maxImageCount}`,
-    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoTotalSec}s`,
+    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}${Number.isFinite(maxVideoTotalSec) ? `/${maxVideoTotalSec}` : ""}s`,
     audio: `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioTotalSec}s`,
   };
 
@@ -831,8 +844,8 @@ export const PromptBoxVideo = ({
     referenceAudios.length > 0;
 
   // Characters are only supported for seedance_2p0
-  const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
-  const activeCharacters = isSeedance2p0 ? storedCharacters : EMPTY_CHARACTERS;
+  const supportsCharacters = canUseReferenceMedia && selectedModel?.id === "seedance_2p0" && selectedProvider !== GenerationProvider.WaveSpeed;
+  const activeCharacters = supportsCharacters ? storedCharacters : EMPTY_CHARACTERS;
 
   // Build a set of character names for highlight matching
   const characterNames = useMemo(
@@ -840,7 +853,7 @@ export const PromptBoxVideo = ({
     [activeCharacters],
   );
 
-  const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
+  const hasAnyMentionables = canUseReferenceMedia && (hasAnyRefs || activeCharacters.length > 0);
 
   // @-mention autocomplete state (for fallback textarea path)
   const [mentionOpen, setMentionOpen] = useState(false);
@@ -1040,7 +1053,16 @@ export const PromptBoxVideo = ({
       prompt,
     ) ?? 1000;
 
+  /** Validate video inputs and submit the effective batch, preserving user-visible command errors. */
   const handleEnqueue = async () => {
+    if (isWaveSpeedReference && waveSpeedMode !== "reference" && referenceVideos.length !== 1) {
+      toast.error("Choose exactly one input video to edit or extend");
+      return;
+    }
+    if (canUseReferenceMedia && referenceImages.length > maxImageCount) {
+      toast.error(`Remove reference images above the current limit of ${maxImageCount}`);
+      return;
+    }
     if (!prompt.trim()) {
       console.warn("Cannot generate video: prompt is empty");
       toast.error("Please enter a prompt to generate video");
@@ -1059,7 +1081,7 @@ export const PromptBoxVideo = ({
       return;
     }
 
-    if (selectedModel?.requiresImage && referenceImages.length === 0) {
+    if (selectedModel?.requiresImage && (!canUseReferenceMedia || referenceImages.length === 0)) {
       console.warn("Cannot generate video: no reference image provided");
       toast.error("Please add a starting frame image to generate video");
       return;
@@ -1071,12 +1093,12 @@ export const PromptBoxVideo = ({
 
     const count = effectiveGenerationCount;
 
-    const isRefMode =
+    const isRefMode = canUseReferenceMedia &&
       inputMode === "reference" && !!selectedModel.supportsReferenceMode;
 
     let imageMediaToken = undefined;
 
-    if (!isRefMode && referenceImages.length > 0) {
+    if (canUseReferenceMedia && !isRefMode && referenceImages.length > 0) {
       imageMediaToken = referenceImages[0].mediaToken;
     }
 
@@ -1087,12 +1109,13 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
+    /** Assemble one subscriber-tagged video request with provider-specific references, mode, and generation options. */
     const buildRequest = (subscriberId: string): GenerateVideoRequest => {
       let request: GenerateVideoRequest = {
         model: selectedModel,
         start_frame_image_media_token: imageMediaToken,
-        prompt: prompt,
-        end_frame_image_media_token: isRefMode
+        prompt: selectedProvider === GenerationProvider.WaveSpeed ? prompt.replace(/@(Image|Video|Audio)(\d+)/g, "@$1 $2") : prompt,
+        end_frame_image_media_token: !canUseReferenceMedia || isRefMode
           ? undefined
           : endFrameImage?.mediaToken,
         frontend_caller: "image_to_video",
@@ -1102,6 +1125,7 @@ export const PromptBoxVideo = ({
       if (!!selectedProvider) {
         request.provider = selectedProvider;
       }
+      if (isWaveSpeedReference) request.wavespeed_mode = waveSpeedMode;
 
       if (selectedModel.generateWithSound) {
         request.generate_audio = !!generateWithSound;
@@ -1317,7 +1341,7 @@ export const PromptBoxVideo = ({
 
   // Character button (seedance_2p0 only), reused in the fullscreen footer.
   const characterButtonEl =
-    selectedModel?.id === "seedance_2p0" ? (
+    supportsCharacters ? (
       <button
         type="button"
         onClick={() => setIsCharactersModalOpen(true)}
@@ -1329,6 +1353,7 @@ export const PromptBoxVideo = ({
 
   // Input-mode (keyframe/reference) picker, reused in the fullscreen footer.
   const inputModeEl = inputModeOptions ? (
+    <>
     <Tooltip content="Input Mode" position="top" className="z-50" closeOnClick>
       <PopoverMenu
         items={inputModeOptions}
@@ -1337,12 +1362,22 @@ export const PromptBoxVideo = ({
         panelTitle="Input Mode"
       />
     </Tooltip>
+    {isWaveSpeedReference && <select aria-label="WaveSpeed video mode" value={waveSpeedMode} onChange={(event) => {
+      setWaveSpeedMode(event.target.value as "reference" | "edit" | "extend");
+      setReferenceImages([]);
+      setReferenceAudios([]);
+      setEndFrameImage(undefined);
+      setReferenceVideos(referenceVideos.slice(0, event.target.value === "reference" ? 3 : 1));
+    }} className="min-h-9 cursor-pointer rounded border border-ui-controls-border bg-ui-controls px-2 py-1 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+      <option value="reference">Reference</option><option value="edit">Edit video</option><option value="extend">Extend video</option>
+    </select>}
+    </>
   ) : null;
 
   return (
     <>
-      {deck.fileInputs}
-      {deck.galleryModal}
+      {canUseReferenceMedia && deck.fileInputs}
+      {canUseReferenceMedia && deck.galleryModal}
       <div className="relative z-20 flex flex-col gap-3">
         <div
           className={twMerge(
@@ -1352,7 +1387,10 @@ export const PromptBoxVideo = ({
           {...drop.dropZoneProps}
         >
           {dropOverlay}
-          {selectedModel?.textToVideoSupported === false && (
+          {!canUseReferenceMedia && selectedModel?.requiresImage && (
+            <p role="status" className="mb-2 text-sm text-base-fg/70">Sign in to attach the starting frame required by this model, or select a text-to-video model.</p>
+          )}
+          {canUseReferenceMedia && selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <InfoIcon
                 
@@ -1364,7 +1402,7 @@ export const PromptBoxVideo = ({
             </div>
           )}
           <div className="relative flex gap-3">
-            {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
+            {canUseReferenceMedia && (isReferenceMode ? renderReferenceDeck() : renderKeyframeCards())}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
                 <MentionTextarea
@@ -1568,7 +1606,7 @@ export const PromptBoxVideo = ({
                 <div>
                   <GenerateIconButton
                     onClick={handleEnqueue}
-                    disabled={!prompt.trim()}
+                    disabled={!prompt.trim() || (!canUseReferenceMedia && selectedModel?.requiresImage)}
                     loading={isEnqueueing}
                     credits={credits}
                   />
@@ -1654,7 +1692,7 @@ export const PromptBoxVideo = ({
           </>
         }
         imagePromptRow={
-          isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()
+          canUseReferenceMedia ? (isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()) : undefined
         }
       >
         {hasAnyMentionables ? (

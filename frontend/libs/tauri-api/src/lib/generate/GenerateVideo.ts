@@ -33,6 +33,7 @@ export interface GenerateVideoRequest {
   reference_video_media_tokens?: string[];
   reference_audio_media_tokens?: string[];
   reference_character_tokens?: string[];
+  wavespeed_mode?: "generate" | "reference" | "edit" | "extend";
 
   aspect_ratio?: CommonAspectRatio | string;
   resolution?: CommonResolution | string;
@@ -54,10 +55,12 @@ export interface GenerateVideoRequest {
 }
 
 export enum GenerateVideoErrorType {
+  BadInput = "bad_input",
   ModelNotSpecified = "model_not_specified",
   NoProviderAvailable = "no_provider_available",
   ServerError = "server_error",
   NeedsFalApiKey = "needs_fal_api_key",
+  NeedsWaveSpeedApiKey = "needs_wavespeed_api_key",
   FalError = "fal_error",
   NeedsStorytellerCredentials = "needs_storyteller_credentials",
 }

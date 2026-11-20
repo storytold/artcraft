@@ -15,6 +15,7 @@ members = [
   "crates/api_clients/midjourney_client",
   "crates/api_clients/openai_sora_client",
   "crates/api_clients/worldlabs_api_client",
+  "crates/api_clients/wavespeed_client",
   "crates/api_clients/worldlabs_consumer_client",
   "crates/desktop/artcraft",
   "crates/lib/artcraft_client_identity",
@@ -84,6 +85,7 @@ url_utils = { path = "crates/lib/url_utils" }
 uuid_utils = { path = "crates/lib/uuid_utils" }
 web_base64 = { path = "crates/lib/data/web_base64" }
 worldlabs_api_client = { path = "crates/api_clients/worldlabs_api_client" }
+wavespeed_client = { path = "crates/api_clients/wavespeed_client" }
 worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_client" }
 anyhow = "1.0.102"
 assertor = "0.0.3"

@@ -55,11 +55,17 @@ pub struct GrokVideoResponsePayload {
 
 #[derive(Clone, Debug)]
 pub enum GenerateVideoResponse {
+  WaveSpeed(WaveSpeedVideoResponsePayload),
   Artcraft(ArtcraftVideoResponsePayload),
   GmiCloud(GmiCloudVideoResponsePayload),
   Grok(GrokVideoResponsePayload),
   KinoviWeb(KinoviWebVideoResponsePayload),
   Fal(FalVideoResponsePayload),
+}
+
+#[derive(Clone, Debug)]
+pub struct WaveSpeedVideoResponsePayload {
+  pub prediction_id: String,
 }
 
 impl GenerateVideoResponse {

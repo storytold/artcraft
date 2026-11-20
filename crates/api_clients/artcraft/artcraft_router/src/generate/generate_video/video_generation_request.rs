@@ -144,6 +144,7 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::re
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
+  WaveSpeed(crate::generate::generate_video::providers::wavespeed::request::WaveSpeedVideoRequest),
   ArtcraftGrokImagineVideo(ArtcraftGrokImagineVideoRequestState),
   ArtcraftGrokImagineVideo1p5(ArtcraftGrokImagineVideo1p5RequestState),
   ArtcraftFlux3(ArtcraftFlux3RequestState),
@@ -219,6 +220,7 @@ impl VideoGenerationRequest {
 
   pub fn get_provider(&self) -> RouterProvider {
     match self {
+      Self::WaveSpeed(_) => RouterProvider::WaveSpeed,
       Self::ArtcraftGrokImagineVideo(_) => RouterProvider::Artcraft,
       Self::ArtcraftGrokImagineVideo1p5(_) => RouterProvider::Artcraft,
       Self::ArtcraftHappyHorse1p0(_) => RouterProvider::Artcraft,
@@ -294,6 +296,7 @@ impl VideoGenerationRequest {
   /// Return a cost estimate to fulfill the request.
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
+      Self::WaveSpeed(_) => Ok(crate::generate::generate_video::providers::wavespeed::cost::estimate_cost()),
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => Ok(ArtcraftGrokImagineVideoCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftGrokImagineVideo1p5(request) => ArtcraftGrokImagineVideo1p5CostState::from_request(request).estimate_cost(),
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
@@ -370,6 +373,7 @@ impl VideoGenerationRequest {
   /// If successful, returns the job IDs.
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
+      Self::WaveSpeed(request) => request.send(client.get_wavespeed_client_ref()?).await,
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await

@@ -5,14 +5,19 @@ import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
 import { useShowProviderLoginModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
+import { SetWaveSpeedApiKey } from "@storyteller/tauri-api";
 
 interface ProviderSetupModalProps {
 }
 
+/** Respond to native provider-login events with API-key setup or the supported provider login flow. */
 export function ProviderSetupModal({
 }: ProviderSetupModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [provider, setProvider] = useState<GenerationProvider>(GenerationProvider.Artcraft);
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useShowProviderLoginModalEvent(async (event) => {
     // Retained native handlers can still emit these events for old tasks.
@@ -24,6 +29,8 @@ export function ProviderSetupModal({
     }
     console.log("Show provider login modal event received from Tauri:", event);
     setProvider(event.provider);
+    setApiKey("");
+    setError("");
     setShowModal(true);
   });
 
@@ -34,6 +41,9 @@ export function ProviderSetupModal({
 
   let modalDescription;
   switch (provider) {
+    case GenerationProvider.WaveSpeed:
+      modalDescription = "Enter your WaveSpeed API key to use supported image and video models with your WaveSpeed credits.";
+      break;
     case GenerationProvider.Grok:
       modalDescription = `You can add your ${serviceProviderName} account to ArtCraft by simply logging in. Use can then use it directly within Artcraft. You can add all of your AI accounts to Artcraft to use them all in one place and build the ultimate AI art tool.`;
       break;
@@ -44,7 +54,22 @@ export function ProviderSetupModal({
 
   const modalButtonText = `Set up ${serviceProviderName}`;
 
+  /** Save WaveSpeed credentials before closing, or launch the supported browser-based provider login. */
   const buttonOnClick = async () => {
+    if (provider === GenerationProvider.WaveSpeed) {
+      setSaving(true);
+      setError("");
+      try {
+        await SetWaveSpeedApiKey(apiKey);
+        setApiKey("");
+        setShowModal(false);
+      } catch {
+        setError("Could not save your WaveSpeed API key. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     switch (provider) {
       case GenerationProvider.Grok:
         await invoke("grok_open_login_command");
@@ -87,7 +112,21 @@ export function ProviderSetupModal({
           </p>
         </div>
 
+        {provider === GenerationProvider.WaveSpeed && (
+          <input
+            aria-label="WaveSpeed API key"
+            type="password"
+            autoComplete="off"
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            placeholder="Enter WaveSpeed API key"
+            disabled={saving}
+            className="rounded border border-ui-panel-border bg-transparent px-3 py-2"
+          />
+        )}
+        {error && <p role="alert">{error}</p>}
         <Button
+          disabled={saving || (provider === GenerationProvider.WaveSpeed && !apiKey.trim())}
           className="h-10 px-4"
           icon={ArrowRightIcon}
           iconFlip={true}
@@ -102,12 +141,15 @@ export function ProviderSetupModal({
   );
 }
 
+/** Return the provider name used in connection guidance, falling back to Artcraft. */
 function getServiceProviderName(provider: GenerationProvider) : string {
   switch (provider) {
     case GenerationProvider.Grok:
       return "Grok";
     case GenerationProvider.Fal:
       return "Fal";
+    case GenerationProvider.WaveSpeed:
+      return "WaveSpeed";
     case GenerationProvider.Midjourney:
       return "Midjourney";
     case GenerationProvider.Higgsfield:

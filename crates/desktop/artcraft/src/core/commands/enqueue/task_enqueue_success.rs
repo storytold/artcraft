@@ -7,9 +7,12 @@ use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use sqlite_tasks::error::SqliteTasksError;
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
+use sqlite_tasks::queries::create_task_once::create_task_once;
+use serde::{Deserialize, Serialize};
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::sqlite::tasks::TaskId;
 
+#[derive(Clone, Deserialize, Serialize)]
 pub struct TaskEnqueueSuccess {
   pub task_type: TaskType,
   pub model: Option<GenerationModel>,
@@ -37,6 +40,7 @@ impl TaskEnqueueSuccess{
     match self.provider {
       GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
       GenerationProvider::Fal => GenerationServiceProvider::Fal,
+      GenerationProvider::WaveSpeed => GenerationServiceProvider::WaveSpeed,
       GenerationProvider::Grok => GenerationServiceProvider::Grok,
       GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
       GenerationProvider::Sora => GenerationServiceProvider::Sora,
@@ -133,7 +137,7 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Sora) => None, // TODO: unused elsewhere?
     };
 
-    create_task(CreateTaskArgs {
+    let args = CreateTaskArgs {
       db: task_database.get_connection(),
       status: TaskStatus::Pending,
       task_type: self.task_type,
@@ -146,6 +150,11 @@ impl TaskEnqueueSuccess{
       frontend_caller,
       frontend_subscriber_id,
       frontend_subscriber_payload,
-    }).await
+    };
+    if self.provider == GenerationProvider::WaveSpeed {
+      create_task_once(args).await
+    } else {
+      create_task(args).await
+    }
   }
 }

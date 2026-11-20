@@ -26,6 +26,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import { generationCountForModel } from "./generationCountForModel";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
@@ -57,6 +58,7 @@ interface PromptBoxImageProps {
   ) => void | Promise<void>;
   selectedModel?: ImageModel;
   selectedProvider?: GenerationProvider;
+  canUseReferenceImages?: boolean;
   imageMediaId?: string;
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
@@ -66,12 +68,14 @@ interface PromptBoxImageProps {
   modelSelector?: ReactNode;
 }
 
+/** Build image requests from the selected provider capabilities, gating uploaded references on availability. */
 export const PromptBoxImage = ({
   useJobContext,
   uploadImage,
   onEnqueuePressed,
   selectedModel: catalogModel,
   selectedProvider,
+  canUseReferenceImages = true,
   imageMediaId,
   url,
   credits,
@@ -92,7 +96,7 @@ export const PromptBoxImage = ({
   );
 
   useEffect(() => {
-    if (imageMediaId && url) {
+    if (canUseReferenceImages && imageMediaId && url) {
       const referenceImage: RefImage = {
         id: uuidv4(),
         url: url,
@@ -101,7 +105,7 @@ export const PromptBoxImage = ({
       };
       setReferenceImages([referenceImage]);
     }
-  }, [imageMediaId, url]);
+  }, [canUseReferenceImages, imageMediaId, url]);
 
   const prompt = usePromptImageStore((s) => s.prompt);
   const setPrompt = usePromptImageStore((s) => s.setPrompt);
@@ -144,10 +148,11 @@ export const PromptBoxImage = ({
 
   // Drag & drop / paste onto the box bounds. Images are the only reference
   // kind this box takes, and only when the model can use them at all.
-  const dropAcceptsImages = !!selectedModel?.canUseImagePrompt;
+  const dropAcceptsImages = canUseReferenceImages && !!selectedModel?.canUseImagePrompt;
 
+  /** Accept dropped image references only when supported and at least one reference slot remains. */
   const handleDroppedFiles = ({ images }: DroppedFiles) => {
-    if (images.length === 0) return;
+    if (!dropAcceptsImages || images.length === 0) return;
     if (deck.availableImageSlots <= 0) {
       toast.error(
         `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
@@ -209,8 +214,9 @@ export const PromptBoxImage = ({
     },
   ];
 
+  /** Render reference editing controls only when both the page and selected model permit image references. */
   const renderReferenceDeck = (alwaysExpanded?: boolean) =>
-    selectedModel?.canUseImagePrompt ? (
+    canUseReferenceImages && selectedModel?.canUseImagePrompt ? (
       <ReferenceDeck
         items={deckItems}
         canAdd={deckItems.length < maxImagePromptCount}
@@ -237,6 +243,13 @@ export const PromptBoxImage = ({
   );
   const commonResolution = usePromptImageStore((s) => s.commonResolution);
   const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
+  const effectiveResolution = selectedProvider === GenerationProvider.WaveSpeed
+    ? selectedModel?.resolveResolution(commonResolution) : commonResolution;
+  useEffect(() => {
+    if (selectedProvider === GenerationProvider.WaveSpeed && commonResolution !== effectiveResolution) {
+      setCommonResolution(effectiveResolution);
+    }
+  }, [selectedProvider, commonResolution, effectiveResolution, setCommonResolution]);
   const commonQuality = usePromptImageStore((s) => s.commonQuality);
   const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
 
@@ -276,7 +289,7 @@ export const PromptBoxImage = ({
   ]);
 
   useEffect(() => {
-    if (imageMediaId && url) {
+    if (canUseReferenceImages && imageMediaId && url) {
       const referenceImage: RefImage = {
         id: uuidv4(),
         url: url,
@@ -285,14 +298,13 @@ export const PromptBoxImage = ({
       };
       setReferenceImages([referenceImage]);
     }
-  }, [imageMediaId, url]);
+  }, [canUseReferenceImages, imageMediaId, url]);
 
   useEffect(() => {
-    if (selectedModel?.isValidGenerationCount(generationCount)) {
-      return;
+    const nextCount = generationCountForModel(selectedModel, generationCount);
+    if (nextCount !== generationCount) {
+      setGenerationCount(nextCount);
     }
-    const defaultGenerations = selectedModel?.defaultGenerationCount || 4;
-    setGenerationCount(defaultGenerations);
   }, [selectedModel, generationCount]);
 
   useEffect(() => {
@@ -354,6 +366,7 @@ export const PromptBoxImage = ({
 
   const maxLen = selectedModel?.maxPromptLength ?? 1000;
 
+  /** Validate the image prompt, submit effective model/provider options, and expose command failures to the user. */
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
       console.warn("Cannot generate image: prompt is empty");
@@ -403,7 +416,7 @@ export const PromptBoxImage = ({
       }
 
       if (selectedModel?.supportsNewResolution()) {
-        request.resolution = commonResolution;
+        request.resolution = effectiveResolution;
       }
 
       if (selectedModel?.supportsQuality()) {
@@ -411,7 +424,7 @@ export const PromptBoxImage = ({
       }
 
       if (
-        selectedModel?.canUseImagePrompt &&
+        canUseReferenceImages && selectedModel?.canUseImagePrompt &&
         !!referenceImages &&
         referenceImages.length > 0
       ) {
@@ -422,7 +435,7 @@ export const PromptBoxImage = ({
 
       window.__storeTaskEnqueueMeta?.({
         prompt,
-        refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
+        refImageUrls: canUseReferenceImages ? referenceImages?.map((img) => img.url).filter(Boolean) : [],
         modelType: (selectedModel as any)?.tauriId || String(selectedModel),
         timestamp: Date.now(),
         batchCount: generationCount,
@@ -467,8 +480,8 @@ export const PromptBoxImage = ({
 
   return (
     <>
-      {deck.fileInputs}
-      {deck.galleryModal}
+      {canUseReferenceImages && deck.fileInputs}
+      {canUseReferenceImages && deck.galleryModal}
 
       <div className="relative z-20 flex flex-col">
         <div
@@ -530,7 +543,7 @@ export const PromptBoxImage = ({
               {selectedModel?.supportsNewResolution() && (
                 <ResolutionPicker
                   model={selectedModel}
-                  currentResolution={commonResolution}
+                  currentResolution={effectiveResolution}
                   handleCommonResolutionSelect={setCommonResolution}
                 />
               )}

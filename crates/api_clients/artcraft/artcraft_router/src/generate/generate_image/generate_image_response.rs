@@ -38,10 +38,16 @@ pub struct KinoviWebImageResponsePayload {
 
 #[derive(Clone, Debug)]
 pub enum GenerateImageResponse {
+  WaveSpeed(WaveSpeedImageResponsePayload),
   Midjourney(MidjourneyImageResponsePayload),
   Artcraft(ArtcraftImageResponsePayload),
   Fal(FalImageResponsePayload),
   KinoviWeb(KinoviWebImageResponsePayload),
+}
+
+#[derive(Clone, Debug)]
+pub struct WaveSpeedImageResponsePayload {
+  pub prediction_id: String,
 }
 
 impl GenerateImageResponse {

@@ -53,6 +53,11 @@ impl StorytellerCredentialManager {
     self.holder.get_credentials()
   }
 
+  /// Return credentials only when they contain a session; visitor cookies alone are not a login.
+  pub fn get_signed_in_credentials(&self) -> AnyhowResult<Option<StorytellerCredentialSet>> {
+    Ok(self.get_credentials()?.filter(|credentials| credentials.session.is_some()))
+  }
+
   pub fn get_credentials_required(&self) -> AnyhowResult<StorytellerCredentialSet> {
     self.holder.get_credentials_required()
   }
@@ -126,4 +131,22 @@ fn persist_avt_to_disk(avt: &StorytellerAvtCookie, app_data_root: &AppDataRoot) 
   file.flush()?;
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn anonymous_credentials_are_not_signed_in() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(directory.path()).unwrap();
+    let manager = StorytellerCredentialManager::initialize_empty(&root);
+    assert!(manager.get_signed_in_credentials().unwrap().is_none());
+    manager.set_credentials(&StorytellerCredentialSet::initialize_with_just_avt(StorytellerAvtCookie::new("visitor".into()))).unwrap();
+    assert!(manager.get_credentials().unwrap().is_some());
+    assert!(manager.get_signed_in_credentials().unwrap().is_none());
+    manager.set_credentials(&StorytellerCredentialSet::initialize_with_just_cookie(StorytellerSessionCookie::new("session".into()))).unwrap();
+    assert!(manager.get_signed_in_credentials().unwrap().is_some());
+  }
 }
