@@ -61,6 +61,11 @@ pub fn set_app_log_level(
         .build(),
   )?;
 
+  // NB: `AppDataRoot::create_default` runs before the logger exists, so the choice is logged here.
+  if let Some(data_dir) = root.maybe_data_dir() {
+    data_dir.log_choice();
+  }
+
   Ok(())
 }
 

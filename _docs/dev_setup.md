@@ -80,6 +80,35 @@ without restarting the Rust process.
 .\script\artcraft\windows_rust_dev.ps1
 ```
 
+**Data directory**
+
+The desktop app keeps its data (assets, credentials, downloads, settings, the task
+database and `artcraft_debug.log`) in `~/Artcraft`. To use another folder, set
+`ARTCRAFT_DATA_DIR` to an absolute path before starting the app. `artcraft-native`
+reads the same variable. A leading `~` means the home directory. The folder is
+created if it doesn't exist. A blank value keeps `~/Artcraft`, and so does a
+relative path, with a warning in the log. The webview profile and the login cookie
+jar are kept by Tauri in the system folders, not here.
+
+Existing data isn't moved. To keep it:
+
+1. Quit ArtCraft (and `artcraft-native`, if it's running).
+2. Move the contents of `~/Artcraft` into the new folder.
+3. Set `ARTCRAFT_DATA_DIR` to the new folder, as below.
+4. Start ArtCraft again. The log's "App data directory" line shows the folder in use.
+
+```bash
+ARTCRAFT_DATA_DIR="$HOME/Library/Application Support/Artcraft" ./script/artcraft/unix_dev.sh
+
+# macOS, for the app started from Finder or the Launcher (lasts until you log out)
+launchctl setenv ARTCRAFT_DATA_DIR "$HOME/Library/Application Support/Artcraft"
+```
+
+```powershell
+# Windows, for your user account (restart ArtCraft afterwards)
+[Environment]::SetEnvironmentVariable("ARTCRAFT_DATA_DIR", "D:\Artcraft", "User")
+```
+
 Backend services and website builds live in the separate `artcraft-services` repository.
 This repository retains the desktop task database in
 `_database/sql/artcraft_migrations/` and its SQLite query cache in `.sqlx/`.

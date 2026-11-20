@@ -201,17 +201,18 @@ pub struct Backend {
 }
 
 impl Backend {
-  pub fn new(ctx: egui::Context) -> Self {
+  /// Fails when there's no data folder (see `session::data_root`).
+  pub fn new(ctx: egui::Context) -> anyhow::Result<Self> {
+    let root = session::data_root()?;
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(4).thread_name("artcraft-io").enable_all().build().expect("tokio runtime");
     let (tx, rx) = channel();
-    let root = session::data_root();
     let host = session::api_host(&root);
     let creds = session::load(&root);
     let http = reqwest::Client::builder().user_agent(USER_AGENT).gzip(true).timeout(Duration::from_secs(60)).build().unwrap_or_default();
     let (accounts, jobs) = (ProviderAccounts::load(&root), JobStore::load(&root));
     let creds = Arc::new(RwLock::new(creds));
     rt.spawn(Worker { host: host.clone(), creds: creds.clone(), http: http.clone(), accounts: accounts.clone(), jobs: jobs.clone(), tx: tx.clone(), ctx: ctx.clone() }.run());
-    Self { rt, ctx, tx, rx, host, root, creds, http, device_login_cancel: Arc::new(AtomicBool::new(false)), accounts, jobs }
+    Ok(Self { rt, ctx, tx, rx, host, root, creds, http, device_login_cancel: Arc::new(AtomicBool::new(false)), accounts, jobs })
   }
 
   pub fn runtime(&self) -> tokio::runtime::Handle {
