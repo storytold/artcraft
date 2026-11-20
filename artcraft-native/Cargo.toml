@@ -23,7 +23,7 @@ tokens.workspace = true
 anyhow.workspace = true
 cookie.workspace = true
 chrono.workspace = true
-craft-image-codecs = { git = "https://github.com/storytold/craft-libs", rev = "057b0e3e01aed74ecc5d18eb047ddd7328b46b1d" }
+craft-image-codecs.workspace = true
 directories = "6.0.0"
 eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "accesskit", "wayland", "x11", "persistence", "links"] }
 egui = "0.36"

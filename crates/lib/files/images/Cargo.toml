@@ -21,6 +21,7 @@ errors = { workspace = true}
 mimetypes = { workspace = true }
 
 # External
+craft-image-codecs = { workspace = true }
 image = { version = "0.25.6" , features = ["jpeg", "png", "tiff", "webp"] }
 
 [dev-dependencies]

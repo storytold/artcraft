@@ -16,6 +16,9 @@ use log::warn;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
 
+#[cfg(test)]
+mod tests;
+
 /// How many images may download at once.
 const MAX_CONCURRENT_DOWNLOADS: usize = 6;
 /// Longest side of a decoded image; larger ones are downscaled before upload.
@@ -237,12 +240,68 @@ fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
   Some(out)
 }
 
-fn image_to_color_image(image: Image, max_side: u32) -> Option<ColorImage> {
+fn image_to_color_image(mut image: Image, max_side: u32) -> Option<ColorImage> {
+  if image.width().max(image.height()) > max_side && image.sample_type() == SampleType::U16 && matches!(image.layout(), ChannelLayout::Gray | ChannelLayout::GrayA | ChannelLayout::Rgb | ChannelLayout::Rgba) {
+    image = thumbnail_u16(&image, max_side)?;
+  }
   let (w, h) = image.dimensions();
   let rgba_bytes = if image.layout() == ChannelLayout::Rgba && image.sample_type() == SampleType::U8 { image.into_data() } else { image.to_rgba8() };
   let rgba = image::RgbaImage::from_raw(w, h, rgba_bytes)?;
   let rgba = if w.max(h) > max_side { image::DynamicImage::ImageRgba8(rgba).thumbnail(max_side, max_side).into_rgba8() } else { rgba };
   Some(to_color_image(rgba))
+}
+
+/// Keep the original 16-bit sample precision while averaging each source rectangle.
+/// Wide sums also cover reductions whose 16-bit samples would overflow a U32 sum.
+fn thumbnail_u16(image: &Image, max_side: u32) -> Option<Image> {
+  let (w, h) = image.dimensions();
+  if w == 0 || h == 0 || max_side == 0 {
+    return None;
+  }
+  let ratio = (f64::from(max_side) / f64::from(w)).min(f64::from(max_side) / f64::from(h));
+  let nw = (f64::from(w) * ratio).round().max(1.0) as u32;
+  let nh = (f64::from(h) * ratio).round().max(1.0) as u32;
+
+  let layout = image.layout();
+  let channels = layout.channels();
+  let pixel_bytes = channels * 2;
+  let row_bytes = (w as usize).checked_mul(pixel_bytes)?;
+  let output_bytes = (nw as usize).checked_mul(nh as usize)?.checked_mul(pixel_bytes)?;
+  let mut data = Vec::new();
+  data.try_reserve_exact(output_bytes).ok()?;
+  let rows = image.data().chunks_exact(row_bytes);
+  let x_ratio = w as f32 / nw as f32;
+  let y_ratio = h as f32 / nh as f32;
+
+  // Use the same floating-point box boundaries as the earlier thumbnail path.
+  let source_span = |index: u32, input: u32, ratio: f32| {
+    let offset = index as f32 * ratio;
+    let start = (offset.ceil() as u32).min(input - 1);
+    let end = ((offset + ratio).ceil() as u32).clamp(start + 1, input);
+    start as usize..end as usize
+  };
+  for y in 0..nh {
+    let y_span = source_span(y, h, y_ratio);
+    let band = rows.clone().skip(y_span.start).take(y_span.len());
+    for x in 0..nw {
+      let x_span = source_span(x, w, x_ratio);
+      let bytes = x_span.start * pixel_bytes..x_span.end * pixel_bytes;
+      let count = x_span.len() as u64 * y_span.len() as u64;
+      let mut sums = [0_u64; 4];
+      for row in band.clone() {
+        for pixel in row.get(bytes.clone())?.chunks_exact(pixel_bytes) {
+          for (sum, sample) in sums.iter_mut().zip(pixel.chunks_exact(2)) {
+            *sum += u64::from(u16::from_ne_bytes([sample[0], sample[1]]));
+          }
+        }
+      }
+      for sum in sums.iter().take(channels) {
+        let sample = ((sum + count / 2) / count) as u16;
+        data.extend_from_slice(&sample.to_ne_bytes());
+      }
+    }
+  }
+  Image::from_raw(nw, nh, layout, SampleType::U16, data).ok()
 }
 
 fn to_color_image(rgba: image::RgbaImage) -> ColorImage {
