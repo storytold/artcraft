@@ -15,7 +15,8 @@ pub async fn simple_http_download<P: AsRef<Path>>(url: &Url, download_path: P) -
       .header("User-Agent", USER_AGENT)
       .header("Accept", "*/*")
       .send()
-      .await?;
+      .await?
+      .error_for_status()?;
 
   //let response : Response = reqwest::get(url).await?;
   let bytes = response.bytes().await?;
