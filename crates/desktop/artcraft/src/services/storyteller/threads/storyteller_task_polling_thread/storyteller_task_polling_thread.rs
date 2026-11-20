@@ -1,7 +1,7 @@
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use crate::services::storyteller::threads::storyteller_task_polling_thread::handle_storyteller_failed_job::handle_failed_job;
+use crate::services::storyteller::threads::storyteller_task_polling_thread::handle_storyteller_failed_job::{handle_failed_job, to_failed_task_status};
 use crate::services::storyteller::threads::storyteller_task_polling_thread::handle_storyteller_successful_job::handle_successful_job;
 use anyhow::anyhow;
 use artcraft_client::endpoints::jobs::list_session_jobs::{list_session_jobs, States};
@@ -114,14 +114,21 @@ async fn polling_loop(
             error!("Completion for task {} will be retried: {}", task.id.as_str(), err);
           }
         }
-        JobStatusPlus::CompleteFailure => {
-          match task.status {
-            TaskStatus::CompleteFailure => continue, // NB: We're done with this task.
-            _ => {}
+        status => {
+          // NB: Not just `CompleteFailure`. A `Dead` or cancelled job is over too, and if we
+          // never record that, the task stays pending forever (stuck at 95%, no error shown).
+          let failed_status = match to_failed_task_status(status) {
+            Some(failed_status) => failed_status,
+            None => continue, // NB: Still in flight.
+          };
+          if task.status == failed_status {
+            continue; // NB: We're done with this task.
           }
-          handle_failed_job(app_handle, job, task, task_database).await?;
+          if let Err(err) = handle_failed_job(app_handle, job, task, failed_status, task_database).await {
+            // A failed local update must not delay the other jobs in this batch.
+            error!("Failure status for task {} will be retried: {}", task.id.as_str(), err);
+          }
         }
-        _ => continue,
       }
     }
 
