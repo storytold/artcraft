@@ -13,6 +13,7 @@ use crate::backend::{Backend, Modality, UploadedMedia};
 use crate::feed::grid::{self, FeedAction, FeedView, RatioCache, ViewMode};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 use crate::models::Catalog;
 use crate::prompt_box;
 use crate::prompt_box::refs::{ImageSlot, RefKind, RefMedia, RefStatus, References};
@@ -197,12 +198,12 @@ pub fn selection_bar(ui: &Ui, area: Rect, bottom: f32, feed: &mut FeedStore, kin
       ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 10.0;
         ui.add_space(6.0);
-        ui.label(egui::RichText::new(format!("{} selected", feed.selected.len())).size(13.0).family(theme::medium()));
+        ui.label(egui::RichText::new(i18n::fmt("{count} selected", &[("count", &feed.selected.len().to_string())])).size(13.0).family(theme::medium()));
         let any = !feed.selected.is_empty();
-        if ui.add_enabled_ui(any, |ui| widgets::button(ui, Some(crate::ui::icons::Icon::Download), "Download", widgets::Kind::Secondary, 0.0, 30.0)).inner.clicked() {
+        if ui.add_enabled_ui(any, |ui| widgets::button(ui, Some(crate::ui::icons::Icon::Download), i18n::t("Download"), widgets::Kind::Secondary, 0.0, 30.0)).inner.clicked() {
           requests.push(AppRequest::Download(feed.selected.iter().cloned().collect()));
         }
-        if widgets::ghost(ui, crate::ui::icons::Icon::X, None, "Exit selection", false).clicked() {
+        if widgets::ghost(ui, crate::ui::icons::Icon::X, None, i18n::t("Exit selection"), false).clicked() {
           feed.selecting = false;
           feed.selected.clear();
         }
@@ -221,13 +222,13 @@ fn empty_state(ui: &mut Ui, env: &mut Env<'_>, area: Rect, bottom_offset: f32, t
   let p = ui.painter();
   p.rect(section, 0.0, Color32::from_rgba_unmultiplied(242, 241, 238, 4), egui::Stroke::new(1.0, Color32::from_rgba_unmultiplied(242, 241, 238, 51)), egui::StrokeKind::Inside);
   widgets::corner_marks(p, section);
-  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 52.0))));
-  child.label(widgets::heading(title, 48.0));
+  let mut child = ui.new_child(egui::UiBuilder::new().max_rect(section.shrink2(vec2(40.0, 52.0))).layout(egui::Layout::top_down(i18n::align_for_text(i18n::is_rtl()))));
+  child.label(widgets::heading(i18n::t(title), 48.0));
   child.add_space(12.0);
-  child.label(egui::RichText::new(subtitle).size(16.0).color(theme::MUTED));
+  i18n::wrapped_label(&mut child, subtitle, |r| r.size(16.0).color(theme::MUTED));
   if !env.signed_in {
     child.add_space(24.0);
-    if widgets::button(&mut child, Some(crate::ui::icons::Icon::Sparkles), "Sign in to create", widgets::Kind::Primary, 0.0, 44.0).clicked() {
+    if widgets::button(&mut child, Some(crate::ui::icons::Icon::Sparkles), i18n::t("Sign in to create"), widgets::Kind::Primary, 0.0, 44.0).clicked() {
       env.requests.push(AppRequest::SignIn);
     }
   }
@@ -258,7 +259,7 @@ pub fn selected_model<'a>(models: &'a [crate::models::ModelInfo], selected: Opti
 /// Starts uploading `path` into `slot` (or the deck for videos and audio).
 pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: RefKind, slot: ImageSlot) {
   if kind == RefKind::Video && !path.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("mp4")) {
-    env.toasts.error("Failed to upload video. Please upload an MP4 file.");
+    env.toasts.error(crate::i18n::t("Failed to upload video. Please upload an MP4 file."));
     return;
   }
   let mut item = RefMedia::uploading(kind, None);
@@ -270,7 +271,7 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
         item.preview = Some(key);
       },
       Err(err) => {
-        env.toasts.error(format!("Couldn't read {}: {err}", file_name(path)));
+        env.toasts.error(crate::i18n::fmt("Couldn't read {file}: {err}", &[("file", &file_name(path)), ("err", &err.to_string())]));
         return;
       },
     }
@@ -313,9 +314,9 @@ pub fn apply_upload(toasts: &mut Toasts, refs: &mut References, ref_id: u64, res
       true
     },
     Err(message) => {
-      let kind = refs.find_mut(ref_id).map_or("file", |r| r.kind.noun());
+      let kind = refs.find_mut(ref_id).map_or("file", |r| crate::i18n::tl(r.kind.noun()));
       refs.remove(ref_id);
-      toasts.error(format!("Failed to upload {kind}: {message}"));
+      toasts.error(crate::i18n::fmt("Failed to upload {kind}: {message}", &[("kind", kind), ("message", &message)]));
       false
     },
   }
@@ -340,7 +341,7 @@ pub fn pick_files(kinds: &[RefKind], multiple: bool) -> Vec<PathBuf> {
       RefKind::Video => ("Videos (MP4)", &["mp4"]),
       RefKind::Audio => ("Audio", &["mp3", "wav", "ogg", "flac", "aac", "m4a", "opus"]),
     };
-    dialog = dialog.add_filter(name, exts);
+    dialog = dialog.add_filter(crate::i18n::tl(name), exts);
   }
   if multiple {
     dialog.pick_files().unwrap_or_default()

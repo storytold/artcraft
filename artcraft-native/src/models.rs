@@ -4,6 +4,7 @@
 
 use crate::feed::grid::ModelNames;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 
 /// Default models (`defaultModelForPage.ts`).
 pub const DEFAULT_IMAGE_MODEL: &str = "nano_banana_pro";
@@ -493,7 +494,7 @@ impl ModelNames for Catalog {
 
 /// Aspect ratio labels (`AspectRatioPicker`).
 pub fn aspect_label(value: &str) -> String {
-  match value {
+  let raw = match value {
     "auto" => "Auto",
     "square" => "Square",
     "wide_five_by_four" => "5:4 (Wide)",
@@ -512,9 +513,9 @@ pub fn aspect_label(value: &str) -> String {
     "square_hd" => "Square (HD)",
     "wide" => "Wide",
     "tall" => "Tall",
-    other => other,
-  }
-  .to_owned()
+    other => return other.to_owned(),
+  };
+  i18n::t(raw).to_owned()
 }
 
 /// The proportions an aspect ratio's icon draws (`AspectRatioIcon`); `None` for the auto ones.
@@ -560,16 +561,16 @@ pub fn resolution_is_hd(value: &str) -> bool {
 
 /// Quality labels (`QualityPicker`).
 pub fn quality_label(value: &str) -> String {
-  match value {
+  let raw = match value {
     "auto" => "Auto",
     "max" => "Max",
     "xhigh" => "Extra high",
     "high" => "High",
     "medium" => "Medium",
     "low" => "Low",
-    other => other,
-  }
-  .to_owned()
+    other => return other.to_owned(),
+  };
+  i18n::t(raw).to_owned()
 }
 
 /// Sample rate labels (`formatSampleRateHz`): 44100 → "44.1 kHz", 24000 → "24 kHz".
@@ -584,8 +585,8 @@ pub fn sample_rate_label(hz: u32) -> String {
 /// Bitrate labels.
 pub fn bitrate_label(value: &str) -> String {
   match value {
-    "normal" => "Normal".to_owned(),
-    "high" => "High".to_owned(),
+    "normal" => i18n::t("Normal").to_owned(),
+    "high" => i18n::t("High").to_owned(),
     other => other.to_owned(),
   }
 }

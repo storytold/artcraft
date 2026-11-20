@@ -173,12 +173,14 @@ pub fn apply(ctx: &egui::Context) {
 /// A font registered under `name`: its file, its variation coordinates and its family.
 type Face<'a> = (&'a str, &'static [u8], &'a [([u8; 4], f32)], FontFamily);
 
-/// Registers the three variable fonts, each at the weights (and width) the webapp uses.
+/// Registers the three variable fonts, each at the weights (and width) the webapp uses, plus a
+/// Hebrew fallback face so RTL UI labels render cleanly without committing binary font assets.
 fn install_fonts(ctx: &egui::Context) {
   const INTER: &[u8] = include_bytes!("../assets/fonts/Inter-Variable.ttf");
   const ARCHIVO: &[u8] = include_bytes!("../assets/fonts/Archivo-Variable.ttf");
   const GEIST_MONO: &[u8] = include_bytes!("../assets/fonts/GeistMono-Variable.ttf");
   let mut fonts = FontDefinitions::default();
+  let hebrew = hebrew_fallback_font(&mut fonts);
   // egui's own fonts stay behind ours, for symbols and emoji ours don't have.
   let fallback = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
   let faces: [Face<'_>; 7] = [("Inter", INTER, &[(*b"wght", 400.0), (*b"opsz", 14.0)], FontFamily::Proportional), ("Inter-Medium", INTER, &[(*b"wght", 500.0), (*b"opsz", 14.0)], medium()), ("Inter-SemiBold", INTER, &[(*b"wght", 600.0), (*b"opsz", 14.0)], semibold()), ("Archivo-Display", ARCHIVO, &[(*b"wght", 620.0), (*b"wdth", 118.0)], display()), ("GeistMono", GEIST_MONO, &[(*b"wght", 400.0)], FontFamily::Monospace), ("GeistMono-Medium", GEIST_MONO, &[(*b"wght", 500.0)], mono()), ("GeistMono-SemiBold", GEIST_MONO, &[(*b"wght", 650.0)], mono_bold())];
@@ -186,8 +188,60 @@ fn install_fonts(ctx: &egui::Context) {
     let tweak = FontTweak { coords: VariationCoords::new(coords.iter().copied()), ..Default::default() };
     fonts.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(bytes).tweak(tweak)));
     let mut stack = vec![name.to_owned()];
+    if let Some(ref heb) = hebrew {
+      stack.push(heb.clone());
+    }
     stack.extend(fallback.iter().cloned());
     fonts.families.insert(family, stack);
   }
   ctx.set_fonts(fonts);
+}
+
+fn hebrew_fallback_font(fonts: &mut FontDefinitions) -> Option<String> {
+  #[cfg(has_hebrew_craft_font)]
+  {
+    const NAME: &str = "NotoSansHebrew";
+    const BYTES: &[u8] = include_bytes!(env!("HEBREW_CRAFT_FONT_PATH"));
+    fonts.font_data.insert(NAME.to_owned(), Arc::new(FontData::from_static(BYTES)));
+    return Some(NAME.to_owned());
+  }
+
+  #[cfg(not(target_arch = "wasm32"))]
+  {
+    const CANDIDATES: [(&str, &str); 11] = [("sf-hebrew", "/System/Library/Fonts/SFHebrew.ttf"), ("arial-hebrew", "/System/Library/Fonts/Supplemental/Arial Hebrew.ttf"), ("arial-hebrew-local", "/Library/Fonts/Arial Hebrew.ttf"), ("arial", "/System/Library/Fonts/Supplemental/Arial.ttf"), ("arial-unicode", "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"), ("arialhb-ttc", "/System/Library/Fonts/ArialHB.ttc"), ("noto-sans-hebrew", "/usr/share/fonts/truetype/noto/NotoSansHebrew-Regular.ttf"), ("noto-sans-hebrew-arch", "/usr/share/fonts/noto/NotoSansHebrew-Regular.ttf"), ("dejavu-sans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"), ("win-arial", "C:\\Windows\\Fonts\\arial.ttf"), ("win-segoeui", "C:\\Windows\\Fonts\\segoeui.ttf")];
+    for (name, path) in CANDIDATES {
+      if let Ok(bytes) = std::fs::read(path) {
+        fonts.font_data.insert(name.to_owned(), Arc::new(FontData::from_owned(bytes)));
+        return Some(name.to_owned());
+      }
+    }
+    None
+  }
+
+  #[cfg(all(target_arch = "wasm32", not(has_hebrew_craft_font)))]
+  {
+    let _ = fonts;
+    None
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn hebrew_fallback_font_renders_hebrew_text_without_panicking() {
+    let ctx = egui::Context::default();
+    apply(&ctx);
+    let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+      let galley = ui.painter().layout_no_wrap("עברית".into(), FontId::proportional(14.0), Color32::WHITE);
+      assert!(galley.size().x > 0.0);
+    });
+    out.textures_delta.clear();
+    #[cfg(target_os = "macos")]
+    {
+      let has_hebrew = ctx.fonts_mut(|f| f.has_glyph(&FontId::proportional(14.0), 'ע'));
+      assert!(has_hebrew, "expected system Hebrew fallback font on macOS");
+    }
+  }
 }

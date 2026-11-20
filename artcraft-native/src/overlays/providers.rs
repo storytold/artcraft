@@ -14,6 +14,7 @@ use wry::raw_window_handle::HasWindowHandle;
 use wry::{WebContext, WebView, WebViewBuilder};
 
 use crate::backend::providers::Provider;
+use crate::i18n;
 use crate::overlays::account::text_field;
 use crate::theme;
 use crate::ui::icons::{self, Icon};
@@ -41,30 +42,31 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("provider-setup"), 460.0, |ui| {
     ui.horizontal(|ui| {
-      widgets::hud(ui, "Connect account", theme::FAINT);
+      widgets::hud(ui, i18n::t("Connect account"), theme::FAINT);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
           action = Some(SetupAction::Close);
         }
       });
     });
     ui.add_space(6.0);
-    ui.label(widgets::heading(&format!("Set up {name}"), 26.0));
+    ui.label(widgets::heading(&i18n::fmt("Set up {name}", &[("name", name)]), 26.0));
     ui.add_space(4.0);
-    ui.label(egui::RichText::new(format!("Add your {name} account to ArtCraft!")).size(14.0).family(theme::medium()));
+    ui.label(egui::RichText::new(i18n::fmt("Add your {name} account to ArtCraft!", &[("name", name)])).size(14.0).family(theme::medium()));
     ui.add_space(10.0);
-    let description = match provider {
-      Provider::Fal => format!("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
-      _ => format!("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
+    let desc_logical = match provider {
+      Provider::Fal => i18n::fmt_logical("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.", &[("name", name)]),
+      _ => i18n::fmt_logical("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.", &[("name", name)]),
     };
-    ui.label(egui::RichText::new(description).size(13.0).color(theme::MUTED));
+    i18n::wrapped_label(ui, &desc_logical, |r| r.size(13.0).color(theme::MUTED));
     ui.add_space(16.0);
     if provider == Provider::Fal {
-      text_field(ui, fal_key, true, "FAL API key");
+      text_field(ui, fal_key, true, i18n::t("FAL API key"));
       ui.add_space(10.0);
     }
     let ready = provider != Provider::Fal || !fal_key.trim().is_empty();
-    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &format!("Set up {name}"), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
+    let chev = if i18n::is_rtl() { Icon::ChevronLeft } else { Icon::ChevronRight };
+    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(chev), &i18n::fmt("Set up {name}", &[("name", name)]), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
       action = Some(if provider == Provider::Fal { SetupAction::SaveFalKey } else { SetupAction::ConnectMidjourney });
     }
   });
@@ -94,29 +96,29 @@ pub enum AccountAction {
 pub fn accounts_section(ui: &mut Ui, view: &AccountsView, fal_key: &mut String) -> Option<AccountAction> {
   let mut action = None;
   let detail = match view.midjourney.as_deref() {
-    Some("") => "Connected",
+    Some("") => i18n::t("Connected"),
     Some(email) => email,
-    None => "Not logged in",
+    None => i18n::t("Not logged in"),
   };
-  let (label, kind) = if view.midjourney.is_some() { ("Disconnect", widgets::Kind::Danger) } else { ("Connect", widgets::Kind::Secondary) };
-  if account_row(ui, "Midjourney account", detail, |ui| widgets::button(ui, None, label, kind, 0.0, theme::CONTROL_H).clicked()) {
+  let (label, kind) = if view.midjourney.is_some() { (i18n::t("Disconnect"), widgets::Kind::Danger) } else { (i18n::t("Connect"), widgets::Kind::Secondary) };
+  if account_row(ui, i18n::t("Midjourney account"), detail, |ui| widgets::button(ui, None, label, kind, 0.0, theme::CONTROL_H).clicked()) {
     action = Some(if view.midjourney.is_some() { AccountAction::DisconnectMidjourney } else { AccountAction::ConnectMidjourney });
   }
   ui.add_space(10.0);
   match &view.fal_key_hint {
     Some(hint) => {
-      if account_row(ui, "FAL API key", hint, |ui| widgets::button(ui, None, "Remove", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked()) {
+      if account_row(ui, i18n::t("FAL API key"), hint, |ui| widgets::button(ui, None, i18n::t("Remove"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked()) {
         action = Some(AccountAction::RemoveFalKey);
       }
     },
     None => {
-      account_row(ui, "FAL API key", "Not set", |_| false);
+      account_row(ui, i18n::t("FAL API key"), i18n::t("Not set"), |_| false);
       ui.add_space(6.0);
       ui.horizontal(|ui| {
         let save_w = 90.0;
-        ui.allocate_ui(vec2(ui.available_width() - save_w - 8.0, theme::CONTROL_H), |ui| text_field(ui, fal_key, true, "Paste your FAL API key"));
+        ui.allocate_ui(vec2(ui.available_width() - save_w - 8.0, theme::CONTROL_H), |ui| text_field(ui, fal_key, true, i18n::t("Paste your FAL API key")));
         let enabled = !fal_key.trim().is_empty();
-        if ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, "Save", widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked() {
+        if ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, i18n::t("Save"), widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked() {
           action = Some(AccountAction::SaveFalKey);
         }
       });
@@ -165,9 +167,9 @@ impl MidjourneyLogin {
     let height = (ctx.content_rect().height() - 120.0).clamp(420.0, 800.0);
     let dismissed = widgets::modal(ctx, Id::new("midjourney-login"), LOGIN_WIDTH, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Login to Midjourney", 22.0));
+        ui.label(widgets::heading(i18n::t("Login to Midjourney"), 22.0));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+          if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
             closed = true;
           }
         });
@@ -179,7 +181,7 @@ impl MidjourneyLogin {
         Some(err) => {
           let mut note = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(24.0)).layout(egui::Layout::top_down(egui::Align::Center)));
           note.add_space(rect.height() / 2.0 - 48.0);
-          note.label(egui::RichText::new(format!("Couldn't open the sign-in window: {err}")).size(13.0).color(theme::BAD));
+          note.label(egui::RichText::new(i18n::fmt("Couldn't open the sign-in window: {err}", &[("err", err)])).size(13.0).color(theme::BAD));
         },
         None => icons::paint_spinner(ui, Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), theme::MUTED),
       }

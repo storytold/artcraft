@@ -15,6 +15,7 @@ use crate::backend::{Backend, Event, Modality, SHARE_URL_BASE};
 use crate::feed::grid::{RatioCache, ViewMode};
 use crate::feed::store::{FeedNotice, FeedStore};
 use crate::feed::types::{FeedItem, MediaKind};
+use crate::i18n;
 use crate::models::Catalog;
 use crate::backend::wire::{Character, JobPhase};
 use crate::overlays::account::{LoginAction, LoginDialog, SettingsAction, settings_dialog};
@@ -56,6 +57,7 @@ const MODALITIES: [Modality; 3] = [Modality::Image, Modality::Video, Modality::A
 struct Saved {
   page: Page,
   enter_to_generate: bool,
+  language: String,
   view_mode: ViewMode,
   autoplay: bool,
   sidebar_open: bool,
@@ -66,7 +68,7 @@ struct Saved {
 
 impl Default for Saved {
   fn default() -> Self {
-    Self { page: Page::CreateImage, enter_to_generate: false, view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
+    Self { page: Page::CreateImage, enter_to_generate: false, language: i18n::SYSTEM.to_owned(), view_mode: ViewMode::Grid, autoplay: true, sidebar_open: true, image: ImageSettings { count: 1, ..Default::default() }, video: VideoSettings::default(), audio: AudioSettings::default() }
   }
 }
 
@@ -80,6 +82,7 @@ pub struct ArtcraftApp {
   credits: Option<u64>,
   page: Page,
   enter_to_generate: bool,
+  language: String,
   view_mode: ViewMode,
   autoplay: bool,
   sidebar_open: bool,
@@ -122,6 +125,12 @@ impl ArtcraftApp {
     theme::apply(&cc.egui_ctx);
     egui_extras::install_image_loaders(&cc.egui_ctx);
     let mut saved: Saved = cc.storage.and_then(|s| eframe::get_value(s, STORAGE_KEY)).unwrap_or_default();
+    if let Ok(normalized) = i18n::validate_preference(&saved.language) {
+      saved.language = normalized;
+    } else {
+      saved.language = i18n::SYSTEM.to_owned();
+    }
+    i18n::apply_preference(&saved.language);
     if let Some(page) = std::env::var("ARTCRAFT_PAGE").ok().and_then(|p| Page::from_slug(&p)) {
       saved.page = page;
     }
@@ -132,7 +141,47 @@ impl ArtcraftApp {
       backend.load_models(modality);
     }
     backend.refresh_session();
-    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
+    let mut app = Self {
+      cache,
+      player,
+      toasts: Toasts::default(),
+      catalog: Catalog::default(),
+      user: None,
+      credits: None,
+      page: saved.page,
+      enter_to_generate: saved.enter_to_generate,
+      language: saved.language,
+      view_mode: saved.view_mode,
+      autoplay: saved.autoplay,
+      sidebar_open: saved.sidebar_open,
+      image: CreateImagePage::new(saved.image),
+      video: CreateVideoPage::new(saved.video),
+      audio: CreateAudioPage::new(saved.audio),
+      library: FeedStore::default(),
+      ratios: RatioCache::default(),
+      prompts: HashMap::new(),
+      prompt_records: HashMap::new(),
+      requested_prompts: HashSet::new(),
+      pending_recreate: None,
+      batch_kinds: HashMap::new(),
+      lightbox: None,
+      picker: None,
+      login: None,
+      characters_modal: None,
+      characters: Vec::new(),
+      pending_characters: Vec::new(),
+      settings_open: false,
+      provider_setup: None,
+      midjourney_login: None,
+      fal_key_input: String::new(),
+      preview: None,
+      requests: Vec::new(),
+      screenshot: ScreenshotRequest::from_env(),
+      next_poll: 0.0,
+      next_credits: CREDITS_INTERVAL,
+      models_retry_at: None,
+      backend,
+    };
     app.restore_provider_jobs();
     // Diagnostics: `ARTCRAFT_OPEN=settings` or `midjourney-login` opens that dialog at launch.
     match std::env::var("ARTCRAFT_OPEN").as_deref() {
@@ -194,7 +243,7 @@ impl ArtcraftApp {
       },
       Event::Models(_, Err(message)) => {
         if self.models_retry_at.is_none() {
-          self.toasts.error(format!("Couldn't load models: {message}"));
+          self.toasts.error(i18n::fmt("Couldn't load models: {message}", &[("message", &message)]));
         }
         self.models_retry_at = Some(ctx.input(|i| i.time) + MODEL_RETRY_INTERVAL);
       },
@@ -249,7 +298,7 @@ impl ArtcraftApp {
         self.pending_characters.retain(|(job, name)| match jobs.iter().find(|j| &j.job_token == job).map(|j| j.status.phase()) {
           Some(JobPhase::Succeeded) => false,
           Some(JobPhase::Failed) => {
-            toasts.error(format!("Character \u{201c}{name}\u{201d} failed to create"));
+            toasts.error(i18n::fmt("Character \u{201c}{name}\u{201d} failed to create", &[("name", name)]));
             false
           },
           _ => true,
@@ -261,7 +310,7 @@ impl ArtcraftApp {
           for notice in notices {
             match notice {
               FeedNotice::Completed => {
-                self.toasts.success(format!("{} generation complete!", kind.label()));
+                self.toasts.success(i18n::fmt("{kind} generation complete!", &[("kind", i18n::tl(kind.label()))]));
                 self.backend.refresh_credits();
               },
               FeedNotice::Failed(reason) => self.toasts.error(reason),
@@ -292,7 +341,7 @@ impl ArtcraftApp {
             }
           },
         }
-        self.toasts.error(format!("Couldn't load your library: {message}"));
+        self.toasts.error(i18n::fmt("Couldn't load your library: {message}", &[("message", &message)]));
       },
       Event::Batch { job_token, items } => {
         let kind = self.batch_kinds.remove(&job_token).unwrap_or(MediaKind::Image);
@@ -311,7 +360,7 @@ impl ArtcraftApp {
       },
       Event::Characters(list) => self.characters = list,
       Event::CharacterCreating { job_token, name } => {
-        self.toasts.success(format!("Character \u{201c}{name}\u{201d} is being created"));
+        self.toasts.success(i18n::fmt("Character \u{201c}{name}\u{201d} is being created", &[("name", &name)]));
         self.pending_characters.push((job_token, name));
         self.next_poll = 0.0;
       },
@@ -322,7 +371,7 @@ impl ArtcraftApp {
       },
       Event::ProviderJobFinished { job_id, batch_token } => {
         if self.image.feed.finish_local(&job_id) {
-          self.toasts.success("Image generation complete!");
+          self.toasts.success(i18n::t("Image generation complete!"));
         }
         // The batch brings the images into the feed.
         self.batch_kinds.insert(job_id.clone(), MediaKind::Image);
@@ -341,7 +390,7 @@ impl ArtcraftApp {
           self.lightbox = None;
         }
       },
-      Event::Saved(path) => self.toasts.success(format!("Downloaded {}", common::file_name(&path))),
+      Event::Saved(path) => self.toasts.success(i18n::fmt("Downloaded {file}", &[("file", &common::file_name(&path))])),
       Event::Toast { error, message } => {
         if error {
           self.toasts.error(message);
@@ -385,7 +434,7 @@ impl ArtcraftApp {
       },
       AppRequest::Recreate { kind, token } => {
         let Some(prompt_token) = self.find_item(&token).and_then(|i| i.prompt_token.clone()) else {
-          self.toasts.error("Could not load the original prompt.");
+          self.toasts.error(i18n::t("Could not load the original prompt."));
           return;
         };
         match self.prompt_records.get(&prompt_token).cloned() {
@@ -399,11 +448,11 @@ impl ArtcraftApp {
       },
       AppRequest::Share(token) => {
         ctx.copy_text(format!("{SHARE_URL_BASE}{token}"));
-        self.toasts.success("Share link copied");
+        self.toasts.success(i18n::t("Share link copied"));
       },
       AppRequest::CopyText(text) => {
         ctx.copy_text(text);
-        self.toasts.success("Prompt copied");
+        self.toasts.success(i18n::t("Prompt copied"));
       },
       AppRequest::Download(tokens) => self.download(&tokens),
       AppRequest::Preview(url) => self.preview = Some(url),
@@ -418,7 +467,7 @@ impl ArtcraftApp {
       },
       AppRequest::PlayExternally(url) => {
         if let Err(err) = open::that(&url) {
-          self.toasts.error(format!("Couldn't open the file: {err}"));
+          self.toasts.error(i18n::fmt("Couldn't open the file: {err}", &[("err", &err.to_string())]));
         }
       },
       AppRequest::LoadMoreLibrary(key) => {
@@ -579,7 +628,8 @@ impl ArtcraftApp {
       actions.extend(shell::titlebar(ui, &account, &mark));
     });
     if self.sidebar_open {
-      egui::Panel::left("sidebar").exact_size(shell::SIDEBAR_WIDTH).resizable(false).frame(chrome).show(ui, |ui| {
+      let panel = if i18n::is_rtl() { egui::Panel::right("sidebar") } else { egui::Panel::left("sidebar") };
+      panel.exact_size(shell::SIDEBAR_WIDTH).resizable(false).frame(chrome).show(ui, |ui| {
         actions.extend(shell::sidebar(ui, self.page, &account));
       });
     }
@@ -615,7 +665,8 @@ impl ArtcraftApp {
   fn page_ui(&mut self, ui: &mut Ui) {
     let ctx = ui.ctx().clone();
     let gap = shell::PANEL_GAP;
-    let margin = egui::Margin { left: if self.sidebar_open { 0 } else { gap }, right: gap, top: 0, bottom: gap };
+    let edge = if self.sidebar_open { 0 } else { gap };
+    let margin = if i18n::is_rtl() { egui::Margin { left: gap, right: edge, top: 0, bottom: gap } } else { egui::Margin { left: edge, right: gap, top: 0, bottom: gap } };
     // Only feeds with videos offer the preview autoplay toggle.
     let toggles = self.page_feed().map(|key| FeedToggles { mode: self.view_mode, selecting: self.feed(key).selecting, autoplay: matches!(key, FeedKey::Video | FeedKey::Library).then_some(self.autoplay) });
     let mut header_action = None;
@@ -748,7 +799,7 @@ impl ArtcraftApp {
       let username = self.user.as_ref().map(|u| u.username.clone());
       let accounts = self.backend.accounts();
       let view = AccountsView { midjourney: accounts.midjourney_account(), fal_key_hint: accounts.fal_key_hint() };
-      match settings_dialog(ctx, &mut self.enter_to_generate, username.as_deref(), self.credits, &view, &mut self.fal_key_input, self.backend.data_root()) {
+      match settings_dialog(ctx, &mut self.enter_to_generate, &mut self.language, username.as_deref(), self.credits, &view, &mut self.fal_key_input, self.backend.data_root()) {
         Some(SettingsAction::Close) => self.settings_open = false,
         Some(SettingsAction::SignOut) => {
           self.settings_open = false;
@@ -781,7 +832,7 @@ impl ArtcraftApp {
         Some(LoginEvent::Captured(cookies)) => {
           self.midjourney_login = None;
           self.backend.save_midjourney_login(cookies);
-          self.toasts.success("Midjourney connected");
+          self.toasts.success(i18n::t("Midjourney connected"));
         },
         Some(LoginEvent::Closed) => self.midjourney_login = None,
         None => {},
@@ -890,7 +941,7 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
+    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, language: self.language.clone(), view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 

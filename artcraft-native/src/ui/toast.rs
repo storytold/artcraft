@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use egui::{Align2, Color32, FontId, Id, Order, Rect, Sense, pos2, vec2};
 
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 
 const DEFAULT_DURATION: Duration = Duration::from_secs(4);
@@ -58,8 +58,10 @@ impl Toasts {
     let screen = ctx.content_rect();
     let mut y = screen.top() + TOP_OFFSET;
     let mut dismissed = None;
+    let rtl = i18n::is_rtl();
+    let (pivot, anchor_x) = if rtl { (Align2::LEFT_TOP, screen.left() + RIGHT_OFFSET) } else { (Align2::RIGHT_TOP, screen.right() - RIGHT_OFFSET) };
     for toast in &self.items {
-      let area = egui::Area::new(Id::new(("toast", toast.id))).order(Order::Tooltip).pivot(Align2::RIGHT_TOP).fixed_pos(pos2(screen.right() - RIGHT_OFFSET, y)).interactable(true);
+      let area = egui::Area::new(Id::new(("toast", toast.id))).order(Order::Tooltip).pivot(pivot).fixed_pos(pos2(anchor_x, y)).interactable(true);
       let inner = area.show(ctx, |ui| {
         let galley = ui.painter().layout(toast.message.clone(), FontId::new(14.0, egui::FontFamily::Proportional), theme::fade(Color32::WHITE, 0.9), MAX_WIDTH - 80.0);
         let h = galley.size().y.max(24.0) + 20.0;
@@ -67,15 +69,17 @@ impl Toasts {
         let (rect, _) = ui.allocate_exact_size(vec2(w, h), Sense::hover());
         let p = ui.painter();
         p.rect(rect, theme::RADIUS, theme::fade(theme::CONTROLS, 0.97), theme::hairline(), egui::StrokeKind::Inside);
-        let badge = Rect::from_min_size(pos2(rect.left() + 16.0, rect.center().y - 12.0), vec2(24.0, 24.0));
+        let badge = if rtl { Rect::from_min_size(pos2(rect.right() - 16.0 - 24.0, rect.center().y - 12.0), vec2(24.0, 24.0)) } else { Rect::from_min_size(pos2(rect.left() + 16.0, rect.center().y - 12.0), vec2(24.0, 24.0)) };
         let (fill, icon) = match toast.kind {
           ToastKind::Success => (Color32::from_rgb(0x22, 0xc5, 0x5e), Icon::Check),
           ToastKind::Error => (Color32::from_rgb(0xef, 0x44, 0x44), Icon::AlertCircle),
         };
         p.rect_filled(badge, 0.0, fill);
         icons::paint(p, badge.shrink(6.0), icon, Color32::WHITE);
-        p.galley(pos2(badge.right() + 12.0, rect.center().y - galley.size().y / 2.0), galley, Color32::WHITE);
-        let close = Rect::from_center_size(pos2(rect.right() - 22.0, rect.center().y), vec2(16.0, 16.0));
+        let text_x = if rtl { badge.left() - 12.0 - galley.size().x } else { badge.right() + 12.0 };
+        p.galley(pos2(text_x, rect.center().y - galley.size().y / 2.0), galley, Color32::WHITE);
+        let close_x = if rtl { rect.left() + 22.0 } else { rect.right() - 22.0 };
+        let close = Rect::from_center_size(pos2(close_x, rect.center().y), vec2(16.0, 16.0));
         let close_resp = ui.interact(close, Id::new(("toast-close", toast.id)), Sense::click());
         let ink = if close_resp.hovered() { theme::fade(Color32::WHITE, 0.8) } else { theme::fade(Color32::WHITE, 0.4) };
         icons::paint(p, close.shrink(2.0), Icon::X, ink);

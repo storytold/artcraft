@@ -2,6 +2,7 @@
 
 use egui::{Color32, Id, Sense, Stroke, Ui, pos2, vec2};
 
+use crate::i18n;
 use crate::overlays::providers::{AccountAction, AccountsView, accounts_section};
 use crate::shell::{WEB_APP_URL, group_thousands};
 use crate::theme;
@@ -29,54 +30,65 @@ pub enum LoginAction {
 impl LoginDialog {
   pub fn show(&mut self, ctx: &egui::Context) -> Option<LoginAction> {
     let mut action = None;
+    let rtl = i18n::is_rtl();
     let close = widgets::modal(ctx, Id::new("login"), 420.0, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Sign in to ArtCraft", 24.0));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if rtl {
+          if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
             action = Some(LoginAction::Close);
           }
-        });
+          ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(widgets::heading(i18n::t("Sign in to ArtCraft"), 24.0));
+          });
+        } else {
+          ui.label(widgets::heading(i18n::t("Sign in to ArtCraft"), 24.0));
+          ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
+              action = Some(LoginAction::Close);
+            }
+          });
+        }
       });
       ui.add_space(4.0);
-      ui.label(egui::RichText::new("Use your ArtCraft account to generate images and videos.").color(theme::MUTED));
+      i18n::wrapped_label(ui, "Use your ArtCraft account to generate images and videos.", |r| r.color(theme::MUTED));
       ui.add_space(16.0);
       let width = ui.available_width();
       match &self.device {
         Some((url, code)) => {
-          widgets::hud(ui, "Confirmation code", theme::FAINT);
+          widgets::hud(ui, i18n::t("Confirmation code"), theme::FAINT);
           ui.add_space(6.0);
           ui.label(egui::RichText::new(code).size(28.0).family(theme::mono_bold()).color(theme::INK).extra_letter_spacing(4.0));
           ui.add_space(6.0);
-          ui.label(egui::RichText::new("Approve the sign-in in your browser and check the code matches. This window updates by itself.").color(theme::MUTED));
+          i18n::wrapped_label(ui, "Approve the sign-in in your browser and check the code matches. This window updates by itself.", |r| r.color(theme::MUTED));
           ui.add_space(10.0);
           ui.horizontal(|ui| {
-            if widgets::button(ui, Some(Icon::ExternalLink), "Open page again", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+            if widgets::button(ui, Some(Icon::ExternalLink), i18n::t("Open page again"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
               ui.ctx().open_url(egui::OpenUrl::new_tab(url));
             }
-            if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+            if widgets::button(ui, None, i18n::t("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
               action = Some(LoginAction::CancelBrowser);
             }
           });
         },
         None => {
-          if ui.add_enabled_ui(!self.busy, |ui| widgets::button(ui, Some(Icon::Globe), "Sign in with browser", widgets::Kind::Primary, width, 40.0)).inner.clicked() {
+          if ui.add_enabled_ui(!self.busy, |ui| widgets::button(ui, Some(Icon::Globe), i18n::t("Sign in with browser"), widgets::Kind::Primary, width, 40.0)).inner.clicked() {
             action = Some(LoginAction::Browser);
           }
           ui.add_space(14.0);
-          divider_with_label(ui, "or");
+          divider_with_label(ui, i18n::t("or"));
           ui.add_space(14.0);
-          widgets::hud(ui, "Username or email", theme::FAINT);
+          widgets::hud(ui, i18n::t("Username or email"), theme::FAINT);
           ui.add_space(4.0);
           let user_resp = text_field(ui, &mut self.username, false, "you@example.com");
           ui.add_space(10.0);
-          widgets::hud(ui, "Password", theme::FAINT);
+          widgets::hud(ui, i18n::t("Password"), theme::FAINT);
           ui.add_space(4.0);
           let pass_resp = text_field(ui, &mut self.password, true, "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}");
           let submitted = (user_resp.lost_focus() || pass_resp.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Enter));
           ui.add_space(14.0);
           let ready = !self.username.trim().is_empty() && !self.password.is_empty() && !self.busy;
-          let clicked = ui.add_enabled_ui(ready, |ui| widgets::button(ui, if self.busy { None } else { Some(Icon::LogIn) }, if self.busy { "Signing in\u{2026}" } else { "Sign in" }, widgets::Kind::Secondary, width, 40.0)).inner.clicked();
+          let label = if self.busy { i18n::t("Signing in\u{2026}") } else { i18n::t("Sign in") };
+          let clicked = ui.add_enabled_ui(ready, |ui| widgets::button(ui, if self.busy { None } else { Some(Icon::LogIn) }, label, widgets::Kind::Secondary, width, 40.0)).inner.clicked();
           if ready && (clicked || submitted) {
             action = Some(LoginAction::Password);
           }
@@ -88,9 +100,9 @@ impl LoginDialog {
       }
       ui.add_space(16.0);
       ui.horizontal(|ui| {
-        widgets::hud_link(ui, "Create account", &format!("{WEB_APP_URL}/signup"));
+        widgets::hud_link(ui, i18n::t("Create account"), &format!("{WEB_APP_URL}/signup"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          widgets::hud_link(ui, "Forgot password", &format!("{WEB_APP_URL}/forgot-password"));
+          widgets::hud_link(ui, i18n::t("Forgot password"), &format!("{WEB_APP_URL}/forgot-password"));
         });
       });
     });
@@ -111,25 +123,36 @@ pub enum SettingsAction {
 
 /// The settings dialog (Settings → Misc and Accounts in the webapp). `fal_key` is the key being
 /// typed.
-pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, username: Option<&str>, credits: Option<u64>, accounts: &AccountsView, fal_key: &mut String, data_root: &std::path::Path) -> Option<SettingsAction> {
+#[allow(clippy::too_many_arguments)]
+pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, language: &mut String, username: Option<&str>, credits: Option<u64>, accounts: &AccountsView, fal_key: &mut String, data_root: &std::path::Path) -> Option<SettingsAction> {
   let mut action = None;
+  let rtl = i18n::is_rtl();
   let close = widgets::modal(ctx, Id::new("settings"), 520.0, |ui| {
     ui.horizontal(|ui| {
-      ui.label(widgets::heading("Settings", 24.0));
-      ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+      if rtl {
+        if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
           action = Some(SettingsAction::Close);
         }
-      });
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+          ui.label(widgets::heading(i18n::t("Settings"), 24.0));
+        });
+      } else {
+        ui.label(widgets::heading(i18n::t("Settings"), 24.0));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+          if widgets::ghost(ui, Icon::X, None, i18n::t("Close"), false).clicked() {
+            action = Some(SettingsAction::Close);
+          }
+        });
+      }
     });
     ui.add_space(14.0);
-    widgets::hud(ui, "General", theme::FAINT);
+    widgets::hud(ui, i18n::t("General"), theme::FAINT);
     ui.add_space(6.0);
     ui.horizontal(|ui| {
       ui.vertical(|ui| {
         ui.set_width(400.0);
-        ui.label(egui::RichText::new("Enter to generate").size(14.0).family(theme::medium()));
-        ui.label(egui::RichText::new("When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.").size(12.5).color(theme::MUTED));
+        ui.label(egui::RichText::new(i18n::t("Enter to generate")).size(14.0).family(theme::medium()));
+        i18n::wrapped_label(ui, "When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.", |r| r.size(12.5).color(theme::MUTED));
       });
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         if switch(ui, *enter_to_generate).clicked() {
@@ -137,42 +160,63 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
         }
       });
     });
+    ui.add_space(12.0);
+    let (choices, current_idx) = i18n::language_choices_for(language);
+    let selected_label = choices.get(current_idx).map_or("", |c| c.label.as_str());
+    ui.horizontal(|ui| {
+      ui.vertical(|ui| {
+        ui.set_width(300.0);
+        ui.label(egui::RichText::new(i18n::t("Language")).size(14.0).family(theme::medium()));
+        ui.label(egui::RichText::new(i18n::t("Choose the interface language.")).size(12.5).color(theme::MUTED));
+      });
+      ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        egui::ComboBox::from_id_salt("settings-language").selected_text(selected_label).show_ui(ui, |ui| {
+          for choice in &choices {
+            let active = choice.pref == choices[current_idx].pref;
+            if ui.selectable_label(active, &choice.label).clicked() && choice.pref != *language {
+              *language = choice.pref.to_owned();
+              i18n::apply_preference(language);
+            }
+          }
+        });
+      });
+    });
     ui.add_space(18.0);
-    widgets::hud(ui, "Account", theme::FAINT);
+    widgets::hud(ui, i18n::t("Account"), theme::FAINT);
     ui.add_space(6.0);
     match username {
       Some(user) => {
-        ui.label(egui::RichText::new(format!("Signed in as @{user}")).size(14.0));
+        ui.label(egui::RichText::new(i18n::fmt("Signed in as @{user}", &[("user", user)])).size(14.0));
         if let Some(c) = credits {
-          ui.label(egui::RichText::new(format!("{} credits", group_thousands(c))).size(12.5).color(theme::MUTED));
+          ui.label(egui::RichText::new(i18n::fmt("{count} credits", &[("count", &group_thousands(c))])).size(12.5).color(theme::MUTED));
         }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
-          if widgets::button(ui, Some(Icon::Gem), "Buy credits", widgets::Kind::Accent, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, Some(Icon::Gem), i18n::t("Buy credits"), widgets::Kind::Accent, 0.0, theme::CONTROL_H).clicked() {
             ui.ctx().open_url(egui::OpenUrl::new_tab(format!("{WEB_APP_URL}/pricing")));
           }
-          if widgets::button(ui, Some(Icon::LogOut), "Log out", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+          if widgets::button(ui, Some(Icon::LogOut), i18n::t("Log out"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
             action = Some(SettingsAction::SignOut);
           }
         });
       },
       None => {
-        if widgets::button(ui, Some(Icon::LogIn), "Sign in", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, Some(Icon::LogIn), i18n::t("Sign in"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
           action = Some(SettingsAction::SignIn);
         }
       },
     }
     ui.add_space(18.0);
-    widgets::hud(ui, "Provider accounts", theme::FAINT);
+    widgets::hud(ui, i18n::t("Provider accounts"), theme::FAINT);
     ui.add_space(6.0);
     if let Some(account) = accounts_section(ui, accounts, fal_key) {
       action = Some(SettingsAction::Account(account));
     }
     ui.add_space(18.0);
-    widgets::hud(ui, "About", theme::FAINT);
+    widgets::hud(ui, i18n::t("About"), theme::FAINT);
     ui.add_space(6.0);
-    ui.label(egui::RichText::new(format!("ArtCraft native {}", env!("CARGO_PKG_VERSION"))).size(13.0).color(theme::MUTED));
-    if widgets::button(ui, Some(Icon::Folder), "Open data folder", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+    ui.label(egui::RichText::new(i18n::fmt("ArtCraft native {version}", &[("version", env!("CARGO_PKG_VERSION"))])).size(13.0).color(theme::MUTED));
+    if widgets::button(ui, Some(Icon::Folder), i18n::t("Open data folder"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
       if let Err(err) = open::that(data_root) {
         log::warn!("Couldn't open {}: {err}", data_root.display());
       }

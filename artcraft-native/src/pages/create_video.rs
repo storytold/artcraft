@@ -13,6 +13,7 @@ use crate::backend::providers::Provider;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 use crate::models::{self, DEFAULT_PROMPT_MAX, DEFAULT_VIDEO_MODEL, ModelInfo};
 use crate::pages::common::{self, AppRequest, CostState, Env};
 use crate::pages::toolbar;
@@ -113,8 +114,8 @@ impl CreateVideoPage {
       mentions.extend(editor::character_mentions(env.characters.iter().map(|c| (c.name.as_str(), c.token.as_str(), c.avatar_url()))));
     }
     let needs_start = model.is_some_and(|m| self.needs_start_frame(m));
-    let banner = model.filter(|m| !m.text_to_video && !self.has_image_input()).map(|_| TEXT_ONLY_BANNER);
-    let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }, enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" }, warning: needs_start.then_some("Starting frame required"), banner, extra_input: false };
+    let banner = model.filter(|m| !m.text_to_video && !self.has_image_input()).map(|_| i18n::t(TEXT_ONLY_BANNER));
+    let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: i18n::t(if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }), enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: i18n::t(if needs_start { "Add a starting image before generating" } else { "Generate" }), warning: needs_start.then_some(i18n::t("Starting frame required")), banner, extra_input: false };
 
     let models = &env.catalog.video_page;
     let mut prompt = std::mem::take(&mut self.settings.prompt);
@@ -132,7 +133,7 @@ impl CreateVideoPage {
         }
         if let Some(m) = model {
           picked_mode = video_toolbar(ui, m, settings, with_refs).or(picked_mode);
-          if characters_on && pickers::toggle(ui, Id::new("video-characters"), Icon::User, "@Characters", false, "Characters") {
+          if characters_on && pickers::toggle(ui, Id::new("video-characters"), Icon::User, i18n::t("@Characters"), false, i18n::t("Characters")) {
             open_characters = true;
           }
         }
@@ -236,7 +237,7 @@ impl CreateVideoPage {
     let model = common::selected_model(&env.catalog.video_page, self.settings.model.as_deref(), DEFAULT_VIDEO_MODEL).cloned();
     for path in paths {
       let Some(kind) = RefKind::from_path(path) else {
-        env.toasts.error(format!("{} isn't a supported file", common::file_name(path)));
+        env.toasts.error(i18n::fmt("{file} isn't a supported file", &[("file", &common::file_name(path))]));
         continue;
       };
       match (self.settings.input_mode, kind) {
@@ -247,7 +248,13 @@ impl CreateVideoPage {
             None => env.toasts.error(frames_full_message(model.as_ref())),
           }
         },
-        (InputMode::Keyframe, _) => env.toasts.error(format!("{} references aren't available here", if kind == RefKind::Video { "Video" } else { "Audio" })),
+        (InputMode::Keyframe, _) => {
+          let msg = match kind {
+            RefKind::Video => i18n::fmt("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
+            _ => i18n::t("Audio references aren't available here").to_owned(),
+          };
+          env.toasts.error(msg);
+        },
         (InputMode::Reference, _) => {
           let Some(l) = limits else {
             continue;
@@ -258,7 +265,12 @@ impl CreateVideoPage {
             RefKind::Audio => l.max_audios,
           };
           if max == 0 {
-            env.toasts.error(format!("{}{} references aren't available here", kind.noun()[..1].to_uppercase(), &kind.noun()[1..]));
+            let msg = match kind {
+              RefKind::Image => i18n::t("Image references aren't available here").to_owned(),
+              RefKind::Video => i18n::fmt("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
+              RefKind::Audio => i18n::t("Audio references aren't available here").to_owned(),
+            };
+            env.toasts.error(msg);
           } else if free_slots(&self.refs, kind, l) == 0 {
             let secs = if kind == RefKind::Video { l.max_video_secs } else { l.max_audio_secs };
             env.toasts.error(max_message(kind, max, secs.filter(|_| kind != RefKind::Image)));
@@ -281,7 +293,7 @@ impl CreateVideoPage {
       };
       if self.refs.list(kind).iter().any(|r| r.id == ref_id) && self.refs.total_secs(kind) > f32::from(max) + 0.5 {
         self.refs.remove(ref_id);
-        env.toasts.error(format!("Total {} duration cannot exceed {max}s", kind.noun()));
+        env.toasts.error(i18n::fmt("Total {kind} duration cannot exceed {secs}s", &[("kind", i18n::tl(kind.noun())), ("secs", &max.to_string())]));
       }
     }
   }
@@ -291,11 +303,11 @@ impl CreateVideoPage {
       return;
     }
     if self.settings.prompt.trim().is_empty() {
-      env.toasts.error("Please enter a prompt to generate video");
+      env.toasts.error(i18n::t("Please enter a prompt to generate video"));
       return;
     }
     let Some(model) = model else {
-      env.toasts.error("Please select a model to generate video");
+      env.toasts.error(i18n::t("Please select a model to generate video"));
       return;
     };
     if !env.signed_in {
@@ -304,15 +316,15 @@ impl CreateVideoPage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(format!("Prompt exceeds the {} character limit for this model", limit.unwrap_or_default()));
+      env.toasts.error(i18n::fmt("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
       return;
     }
     if self.needs_start_frame(model) {
-      env.toasts.error("Please add a starting frame image to generate video");
+      env.toasts.error(i18n::t("Please add a starting frame image to generate video"));
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error("Please wait for your references to finish uploading");
+      env.toasts.error(i18n::t("Please wait for your references to finish uploading"));
       return;
     }
     self.generating = true;
@@ -449,12 +461,12 @@ impl CreateVideoPage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Video, job_tokens, meta, env.catalog);
-    env.toasts.success("Video generation enqueued!");
+    env.toasts.success(i18n::t("Video generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str) {
     self.generating = false;
-    env.toasts.error(if message.is_empty() { "Failed to start video generation. Please try again." } else { message });
+    env.toasts.error(if message.is_empty() { i18n::t("Failed to start video generation. Please try again.") } else { message });
   }
 
   /// Recreate: the original prompt, model, settings and references.
@@ -508,14 +520,14 @@ fn video_toolbar(ui: &mut Ui, m: &ModelInfo, s: &mut VideoSettings, with_refs: b
   if !m.bitrates.is_empty() {
     let current = ModelInfo::resolve(s.bitrate.as_deref(), &m.bitrates, m.bitrate_default.as_ref()).unwrap_or_default();
     let options: Vec<PickOption<String>> = m.bitrates.iter().map(|v| PickOption::new(v.clone(), models::bitrate_label(v))).collect();
-    if let Some(v) = pickers::option_picker(ui, Id::new("video-bitrate"), Trigger::Pill(Leading::None), "Bitrate", "Bitrate", &current, &options) {
+    if let Some(v) = pickers::option_picker(ui, Id::new("video-bitrate"), Trigger::Pill(Leading::None), i18n::t("Bitrate"), i18n::t("Bitrate"), &current, &options) {
       s.bitrate = Some(v);
     }
   }
   if !m.output_formats.is_empty() {
     let current = ModelInfo::resolve(s.output_format.as_deref(), &m.output_formats, m.output_format_default.as_ref()).unwrap_or_default();
     let options: Vec<PickOption<String>> = m.output_formats.iter().map(|v| PickOption::new(v.clone(), v.to_uppercase())).collect();
-    if let Some(v) = pickers::option_picker(ui, Id::new("video-format"), Trigger::Pill(Leading::None), "Output Format", "Output format", &current, &options) {
+    if let Some(v) = pickers::option_picker(ui, Id::new("video-format"), Trigger::Pill(Leading::None), i18n::t("Output Format"), i18n::t("Output format"), &current, &options) {
       s.output_format = Some(v);
     }
   }
@@ -524,12 +536,12 @@ fn video_toolbar(ui: &mut Ui, m: &ModelInfo, s: &mut VideoSettings, with_refs: b
       s.duration = Some(v as u16);
     }
   }
-  if m.sound_toggle && pickers::toggle(ui, Id::new("video-sound"), if s.generate_audio { Icon::Volume } else { Icon::VolumeOff }, "Sound", s.generate_audio, if s.generate_audio { "Sound: ON" } else { "Sound: OFF" }) {
+  if m.sound_toggle && pickers::toggle(ui, Id::new("video-sound"), if s.generate_audio { Icon::Volume } else { Icon::VolumeOff }, i18n::t("Sound"), s.generate_audio, i18n::t(if s.generate_audio { "Sound: ON" } else { "Sound: OFF" })) {
     s.generate_audio = !s.generate_audio;
   }
   if m.start_frame && m.supports_reference_mode() {
-    let options = [PickOption::new(InputMode::Keyframe, "Keyframe").subtitle("First/Last frame"), PickOption::new(InputMode::Reference, "Omni Reference").subtitle("Multi-media ref")];
-    return pickers::option_picker(ui, Id::new("video-mode"), Trigger::Pill(Leading::None), "Input Mode", "Input mode", &s.input_mode, &options);
+    let options = [PickOption::new(InputMode::Keyframe, i18n::t("Keyframe")).subtitle(i18n::t("First/Last frame")), PickOption::new(InputMode::Reference, i18n::t("Omni Reference")).subtitle(i18n::t("Multi-media ref"))];
+    return pickers::option_picker(ui, Id::new("video-mode"), Trigger::Pill(Leading::None), i18n::t("Input Mode"), i18n::t("Input mode"), &s.input_mode, &options);
   }
   None
 }
@@ -598,10 +610,20 @@ fn free_slots(refs: &References, kind: RefKind, l: &DeckLimits) -> usize {
 
 fn max_message(kind: RefKind, max: usize, secs: Option<f32>) -> String {
   let noun = match kind {
-    RefKind::Image => "image reference",
-    RefKind::Video => "video",
-    RefKind::Audio => "audio clip",
+    RefKind::Image => i18n::tl("image reference"),
+    RefKind::Video => i18n::tl("video"),
+    RefKind::Audio => i18n::tl("audio clip"),
   };
+  if i18n::is_rtl() {
+    let key = match secs {
+      Some(_) => "Max {max} {noun} / {secs}s total",
+      None => "Max {max} {noun}",
+    };
+    return match secs {
+      Some(s) => i18n::fmt(key, &[("max", &max.to_string()), ("noun", noun), ("secs", &(s.round() as i64).to_string())]),
+      None => i18n::fmt(key, &[("max", &max.to_string()), ("noun", noun)]),
+    };
+  }
   let plural = if max == 1 { "" } else { "s" };
   match secs {
     Some(s) => format!("Max {max} {noun}{plural} / {}s total", s.round() as i64),
@@ -611,9 +633,9 @@ fn max_message(kind: RefKind, max: usize, secs: Option<f32>) -> String {
 
 fn frames_full_message(model: Option<&ModelInfo>) -> &'static str {
   if model.is_some_and(|m| m.end_frame) {
-    "First and last frames are already set"
+    i18n::t("First and last frames are already set")
   } else {
-    "The first frame is already set"
+    i18n::t("The first frame is already set")
   }
 }
 

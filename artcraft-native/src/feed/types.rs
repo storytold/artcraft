@@ -1,5 +1,7 @@
 //! What the generation feed shows: jobs still running, jobs that failed, and finished media.
 
+use crate::i18n;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MediaKind {
   Image,
@@ -22,6 +24,16 @@ impl MediaKind {
       MediaKind::Video => "videos",
       MediaKind::Audio => "audio clips",
     }
+  }
+
+  /// Localized singular label for UI surfaces.
+  pub fn display_label(self) -> &'static str {
+    i18n::t(self.label())
+  }
+
+  /// Localized plural label for UI surfaces.
+  pub fn display_plural(self) -> &'static str {
+    i18n::t(self.plural())
   }
 }
 
@@ -87,7 +99,7 @@ pub fn pending_status(job: &PendingJob, now: i64) -> (u8, String) {
   let estimated = ((elapsed / job.expected_secs.max(1.0)) * 100.0).min(95.0) as u8;
   let progress = job.server_progress.filter(|p| *p > 0).unwrap_or(estimated).min(99);
   if progress >= 95 {
-    return (progress, "Almost done...".to_owned());
+    return (progress, i18n::t("Almost done...").to_owned());
   }
   let left = (job.expected_secs - elapsed).max(1.0) as i64;
   let (h, m, s) = (left / 3600, (left % 3600) / 60, left % 60);
@@ -106,13 +118,19 @@ pub fn pending_status(job: &PendingJob, now: i64) -> (u8, String) {
 /// "just now", "5 minutes ago", … for list rows.
 pub fn time_ago(then: i64, now: i64) -> String {
   let d = (now - then).max(0);
-  let plural = |n: i64, unit: &str| format!("{n} {unit}{} ago", if n == 1 { "" } else { "s" });
+  let ago = |n: i64, singular: &str, plural: &str| {
+    if n == 1 {
+      i18n::t(singular).to_owned()
+    } else {
+      i18n::fmt(plural, &[("n", &n.to_string())])
+    }
+  };
   match d {
-    0..=59 => "just now".to_owned(),
-    60..=3599 => plural(d / 60, "minute"),
-    3600..=86_399 => plural(d / 3600, "hour"),
-    86_400..=2_591_999 => plural(d / 86_400, "day"),
-    2_592_000..=31_535_999 => plural(d / 2_592_000, "month"),
-    _ => plural(d / 31_536_000, "year"),
+    0..=59 => i18n::t("just now").to_owned(),
+    60..=3599 => ago(d / 60, "1 minute ago", "{n} minutes ago"),
+    3600..=86_399 => ago(d / 3600, "1 hour ago", "{n} hours ago"),
+    86_400..=2_591_999 => ago(d / 86_400, "1 day ago", "{n} days ago"),
+    2_592_000..=31_535_999 => ago(d / 2_592_000, "1 month ago", "{n} months ago"),
+    _ => ago(d / 31_536_000, "1 year ago", "{n} years ago"),
   }
 }
