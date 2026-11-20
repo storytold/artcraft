@@ -9,6 +9,7 @@ import {
 import {
   GenerateImage,
   GenerateImageRequest,
+  GenerateImageResult,
   EnqueueImageBgRemoval,
   useCanvasBgRemovedEvent,
 } from "@storyteller/tauri-api";
@@ -91,6 +92,15 @@ const useTauriEventBridges = () => {
 };
 
 // ─── TauriPageDrawAdapter ──────────────────────────────────────────────────────
+// A command that returns Err rejects its invoke with the error ({ error_type, ... }); hand that
+// back as the result, so PageDraw can tell the user, and rethrow anything else.
+const errorAsResult = (err: unknown): GenerateImageResult => {
+  if (err && typeof err === "object" && "error_type" in err) {
+    return err as GenerateImageResult;
+  }
+  throw err;
+};
+
 const useTauriAdapter = (): PageDrawAdapter => {
   return useMemo<PageDrawAdapter>(
     () => ({
@@ -111,7 +121,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
           frontend_subscriber_id: req.frontendSubscriberId,
         };
         if (req.provider) request.provider = req.provider;
-        return GenerateImage(request);
+        return GenerateImage(request).catch(errorAsResult);
       },
 
       enqueueInpaint: async (req) => {
@@ -125,7 +135,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
           frontend_subscriber_id: req.frontendSubscriberId,
         };
         if (req.provider) request.provider = req.provider;
-        return GenerateImage(request);
+        return GenerateImage(request).catch(errorAsResult);
       },
 
       enqueueBgRemoval: async (base64Image, nodeId) => {
