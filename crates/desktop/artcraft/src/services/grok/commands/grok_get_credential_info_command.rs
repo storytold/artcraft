@@ -1,9 +1,11 @@
 use crate::core::commands::response::shorthand::{Response, ResponseOrErrorMessage};
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::services::grok::state::grok_credential_manager::GrokCredentialManager;
-use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
+use crate::services::grok::util::get_or_upgrade_grok_full_credentials::get_or_update_grok_full_credentials;
 use errors::AnyhowResult;
-use log::{error, info};
+use grok_consumer_client::credentials::grok_full_credentials::GrokFullCredentials;
+use grok_consumer_client::credentials::grok_user_data::GrokUserData;
+use log::{error, info, warn};
 use serde_derive::Serialize;
 use tauri::State;
 
@@ -22,6 +24,7 @@ pub async fn grok_get_credential_info_command(
   info!("grok_get_credential_info_command called");
 
   let info = get_info(&creds_manager)
+      .await
       .map_err(|err| {
         error!("Error getting info: {:?}", err);
         "error getting info"
@@ -30,25 +33,57 @@ pub async fn grok_get_credential_info_command(
   Ok(info.into())
 }
 
-fn get_info(
+async fn get_info(
   creds: &GrokCredentialManager,
 ) -> AnyhowResult<GrokGetCredentialInfoResponse> {
-  let mut can_clear_state = true;
-  
   let maybe_cookies = creds.maybe_copy_cookie_store()?;
   let maybe_full_credentials = creds.maybe_copy_full_credentials()?;
-  
-  if maybe_cookies.is_none()  && maybe_full_credentials.is_none() {
-    can_clear_state = false;
+  let maybe_user_data = creds.maybe_copy_user_data()?;
+
+  let can_clear_state = maybe_cookies.is_some()
+      || maybe_full_credentials.is_some()
+      || maybe_user_data.is_some();
+
+  let mut maybe_email = email_from_full_credentials(maybe_full_credentials.as_ref())
+      .or_else(|| email_from_user_data(maybe_user_data.as_ref()));
+
+  // Best-effort: cookies exist but we still lack an email — try upgrading secrets.
+  let needs_identity_upgrade = maybe_cookies.is_some()
+      && maybe_email.is_none()
+      && maybe_full_credentials.is_none();
+
+  if needs_identity_upgrade {
+    match get_or_update_grok_full_credentials(creds).await {
+      Ok(full_creds) => {
+        maybe_email = email_from_full_credentials(Some(&full_creds));
+      }
+      Err(err) => {
+        warn!(
+          "Best-effort Grok secrets upgrade failed while reading credential info: {:?}",
+          err
+        );
+      }
+    }
   }
-  
-  let maybe_email = maybe_full_credentials
-      .map(|full_creds| full_creds.client_secrets.user_email)
-      .map(|maybe_email| maybe_email.map(|email| email.to_string()))
-      .flatten();
-  
+
   Ok(GrokGetCredentialInfoResponse {
     maybe_email,
     can_clear_state,
   })
+}
+
+fn email_from_full_credentials(
+  maybe_full_credentials: Option<&GrokFullCredentials>,
+) -> Option<String> {
+  maybe_full_credentials
+      .and_then(|full_creds| full_creds.client_secrets.user_email.as_ref())
+      .map(|email| email.to_string())
+}
+
+fn email_from_user_data(
+  maybe_user_data: Option<&GrokUserData>,
+) -> Option<String> {
+  maybe_user_data
+      .and_then(|data| data.user_email.as_ref())
+      .map(|email| email.to_string())
 }
