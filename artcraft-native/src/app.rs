@@ -243,7 +243,7 @@ impl ArtcraftApp {
       },
       Event::Models(_, Err(message)) => {
         if self.models_retry_at.is_none() {
-          self.toasts.error(i18n::fmt("Couldn't load models: {message}", &[("message", &message)]));
+          self.toasts.error(i18n::fmt_logical("Couldn't load models: {message}", &[("message", &message)]));
         }
         self.models_retry_at = Some(ctx.input(|i| i.time) + MODEL_RETRY_INTERVAL);
       },
@@ -298,7 +298,7 @@ impl ArtcraftApp {
         self.pending_characters.retain(|(job, name)| match jobs.iter().find(|j| &j.job_token == job).map(|j| j.status.phase()) {
           Some(JobPhase::Succeeded) => false,
           Some(JobPhase::Failed) => {
-            toasts.error(i18n::fmt("Character \u{201c}{name}\u{201d} failed to create", &[("name", name)]));
+            toasts.error(i18n::fmt_logical("Character \u{201c}{name}\u{201d} failed to create", &[("name", name)]));
             false
           },
           _ => true,
@@ -310,7 +310,7 @@ impl ArtcraftApp {
           for notice in notices {
             match notice {
               FeedNotice::Completed => {
-                self.toasts.success(i18n::fmt("{kind} generation complete!", &[("kind", i18n::tl(kind.label()))]));
+                self.toasts.success(i18n::fmt_logical("{kind} generation complete!", &[("kind", i18n::tl(kind.label()))]));
                 self.backend.refresh_credits();
               },
               FeedNotice::Failed(reason) => self.toasts.error(reason),
@@ -341,7 +341,7 @@ impl ArtcraftApp {
             }
           },
         }
-        self.toasts.error(i18n::fmt("Couldn't load your library: {message}", &[("message", &message)]));
+        self.toasts.error(i18n::fmt_logical("Couldn't load your library: {message}", &[("message", &message)]));
       },
       Event::Batch { job_token, items } => {
         let kind = self.batch_kinds.remove(&job_token).unwrap_or(MediaKind::Image);
@@ -360,7 +360,7 @@ impl ArtcraftApp {
       },
       Event::Characters(list) => self.characters = list,
       Event::CharacterCreating { job_token, name } => {
-        self.toasts.success(i18n::fmt("Character \u{201c}{name}\u{201d} is being created", &[("name", &name)]));
+        self.toasts.success(i18n::fmt_logical("Character \u{201c}{name}\u{201d} is being created", &[("name", &name)]));
         self.pending_characters.push((job_token, name));
         self.next_poll = 0.0;
       },
@@ -371,7 +371,7 @@ impl ArtcraftApp {
       },
       Event::ProviderJobFinished { job_id, batch_token } => {
         if self.image.feed.finish_local(&job_id) {
-          self.toasts.success(i18n::t("Image generation complete!"));
+          self.toasts.success(i18n::tl("Image generation complete!"));
         }
         // The batch brings the images into the feed.
         self.batch_kinds.insert(job_id.clone(), MediaKind::Image);
@@ -390,7 +390,7 @@ impl ArtcraftApp {
           self.lightbox = None;
         }
       },
-      Event::Saved(path) => self.toasts.success(i18n::fmt("Downloaded {file}", &[("file", &common::file_name(&path))])),
+      Event::Saved(path) => self.toasts.success(i18n::fmt_logical("Downloaded {file}", &[("file", &common::file_name(&path))])),
       Event::Toast { error, message } => {
         if error {
           self.toasts.error(message);
@@ -434,7 +434,7 @@ impl ArtcraftApp {
       },
       AppRequest::Recreate { kind, token } => {
         let Some(prompt_token) = self.find_item(&token).and_then(|i| i.prompt_token.clone()) else {
-          self.toasts.error(i18n::t("Could not load the original prompt."));
+          self.toasts.error(i18n::tl("Could not load the original prompt."));
           return;
         };
         match self.prompt_records.get(&prompt_token).cloned() {
@@ -448,11 +448,11 @@ impl ArtcraftApp {
       },
       AppRequest::Share(token) => {
         ctx.copy_text(format!("{SHARE_URL_BASE}{token}"));
-        self.toasts.success(i18n::t("Share link copied"));
+        self.toasts.success(i18n::tl("Share link copied"));
       },
       AppRequest::CopyText(text) => {
         ctx.copy_text(text);
-        self.toasts.success(i18n::t("Prompt copied"));
+        self.toasts.success(i18n::tl("Prompt copied"));
       },
       AppRequest::Download(tokens) => self.download(&tokens),
       AppRequest::Preview(url) => self.preview = Some(url),
@@ -467,7 +467,7 @@ impl ArtcraftApp {
       },
       AppRequest::PlayExternally(url) => {
         if let Err(err) = open::that(&url) {
-          self.toasts.error(i18n::fmt("Couldn't open the file: {err}", &[("err", &err.to_string())]));
+          self.toasts.error(i18n::fmt_logical("Couldn't open the file: {err}", &[("err", &err.to_string())]));
         }
       },
       AppRequest::LoadMoreLibrary(key) => {
@@ -628,8 +628,7 @@ impl ArtcraftApp {
       actions.extend(shell::titlebar(ui, &account, &mark));
     });
     if self.sidebar_open {
-      let panel = if i18n::is_rtl() { egui::Panel::right("sidebar") } else { egui::Panel::left("sidebar") };
-      panel.exact_size(shell::SIDEBAR_WIDTH).resizable(false).frame(chrome).show(ui, |ui| {
+      shell::sidebar_panel("sidebar").exact_size(shell::SIDEBAR_WIDTH).resizable(false).frame(chrome).show(ui, |ui| {
         actions.extend(shell::sidebar(ui, self.page, &account));
       });
     }
@@ -832,7 +831,7 @@ impl ArtcraftApp {
         Some(LoginEvent::Captured(cookies)) => {
           self.midjourney_login = None;
           self.backend.save_midjourney_login(cookies);
-          self.toasts.success(i18n::t("Midjourney connected"));
+          self.toasts.success(i18n::tl("Midjourney connected"));
         },
         Some(LoginEvent::Closed) => self.midjourney_login = None,
         None => {},

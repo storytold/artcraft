@@ -53,6 +53,7 @@ impl Lang {
 pub struct LanguageChoice {
   pub pref: &'static str,
   pub label: String,
+  pub accessible_label: String,
 }
 
 #[cfg(not(test))]
@@ -86,35 +87,60 @@ pub fn apply_preference(pref: &str) {
   set_current(resolve_preference(pref));
 }
 
-/// Whether Hebrew glyphs can render in this build (always on desktop; on `wasm32` only when
-/// `CRAFT_FONTS_DIR` supplied `NotoSansHebrew-Regular.ttf` at compile time).
-pub const fn hebrew_font_available() -> bool {
-  cfg!(any(not(target_arch = "wasm32"), has_hebrew_craft_font))
+/// Whether Hebrew glyphs can render in this build (verified at font registration/probe time).
+pub fn hebrew_font_available() -> bool {
+  crate::theme::hebrew_font_available()
 }
 
-/// Strip POSIX encoding/modifier suffixes, normalize separators to `-`, lowercase, reject `x-*`
-/// private-use tags, and map legacy ISO 639-1 `iw` primary subtags to `he`.
+/// Strip POSIX encoding/modifier suffixes, normalize separators to `-`, lowercase, validate BCP 47
+/// subtag structure (rejecting `x-*` private-use tags and dangling singletons like `he-u`), and
+/// map legacy ISO 639-1 `iw` primary subtags to `he`.
 pub fn normalize_language_tag(tag: &str) -> String {
   let base = tag.trim().split(['.', '@']).next().unwrap_or_default().replace('_', "-").to_ascii_lowercase();
-  let mut parts = base.split('-').filter(|part| !part.is_empty());
-  let Some(primary) = parts.next() else {
+  if base.is_empty() {
+    return String::new();
+  }
+  let raw_parts: Vec<&str> = base.split('-').collect();
+  if raw_parts.iter().any(|part| part.is_empty() || part.len() > 8 || !part.bytes().all(|b| b.is_ascii_alphanumeric())) {
+    return String::new();
+  }
+  let Some((&primary, rest)) = raw_parts.split_first() else {
     return String::new();
   };
-  if primary == "x" {
+  if primary == "x" || primary.len() < 2 || !primary.bytes().all(|b| b.is_ascii_alphabetic()) {
     return String::new();
+  }
+  let mut idx = 0;
+  while let Some(&part) = rest.get(idx) {
+    if part.len() == 1 {
+      let Some(&next) = rest.get(idx + 1) else {
+        return String::new();
+      };
+      if part == "x" {
+        break;
+      }
+      if next.len() < 2 {
+        return String::new();
+      }
+    }
+    idx += 1;
   }
   let normalized_primary = if primary == "iw" { HEBREW } else { primary };
   let mut out = String::from(normalized_primary);
-  for part in parts {
+  for part in rest {
     out.push('-');
     out.push_str(part);
   }
   out
 }
 
+fn is_rtl_script_tag(script: &str) -> bool {
+  matches!(script, "arab" | "hebr" | "nkoo" | "rohg" | "syrc" | "thaa" | "yezi")
+}
+
 /// Whether `code` names a right-to-left language or ISO 15924 script (normalizing legacy `iw` to
-/// `he`, ignoring private-use `x-*` tags, and inspecting the RFC 5646 script subtag after any
-/// 3-letter `extlang` subtags).
+/// `he`, ignoring private-use `x-*` tags, recognizing standalone script codes like `Hebr`, and
+/// inspecting the RFC 5646 script subtag after any 3-letter `extlang` subtags).
 pub fn is_rtl_code(code: &str) -> bool {
   let cleaned = code.trim().split(['.', '@']).next().unwrap_or_default().replace('_', "-").to_ascii_lowercase();
   let mut parts = cleaned.split('-').filter(|part| !part.is_empty());
@@ -126,7 +152,10 @@ pub fn is_rtl_code(code: &str) -> bool {
   }
   let after_extlang = parts.find(|part| !(part.len() == 3 && part.bytes().all(|b| b.is_ascii_alphabetic())));
   if let Some(script) = after_extlang.filter(|part| part.len() == 4 && part.bytes().all(|b| b.is_ascii_alphabetic())) {
-    return matches!(script, "arab" | "hebr" | "nkoo" | "rohg" | "syrc" | "thaa" | "yezi");
+    return is_rtl_script_tag(script);
+  }
+  if primary.len() == 4 && primary.bytes().all(|b| b.is_ascii_alphabetic()) {
+    return is_rtl_script_tag(primary);
   }
   matches!(primary, "ar" | "ckb" | "dv" | "fa" | "he" | "iw" | "ps" | "sd" | "syr" | "ug" | "ur" | "yi")
 }
@@ -136,8 +165,13 @@ pub fn is_rtl() -> bool {
   is_rtl_code(current().code())
 }
 
+/// Whether `text` contains any right-to-left script character.
+pub fn has_rtl_script(text: &str) -> bool {
+  text.chars().any(is_rtl_script)
+}
+
 /// Validate and normalize a saved or requested preference (`"system"`, `"en"`, `"he"`, `"iw"`).
-pub fn validate_preference(pref: &str) -> Result<String, String> {
+pub fn validate_preference(pref: &str) -> anyhow::Result<String> {
   let trimmed = pref.trim();
   if trimmed.is_empty() || trimmed.eq_ignore_ascii_case(SYSTEM) {
     return Ok(SYSTEM.into());
@@ -146,22 +180,27 @@ pub fn validate_preference(pref: &str) -> Result<String, String> {
   match normalized.split('-').next().unwrap_or_default() {
     ENGLISH => Ok(ENGLISH.into()),
     HEBREW => Ok(HEBREW.into()),
-    _ => Err(format!("unknown language {pref:?} (expected system, en, or he)")),
+    _ => anyhow::bail!("unknown language {pref:?} (expected system, en, or he)"),
   }
 }
 
 /// Resolve POSIX locale env vars respecting precedence (`LC_ALL`, then `LC_MESSAGES`, then `LANG`),
 /// checking only the highest-priority non-empty variable so an explicit override is never shadowed.
-pub fn resolve_posix_env_hebrew(get: impl Fn(&str) -> Option<String>) -> bool {
+pub fn resolve_posix_env_lang(get: impl Fn(&str) -> Option<String>) -> Option<Lang> {
   for var in ["LC_ALL", "LC_MESSAGES", "LANG"] {
     if let Some(val) = get(var) {
       let trimmed = val.trim();
       if !trimmed.is_empty() {
-        return Lang::from_tag(trimmed) == Some(Lang::Hebrew);
+        return Some(Lang::from_tag(trimmed).unwrap_or(Lang::English));
       }
     }
   }
-  false
+  None
+}
+
+/// Select the first supported catalog language from an ordered list of preferred language tags.
+pub fn first_supported_lang<S: AsRef<str>>(tags: impl IntoIterator<Item = S>) -> Option<Lang> {
+  tags.into_iter().take(32).find_map(|tag| Lang::from_tag(tag.as_ref()))
 }
 
 /// Resolve a stored or requested preference to an active catalog language.
@@ -188,17 +227,21 @@ fn resolve_system_language() -> Lang {
       return Lang::English;
     }
   }
-  if resolve_posix_env_hebrew(|k| std::env::var(k).ok()) {
-    return Lang::Hebrew;
+  if let Some(lang) = resolve_posix_env_lang(|k| std::env::var(k).ok()) {
+    return lang;
+  }
+  #[cfg(any(target_os = "macos", target_os = "windows"))]
+  if let Some(lang) = first_supported_lang(sys_locale::get_locales()) {
+    return lang;
   }
   Lang::English
 }
 
 /// Selectable language choices for Settings (in visual order for the active locale).
 pub fn selectable_languages() -> Vec<LanguageChoice> {
-  let mut choices = vec![LanguageChoice { pref: SYSTEM, label: t("System default").to_owned() }, LanguageChoice { pref: ENGLISH, label: "English".into() }];
+  let mut choices = vec![LanguageChoice { pref: SYSTEM, label: t("System default").to_owned(), accessible_label: tl("System default").to_owned() }, LanguageChoice { pref: ENGLISH, label: "English".into(), accessible_label: "English".into() }];
   if hebrew_font_available() {
-    choices.push(LanguageChoice { pref: HEBREW, label: visual_rtl("עברית") });
+    choices.push(LanguageChoice { pref: HEBREW, label: visual_rtl("עברית"), accessible_label: "עברית".into() });
   }
   choices
 }
@@ -218,7 +261,7 @@ fn language_choices_with(mut choices: Vec<LanguageChoice>, saved_pref: &str) -> 
   }
   if current == HEBREW {
     let idx = choices.len();
-    choices.push(LanguageChoice { pref: HEBREW, label: "Hebrew (unavailable)".into() });
+    choices.push(LanguageChoice { pref: HEBREW, label: "Hebrew (unavailable)".into(), accessible_label: "Hebrew (unavailable)".into() });
     return (choices, idx);
   }
   let idx = choices.iter().position(|c| c.pref == SYSTEM).unwrap_or(0);
@@ -374,9 +417,11 @@ pub fn wrapped_visual_lines(ctx: &egui::Context, lang: Lang, logical: &str, font
 
 /// Render a wrapping label from an English catalog `key` (or pre-formatted logical text),
 /// deferring visual RTL reordering until line breaks are measured.
-pub fn wrapped_label(ui: &mut egui::Ui, key_or_logical: &str, style: impl FnOnce(egui::RichText) -> egui::RichText) -> egui::Response {
+pub fn wrapped_label(ui: &mut egui::Ui, key_or_logical: &str, style: impl Fn(egui::RichText) -> egui::RichText) -> egui::Response {
   let lang = current();
-  let font_id = egui::TextStyle::Body.resolve(ui.style());
+  let probe = style(egui::RichText::new("a"));
+  let job = egui::WidgetText::from(probe).into_layout_job(ui.style(), egui::FontSelection::Default, ui.layout().vertical_align());
+  let font_id = job.sections.first().map_or_else(|| egui::TextStyle::Body.resolve(ui.style()), |s| s.format.font_id.clone());
   let logical = if lang.is_rtl() {
     let cat = hebrew_catalog();
     cat.en_to_logical.get(key_or_logical).or_else(|| cat.visual_to_logical.get(key_or_logical)).copied().unwrap_or(key_or_logical)
@@ -400,18 +445,61 @@ pub fn align_for_text(is_rtl: bool) -> egui::Align {
   }
 }
 
+fn measure_text_width(ctx: &egui::Context, text: &str, font_id: &egui::FontId) -> f32 {
+  ctx.fonts_mut(|f| f.layout_no_wrap(text.to_owned(), font_id.clone(), Default::default()).rect.width())
+}
+
+fn is_combining_or_joiner(c: char) -> bool {
+  matches!(u32::from(c), 0x0300..=0x036F | 0x0591..=0x05C7 | 0x0610..=0x061A | 0x064B..=0x065F | 0x0670 | 0x06D6..=0x06ED | 0xFE00..=0xFE0F | 0x200C..=0x200D)
+}
+
+fn grapheme_bounds(text: &str) -> Vec<usize> {
+  let mut bounds = Vec::new();
+  for (idx, ch) in text.char_indices() {
+    if bounds.is_empty() || !is_combining_or_joiner(ch) {
+      bounds.push(idx);
+    }
+  }
+  bounds.push(text.len());
+  bounds
+}
+
+fn split_oversized_span<'a>(ctx: &egui::Context, word: &'a str, font_id: &egui::FontId, max_w: f32) -> Vec<&'a str> {
+  if measure_text_width(ctx, word, font_id) <= max_w {
+    return vec![word];
+  }
+  let bounds = grapheme_bounds(word);
+  let mut pieces = Vec::new();
+  let mut start_idx = 0;
+  while start_idx + 1 < bounds.len() {
+    let start = bounds[start_idx];
+    let mut end_idx = start_idx + 1;
+    while end_idx + 1 < bounds.len() {
+      let candidate = &word[start..bounds[end_idx + 1]];
+      if measure_text_width(ctx, candidate, font_id) <= max_w {
+        end_idx += 1;
+      } else {
+        break;
+      }
+    }
+    pieces.push(&word[start..bounds[end_idx]]);
+    start_idx = end_idx;
+  }
+  pieces
+}
+
 fn wrap_paragraph_logical<'a>(ctx: &egui::Context, paragraph: &'a str, font_id: &egui::FontId, max_width: f32) -> Vec<&'a str> {
   if paragraph.is_empty() || !max_width.is_finite() {
     return vec![paragraph];
   }
   let max_w = max_width.max(1.0);
-  let mut spans: Vec<(usize, usize)> = Vec::new();
+  let mut spans: Vec<&'a str> = Vec::new();
   let mut in_word = false;
   let mut word_start = 0usize;
   for (idx, ch) in paragraph.char_indices() {
     if ch.is_whitespace() {
       if in_word {
-        spans.push((word_start, idx));
+        spans.extend(split_oversized_span(ctx, &paragraph[word_start..idx], font_id, max_w));
         in_word = false;
       }
     } else if !in_word {
@@ -420,16 +508,22 @@ fn wrap_paragraph_logical<'a>(ctx: &egui::Context, paragraph: &'a str, font_id: 
     }
   }
   if in_word {
-    spans.push((word_start, paragraph.len()));
+    spans.extend(split_oversized_span(ctx, &paragraph[word_start..], font_id, max_w));
   }
-  let Some(&(mut line_start, mut line_end)) = spans.first() else {
+  if spans.is_empty() {
     return vec![paragraph];
+  }
+  let base_ptr = paragraph.as_ptr() as usize;
+  let span_range = |s: &str| -> (usize, usize) {
+    let start = (s.as_ptr() as usize).saturating_sub(base_ptr);
+    (start, start + s.len())
   };
+  let (mut line_start, mut line_end) = span_range(spans[0]);
   let mut rows = Vec::new();
-  for &(span_start, span_end) in spans.iter().skip(1) {
+  for span in spans.iter().skip(1) {
+    let (span_start, span_end) = span_range(span);
     let candidate = &paragraph[line_start..span_end];
-    let width = ctx.fonts_mut(|f| f.layout_no_wrap(candidate.to_owned(), font_id.clone(), Default::default()).rect.width());
-    if width <= max_w {
+    if measure_text_width(ctx, candidate, font_id) <= max_w {
       line_end = span_end;
     } else {
       rows.push(&paragraph[line_start..line_end]);
@@ -724,7 +818,11 @@ pub fn visual_rtl(text: &str) -> String {
       out.push('\n');
     }
     let (line, cr) = raw_line.strip_suffix('\r').map_or((raw_line, false), |l| (l, true));
-    push_visual_rtl_line(line, &mut out);
+    if line.chars().any(is_rtl_script) {
+      push_visual_rtl_line(line, &mut out);
+    } else {
+      out.push_str(line);
+    }
     if cr {
       out.push('\r');
     }
@@ -737,6 +835,216 @@ mod tests {
   use std::collections::HashMap;
 
   use super::*;
+
+  mod catalog {
+    use super::*;
+
+    #[test]
+    fn hebrew_catalog_parses_cleanly_with_matching_placeholders() {
+      let rows = parsed_hebrew_rows();
+      assert!(!rows.is_empty());
+      for (k, v) in &rows {
+        assert_eq!(placeholders(k), placeholders(v), "placeholder mismatch for key {k:?}");
+      }
+      assert_eq!(t_for(Lang::English, "Settings"), "Settings");
+      assert_eq!(tl_for(Lang::Hebrew, "Settings"), "הגדרות");
+      assert_eq!(t_for(Lang::Hebrew, "Settings"), "הגדרות");
+    }
+
+    #[test]
+    fn fontless_fallback_preserves_saved_hebrew_choice() {
+      let choices = vec![LanguageChoice { pref: SYSTEM, label: "System default".into(), accessible_label: "System default".into() }, LanguageChoice { pref: ENGLISH, label: "English".into(), accessible_label: "English".into() }];
+      let (with_missing, idx) = language_choices_with(choices, "he-IL");
+      assert_eq!(idx, 2);
+      assert_eq!(with_missing[idx].pref, HEBREW);
+    }
+  }
+
+  mod locale {
+    use super::*;
+
+    #[test]
+    fn legacy_iw_normalization_and_rtl_detection() {
+      assert_eq!(normalize_language_tag("iw"), "he");
+      assert_eq!(normalize_language_tag("iw-IL"), "he-il");
+      assert_eq!(normalize_language_tag("iw_IL.UTF-8"), "he-il");
+      assert_eq!(normalize_language_tag("he_IL@euro"), "he-il");
+      assert_eq!(normalize_language_tag("he-u-nu-latn"), "he-u-nu-latn");
+      assert_eq!(normalize_language_tag("he-x-a"), "he-x-a");
+      assert_eq!(normalize_language_tag("x-he"), "");
+      assert_eq!(normalize_language_tag("he-u"), "");
+      assert_eq!(normalize_language_tag("he-x"), "");
+      assert_eq!(normalize_language_tag("he-"), "");
+      assert_eq!(normalize_language_tag("he--il"), "");
+      assert_eq!(normalize_language_tag("he-u-t"), "");
+
+      for rtl in ["he", "he-IL", "he_IL.UTF-8", "iw", "iw-IL", "Hebr", "en-Hebr", "zh-Arab-CN", "he-u-nu-latn", "ckb", "ku-Arab-IQ"] {
+        assert!(is_rtl_code(rtl), "{rtl} should be RTL");
+      }
+      for ltr in ["", "en", "en-US", "x-he", "x-Arab", "x-Hebr", "en-x-he", "en-x-hebr", "he-Latn", "ar-Latn", "ku", "ku-Latn-TR", "en-u-ca-hebrew"] {
+        assert!(!is_rtl_code(ltr), "{ltr} should be LTR");
+      }
+
+      assert_eq!(validate_preference("system").ok(), Some("system".into()));
+      assert_eq!(validate_preference("en-US").ok(), Some("en".into()));
+      assert_eq!(validate_preference("he-IL").ok(), Some("he".into()));
+      assert_eq!(validate_preference("iw_IL.UTF-8").ok(), Some("he".into()));
+      assert_eq!(validate_preference("he-u-nu-latn").ok(), Some("he".into()));
+      assert_eq!(validate_preference("he-x-a").ok(), Some("he".into()));
+      assert!(validate_preference("he-u").is_err());
+      assert!(validate_preference("x-he").is_err());
+    }
+
+    #[test]
+    fn posix_env_precedence_respects_lc_all_override() {
+      let lc_all_override = |name: &str| match name {
+        "LC_ALL" => Some("en_US.UTF-8".into()),
+        "LANG" => Some("he_IL.UTF-8".into()),
+        _ => None,
+      };
+      assert_eq!(resolve_posix_env_lang(lc_all_override), Some(Lang::English));
+
+      let lc_messages_hebrew = |name: &str| match name {
+        "LC_ALL" => Some(String::new()),
+        "LC_MESSAGES" => Some("iw_IL.UTF-8".into()),
+        "LANG" => Some("en_US.UTF-8".into()),
+        _ => None,
+      };
+      assert_eq!(resolve_posix_env_lang(lc_messages_hebrew), Some(Lang::Hebrew));
+
+      let lang_fallback = |name: &str| match name {
+        "LANG" => Some("he_IL.UTF-8".into()),
+        _ => None,
+      };
+      assert_eq!(resolve_posix_env_lang(lang_fallback), Some(Lang::Hebrew));
+      assert_eq!(resolve_posix_env_lang(|_| None), None);
+    }
+
+    #[test]
+    fn native_preferred_languages_select_first_supported_catalog() {
+      assert_eq!(first_supported_lang(["he-IL", "en-US"]), Some(Lang::Hebrew));
+      assert_eq!(first_supported_lang(["fr-FR", "iw-IL"]), Some(Lang::Hebrew));
+      assert_eq!(first_supported_lang(["x-he", "en-US"]), Some(Lang::English));
+      assert_eq!(first_supported_lang(["fr-FR", "de-DE"]), None);
+    }
+
+    #[test]
+    fn apply_preference_roundtrips_cleanly() {
+      let before = current();
+      apply_preference("iw_IL.UTF-8");
+      if hebrew_font_available() {
+        assert_eq!(current(), Lang::Hebrew);
+        assert!(is_rtl());
+      } else {
+        assert_eq!(current(), Lang::English);
+      }
+      set_current(before);
+    }
+  }
+
+  mod bidi {
+    use super::*;
+
+    #[test]
+    fn fmt_recovers_logical_template_and_preserves_placeholders() {
+      let formatted_en = fmt_for(Lang::English, "{count} credits", &[("count", "42")]);
+      assert_eq!(formatted_en, "42 credits");
+
+      let logical_he = fmt_logical_for(Lang::Hebrew, "{count} credits", &[("count", "42")]);
+      assert_eq!(logical_he, "42 קרדיטים");
+
+      // Visual RTL moves LTR number `42` to the right side of the Hebrew word `קרדיטים`.
+      let visual_he = fmt_for(Lang::Hebrew, "{count} credits", &[("count", "42")]);
+      assert_eq!(visual_he, "קרדיטים 42");
+      assert!(!visual_he.contains("{count}"));
+
+      // Mixed Hebrew and @username must not leave raw placeholders reversed.
+      let signed_in_logical = fmt_logical_for(Lang::Hebrew, "Signed in as @{user}", &[("user", "alice")]);
+      assert_eq!(signed_in_logical, "מחובר בתור @alice");
+      let signed_in = fmt_for(Lang::Hebrew, "Signed in as @{user}", &[("user", "alice")]);
+      assert_eq!(signed_in, "@alice בתור מחובר");
+      assert!(!signed_in.contains("{user}"));
+    }
+
+    #[test]
+    fn visual_rtl_leaves_latin_only_lines_unchanged() {
+      assert_eq!(visual_rtl("שלום\n[!"), "שלום\n[!");
+      assert_eq!(visual_rtl("שלום\r\n[!"), "שלום\r\n[!");
+    }
+  }
+
+  mod wrapping {
+    use super::*;
+
+    #[test]
+    fn wrapped_visual_lines_reorders_after_width_wrapping() {
+      let ctx = egui::Context::default();
+      crate::theme::apply(&ctx);
+      let logical = tl_for(Lang::Hebrew, "When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.");
+      let mut wrapped = String::new();
+      let mut shaped_row_glyphs = Vec::new();
+      let mut has_tav = false;
+      let mut has_mem = false;
+      let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+        wrapped = wrapped_visual_lines(ui.ctx(), Lang::Hebrew, logical, &egui::FontId::proportional(12.5), 260.0);
+        let font_id = egui::FontId::proportional(14.0);
+        has_tav = ui.ctx().fonts_mut(|f| f.has_glyph(&font_id, 'ת'));
+        has_mem = ui.ctx().fonts_mut(|f| f.has_glyph(&font_id, 'מ'));
+        let galley = ui.ctx().fonts_mut(|f| f.layout_no_wrap(visual_rtl("מחובר בתור"), font_id, egui::Color32::WHITE));
+        if let Some(row) = galley.rows.first() {
+          shaped_row_glyphs = row.glyphs.iter().map(|g| (g.chr, g.pos.x)).collect();
+        }
+      });
+      out.textures_delta.clear();
+      assert!(wrapped.contains('\n'), "expected narrow wrapping to produce multiple lines: {wrapped}");
+      if crate::theme::hebrew_font_available() {
+        assert!(has_tav && has_mem, "expected Hebrew font glyph coverage for shaping check");
+        let betor_x = shaped_row_glyphs.iter().find(|(c, _)| *c == 'ת').map(|(_, x)| *x);
+        let mehubar_x = shaped_row_glyphs.iter().find(|(c, _)| *c == 'מ').map(|(_, x)| *x);
+        let (Some(betor_x), Some(mehubar_x)) = (betor_x, mehubar_x) else {
+          panic!("expected both shaped glyphs in {shaped_row_glyphs:?}");
+        };
+        assert!(betor_x < mehubar_x, "expected second word ('בתור') to render left of first word ('מחובר'): {shaped_row_glyphs:?}");
+      }
+    }
+
+    #[test]
+    fn wrapped_visual_lines_splits_oversized_hebrew_word_at_narrow_width() {
+      let ctx = egui::Context::default();
+      crate::theme::apply(&ctx);
+      let mut wrapped = String::new();
+      let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+        wrapped = wrapped_visual_lines(ui.ctx(), Lang::Hebrew, "שלום", &egui::FontId::proportional(14.0), 14.0);
+      });
+      out.textures_delta.clear();
+      assert!(wrapped.contains('\n'), "expected narrow single-word wrap to split 'שלום': {wrapped:?}");
+    }
+
+    #[test]
+    fn wrapped_label_measures_with_styled_font_size() {
+      let ctx = egui::Context::default();
+      crate::theme::apply(&ctx);
+      let before = current();
+      set_current(Lang::Hebrew);
+      let text = "הנחיה קצרה לבדיקת גודל גופן מותאם";
+      let mut chosen_width = 0.0f32;
+      let mut rendered_width = 0.0f32;
+      let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+        let small_font = egui::FontId::proportional(12.5);
+        let body_font = egui::TextStyle::Body.resolve(ui.style());
+        let w_small = measure_text_width(ui.ctx(), text, &small_font);
+        let w_body = measure_text_width(ui.ctx(), text, &body_font);
+        assert!(w_small < w_body);
+        chosen_width = (w_small + w_body) * 0.5;
+        ui.set_max_width(chosen_width);
+        let resp = wrapped_label(ui, text, |r| r.size(12.5));
+        rendered_width = resp.rect.width();
+      });
+      out.textures_delta.clear();
+      set_current(before);
+      assert!(rendered_width <= chosen_width + 1.0, "expected 12.5pt wrapped label ({rendered_width}) to fit inside {chosen_width}");
+    }
+  }
 
   fn placeholders(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -765,123 +1073,5 @@ mod tests {
       assert!(map.insert(k.to_owned(), v.to_owned()).is_none(), "he.tsv:{}: duplicate key {k:?}", idx + 1);
     }
     map
-  }
-
-  #[test]
-  fn hebrew_catalog_parses_cleanly_with_matching_placeholders() {
-    let rows = parsed_hebrew_rows();
-    assert!(!rows.is_empty());
-    for (k, v) in &rows {
-      assert_eq!(placeholders(k), placeholders(v), "placeholder mismatch for key {k:?}");
-    }
-    assert_eq!(t_for(Lang::English, "Settings"), "Settings");
-    assert_eq!(tl_for(Lang::Hebrew, "Settings"), "הגדרות");
-    assert_eq!(t_for(Lang::Hebrew, "Settings"), "הגדרות");
-  }
-
-  #[test]
-  fn legacy_iw_normalization_and_rtl_detection() {
-    assert_eq!(normalize_language_tag("iw"), "he");
-    assert_eq!(normalize_language_tag("iw-IL"), "he-il");
-    assert_eq!(normalize_language_tag("iw_IL.UTF-8"), "he-il");
-    assert_eq!(normalize_language_tag("he_IL@euro"), "he-il");
-    assert_eq!(normalize_language_tag("x-he"), "");
-
-    for rtl in ["he", "he-IL", "he_IL.UTF-8", "iw", "iw-IL", "en-Hebr", "zh-Arab-CN", "he-u-nu-latn", "ckb", "ku-Arab-IQ"] {
-      assert!(is_rtl_code(rtl), "{rtl} should be RTL");
-    }
-    for ltr in ["", "en", "en-US", "x-he", "x-Arab", "en-x-he", "en-x-hebr", "he-Latn", "ar-Latn", "ku", "ku-Latn-TR", "en-u-ca-hebrew"] {
-      assert!(!is_rtl_code(ltr), "{ltr} should be LTR");
-    }
-
-    assert_eq!(validate_preference("system"), Ok("system".into()));
-    assert_eq!(validate_preference("en-US"), Ok("en".into()));
-    assert_eq!(validate_preference("he-IL"), Ok("he".into()));
-    assert_eq!(validate_preference("iw_IL.UTF-8"), Ok("he".into()));
-    assert!(validate_preference("x-he").is_err());
-  }
-
-  #[test]
-  fn posix_env_precedence_respects_lc_all_override() {
-    let lc_all_override = |name: &str| match name {
-      "LC_ALL" => Some("en_US.UTF-8".into()),
-      "LANG" => Some("he_IL.UTF-8".into()),
-      _ => None,
-    };
-    assert!(!resolve_posix_env_hebrew(lc_all_override));
-
-    let lc_messages_hebrew = |name: &str| match name {
-      "LC_ALL" => Some(String::new()),
-      "LC_MESSAGES" => Some("iw_IL.UTF-8".into()),
-      "LANG" => Some("en_US.UTF-8".into()),
-      _ => None,
-    };
-    assert!(resolve_posix_env_hebrew(lc_messages_hebrew));
-
-    let lang_fallback = |name: &str| match name {
-      "LANG" => Some("he_IL.UTF-8".into()),
-      _ => None,
-    };
-    assert!(resolve_posix_env_hebrew(lang_fallback));
-  }
-
-  #[test]
-  fn fmt_recovers_logical_template_and_preserves_placeholders() {
-    let formatted_en = fmt_for(Lang::English, "{count} credits", &[("count", "42")]);
-    assert_eq!(formatted_en, "42 credits");
-
-    let logical_he = fmt_logical_for(Lang::Hebrew, "{count} credits", &[("count", "42")]);
-    assert_eq!(logical_he, "42 קרדיטים");
-
-    // Visual RTL moves LTR number `42` to the right side of the Hebrew word `קרדיטים`.
-    let visual_he = fmt_for(Lang::Hebrew, "{count} credits", &[("count", "42")]);
-    assert_eq!(visual_he, "קרדיטים 42");
-    assert!(!visual_he.contains("{count}"));
-
-    // Mixed Hebrew and @username must not leave raw placeholders reversed.
-    let signed_in_logical = fmt_logical_for(Lang::Hebrew, "Signed in as @{user}", &[("user", "alice")]);
-    assert_eq!(signed_in_logical, "מחובר בתור @alice");
-    let signed_in = fmt_for(Lang::Hebrew, "Signed in as @{user}", &[("user", "alice")]);
-    assert_eq!(signed_in, "@alice בתור מחובר");
-    assert!(!signed_in.contains("{user}"));
-  }
-
-  #[test]
-  fn fontless_fallback_preserves_saved_hebrew_choice() {
-    let choices = vec![LanguageChoice { pref: SYSTEM, label: "System default".into() }, LanguageChoice { pref: ENGLISH, label: "English".into() }];
-    let (with_missing, idx) = language_choices_with(choices, "he-IL");
-    assert_eq!(idx, 2);
-    assert_eq!(with_missing[idx].pref, HEBREW);
-  }
-
-  #[test]
-  fn wrapped_visual_lines_reorders_after_width_wrapping() {
-    let ctx = egui::Context::default();
-    crate::theme::apply(&ctx);
-    let logical = tl_for(Lang::Hebrew, "When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.");
-    let mut wrapped = String::new();
-    let mut shaped_row_glyphs = Vec::new();
-    let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
-      wrapped = wrapped_visual_lines(ui.ctx(), Lang::Hebrew, logical, &egui::FontId::proportional(12.5), 260.0);
-      let galley = ui.ctx().fonts_mut(|f| f.layout_no_wrap(visual_rtl("מחובר בתור"), egui::FontId::proportional(14.0), egui::Color32::WHITE));
-      if let Some(row) = galley.rows.first() {
-        shaped_row_glyphs = row.glyphs.iter().map(|g| (g.chr, g.pos.x)).collect();
-      }
-    });
-    out.textures_delta.clear();
-    assert!(wrapped.contains('\n'), "expected narrow wrapping to produce multiple lines: {wrapped}");
-    // Verify multi-word Hebrew shapes right-to-left: 'ר' of "בתור" is left of 'מ' of "מחובר".
-    let betor_x = shaped_row_glyphs.iter().find(|(c, _)| *c == 'ת').map(|(_, x)| *x);
-    let mehubar_x = shaped_row_glyphs.iter().find(|(c, _)| *c == 'מ').map(|(_, x)| *x);
-    assert!(betor_x < mehubar_x, "expected second word ('בתור') to render left of first word ('מחובר'): {shaped_row_glyphs:?}");
-  }
-
-  #[test]
-  fn apply_preference_roundtrips_cleanly() {
-    let before = current();
-    apply_preference("iw_IL.UTF-8");
-    assert_eq!(current(), Lang::Hebrew);
-    assert!(is_rtl());
-    set_current(before);
   }
 }

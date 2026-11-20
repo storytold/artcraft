@@ -172,7 +172,7 @@ impl CreateAudioPage {
           self.make_room_for_image(env);
           common::upload_png(env, &mut self.refs, png, ImageSlot::Reference);
         },
-        _ => env.toasts.error(i18n::t("Image references aren't available here")),
+        _ => env.toasts.error(i18n::tl("Image references aren't available here")),
       },
       PromptBoxAction::Deck(_) | PromptBoxAction::MentionPicked(..) => {},
     }
@@ -216,13 +216,13 @@ impl CreateAudioPage {
       self.add_audio(env, m, &audios);
     } else if let Some(path) = image {
       if m.image_refs_max == 0 {
-        env.toasts.error(i18n::t("Image references aren't available here"));
+        env.toasts.error(i18n::tl("Image references aren't available here"));
         return;
       }
       self.make_room_for_image(env);
       common::upload_path(env, &mut self.refs, path, RefKind::Image, ImageSlot::Reference);
     } else if !paths.is_empty() {
-      env.toasts.error(i18n::fmt("Only {kinds} files can be added here", &[("kinds", &accepted_kinds(m))]));
+      env.toasts.error(i18n::fmt_logical("Only {kinds} files can be added here", &[("kinds", &accepted_kinds(m))]));
     }
   }
 
@@ -232,13 +232,13 @@ impl CreateAudioPage {
       return;
     }
     if m.audio_refs_max == 0 {
-      env.toasts.error(i18n::t("Audio references aren't available here"));
+      env.toasts.error(i18n::tl("Audio references aren't available here"));
       return;
     }
     let free = m.audio_refs_max.saturating_sub(self.refs.audios.len());
     if paths.len() > free {
       let key = if m.audio_refs_max == 1 { "Max {max} audio track" } else { "Max {max} audio tracks" };
-      env.toasts.error(i18n::fmt(key, &[("max", &m.audio_refs_max.to_string())]));
+      env.toasts.error(i18n::fmt_logical(key, &[("max", &m.audio_refs_max.to_string())]));
     }
     if free == 0 {
       return;
@@ -284,7 +284,7 @@ impl CreateAudioPage {
   fn make_room_for_audio(&mut self, toasts: &mut Toasts) {
     if !self.refs.images.is_empty() {
       self.refs.images.clear();
-      toasts.error(i18n::t("Removed image reference \u{2014} it can't be combined with audio"));
+      toasts.error(i18n::tl("Removed image reference \u{2014} it can't be combined with audio"));
     }
   }
 
@@ -295,7 +295,7 @@ impl CreateAudioPage {
         env.audio.stop();
       }
       self.refs.audios.clear();
-      env.toasts.error(i18n::t("Removed audio reference \u{2014} it can't be combined with an image"));
+      env.toasts.error(i18n::tl("Removed audio reference \u{2014} it can't be combined with an image"));
     }
     self.refs.images.clear();
   }
@@ -309,7 +309,7 @@ impl CreateAudioPage {
       return;
     };
     if self.missing_required_ref(m) {
-      env.toasts.error(i18n::fmt("{model} needs an audio track to work from \u{2014} add one first", &[("model", &m.name)]));
+      env.toasts.error(i18n::fmt_logical("{model} needs an audio track to work from \u{2014} add one first", &[("model", &m.name)]));
       return;
     }
     if !env.signed_in {
@@ -317,7 +317,7 @@ impl CreateAudioPage {
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error(i18n::t("Please wait for your references to finish uploading"));
+      env.toasts.error(i18n::tl("Please wait for your references to finish uploading"));
       return;
     }
     self.generating = true;
@@ -328,7 +328,7 @@ impl CreateAudioPage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Audio, job_tokens, meta, env.catalog);
-    env.toasts.success(i18n::t("Audio generation enqueued!"));
+    env.toasts.success(i18n::tl("Audio generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str, status: Option<u16>) {
@@ -706,15 +706,15 @@ fn accepted_kinds(m: &ModelInfo) -> String {
 }
 
 fn duration_message() -> String {
-  i18n::fmt("Total audio duration cannot exceed {secs}s", &[("secs", &(MAX_REF_SECS as u32).to_string())])
+  i18n::fmt_logical("Total audio duration cannot exceed {secs}s", &[("secs", &(MAX_REF_SECS as u32).to_string())])
 }
 
 /// What a failed generate tells the user: out of credits, an outage, or the server's message.
 fn failure_message(message: &str, status: Option<u16>) -> String {
   match status {
-    Some(402) => i18n::t("Not enough credits for this generation").to_owned(),
-    Some(code) if code >= 500 => i18n::t(OUTAGE_MESSAGE).to_owned(),
-    _ if message.is_empty() => i18n::t("Failed to start audio generation").to_owned(),
+    Some(402) => i18n::tl("Not enough credits for this generation").to_owned(),
+    Some(code) if code >= 500 => i18n::tl(OUTAGE_MESSAGE).to_owned(),
+    _ if message.is_empty() => i18n::tl("Failed to start audio generation").to_owned(),
     _ => message.to_owned(),
   }
 }

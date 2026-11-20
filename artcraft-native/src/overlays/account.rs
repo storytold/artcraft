@@ -162,23 +162,42 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, langua
     });
     ui.add_space(12.0);
     let (choices, current_idx) = i18n::language_choices_for(language);
-    let selected_label = choices.get(current_idx).map_or("", |c| c.label.as_str());
+    let selected_choice = choices.get(current_idx);
+    let selected_label = selected_choice.map_or("", |c| c.label.as_str());
+    let selected_accessible = selected_choice.map_or("", |c| c.accessible_label.as_str()).to_owned();
+    let selected_pref = selected_choice.map_or("", |c| c.pref);
     ui.horizontal(|ui| {
-      ui.vertical(|ui| {
-        ui.set_width(300.0);
-        ui.label(egui::RichText::new(i18n::t("Language")).size(14.0).family(theme::medium()));
-        ui.label(egui::RichText::new(i18n::t("Choose the interface language.")).size(12.5).color(theme::MUTED));
-      });
+      let lang_label = ui
+        .vertical(|ui| {
+          ui.set_width(300.0);
+          let lbl = ui.label(egui::RichText::new(i18n::t("Language")).size(14.0).family(theme::medium()));
+          lbl.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, i18n::tl("Language")));
+          let desc = ui.label(egui::RichText::new(i18n::t("Choose the interface language.")).size(12.5).color(theme::MUTED));
+          desc.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, i18n::tl("Choose the interface language.")));
+          lbl
+        })
+        .inner;
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        egui::ComboBox::from_id_salt("settings-language").selected_text(selected_label).show_ui(ui, |ui| {
+        let combo = egui::ComboBox::from_id_salt("settings-language").selected_text(selected_label).show_ui(ui, |ui| {
           for choice in &choices {
-            let active = choice.pref == choices[current_idx].pref;
-            if ui.selectable_label(active, &choice.label).clicked() && choice.pref != *language {
+            let active = choice.pref == selected_pref;
+            let opt = ui.selectable_label(active, &choice.label);
+            let accessible = choice.accessible_label.clone();
+            opt.widget_info(move || egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, active, accessible.clone()));
+            if opt.clicked() && choice.pref != *language {
               *language = choice.pref.to_owned();
               i18n::apply_preference(language);
             }
           }
         });
+        let enabled = ui.is_enabled();
+        combo.response.widget_info(move || {
+          let mut info = egui::WidgetInfo::new(egui::WidgetType::ComboBox);
+          info.enabled = enabled;
+          info.current_text_value = Some(selected_accessible.clone());
+          info
+        });
+        let _ = combo.response.labelled_by(lang_label.id);
       });
     });
     ui.add_space(18.0);

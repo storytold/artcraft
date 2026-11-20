@@ -223,6 +223,15 @@ fn titlebar_account(ui: &mut Ui, account: &Account<'_>, action: &mut Option<Shel
   }
 }
 
+/// Construct the sidebar panel on the start edge (`right` in RTL, `left` in LTR).
+pub fn sidebar_panel(id: impl Into<Id>) -> egui::Panel {
+  if i18n::is_rtl() {
+    egui::Panel::right(id)
+  } else {
+    egui::Panel::left(id)
+  }
+}
+
 /// The sidebar, flush with the window's start edge. Returns the user's action, if any.
 pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAction> {
   let mut action = None;
@@ -490,22 +499,26 @@ mod tests {
     let before = i18n::current();
     i18n::set_current(i18n::Lang::Hebrew);
     let mut sidebar_rect = Rect::NOTHING;
+    let mut header_rect = Rect::NOTHING;
     let mut out = ctx.run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(1200.0, 800.0))), ..Default::default() }, |ui| {
       let account = Account { username: None, display_name: None, credits: None };
       egui::Panel::top("titlebar-test").exact_size(TITLEBAR_HEIGHT).resizable(false).show(ui, |ui| {
         let _ = titlebar(ui, &account, &mark);
       });
-      let panel = if i18n::is_rtl() { egui::Panel::right("sidebar-test") } else { egui::Panel::left("sidebar-test") };
-      let resp = panel.exact_size(SIDEBAR_WIDTH).resizable(false).show(ui, |ui| {
+      let resp = sidebar_panel("sidebar-test").exact_size(SIDEBAR_WIDTH).resizable(false).show(ui, |ui| {
         let _ = sidebar(ui, Page::CreateImage, &account);
       });
       sidebar_rect = resp.response.rect;
       egui::CentralPanel::default().show(ui, |ui| {
-        let _ = page_header(ui, Page::CreateImage, Some(FeedToggles { mode: ViewMode::Grid, selecting: false, autoplay: None }));
+        let hdr = egui::Panel::top("page-header-test").exact_size(HEADER_HEIGHT).resizable(false).show(ui, |ui| {
+          let _ = page_header(ui, Page::CreateImage, Some(FeedToggles { mode: ViewMode::Grid, selecting: false, autoplay: None }));
+        });
+        header_rect = hdr.response.rect;
       });
     });
     out.textures_delta.clear();
     i18n::set_current(before);
     assert!(sidebar_rect.left() > 900.0, "expected RTL sidebar on right side of 1200 px window, got {sidebar_rect:?}");
+    assert!(header_rect.right() <= sidebar_rect.left() + 1.0, "expected content header ({header_rect:?}) to the left of RTL sidebar ({sidebar_rect:?})");
   }
 }

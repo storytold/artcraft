@@ -259,7 +259,7 @@ pub fn selected_model<'a>(models: &'a [crate::models::ModelInfo], selected: Opti
 /// Starts uploading `path` into `slot` (or the deck for videos and audio).
 pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: RefKind, slot: ImageSlot) {
   if kind == RefKind::Video && !path.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("mp4")) {
-    env.toasts.error(crate::i18n::t("Failed to upload video. Please upload an MP4 file."));
+    env.toasts.error(crate::i18n::tl("Failed to upload video. Please upload an MP4 file."));
     return;
   }
   let mut item = RefMedia::uploading(kind, None);
@@ -271,7 +271,7 @@ pub fn upload_path(env: &mut Env<'_>, refs: &mut References, path: &Path, kind: 
         item.preview = Some(key);
       },
       Err(err) => {
-        env.toasts.error(crate::i18n::fmt("Couldn't read {file}: {err}", &[("file", &file_name(path)), ("err", &err.to_string())]));
+        env.toasts.error(crate::i18n::fmt_logical("Couldn't read {file}: {err}", &[("file", &file_name(path)), ("err", &err.to_string())]));
         return;
       },
     }
@@ -316,7 +316,7 @@ pub fn apply_upload(toasts: &mut Toasts, refs: &mut References, ref_id: u64, res
     Err(message) => {
       let kind = refs.find_mut(ref_id).map_or("file", |r| crate::i18n::tl(r.kind.noun()));
       refs.remove(ref_id);
-      toasts.error(crate::i18n::fmt("Failed to upload {kind}: {message}", &[("kind", kind), ("message", &message)]));
+      toasts.error(crate::i18n::fmt_logical("Failed to upload {kind}: {message}", &[("kind", kind), ("message", &message)]));
       false
     },
   }

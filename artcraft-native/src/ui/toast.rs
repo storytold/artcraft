@@ -63,7 +63,15 @@ impl Toasts {
     for toast in &self.items {
       let area = egui::Area::new(Id::new(("toast", toast.id))).order(Order::Tooltip).pivot(pivot).fixed_pos(pos2(anchor_x, y)).interactable(true);
       let inner = area.show(ctx, |ui| {
-        let galley = ui.painter().layout(toast.message.clone(), FontId::new(14.0, egui::FontFamily::Proportional), theme::fade(Color32::WHITE, 0.9), MAX_WIDTH - 80.0);
+        let font_id = FontId::new(14.0, egui::FontFamily::Proportional);
+        let color = theme::fade(Color32::WHITE, 0.9);
+        let wrap_w = MAX_WIDTH - 80.0;
+        let galley = if rtl && i18n::has_rtl_script(&toast.message) {
+          let wrapped = i18n::wrapped_visual_lines(ctx, i18n::current(), &toast.message, &font_id, wrap_w);
+          ui.painter().layout_no_wrap(wrapped, font_id, color)
+        } else {
+          ui.painter().layout(toast.message.clone(), font_id, color, wrap_w)
+        };
         let h = galley.size().y.max(24.0) + 20.0;
         let w = 16.0 + 24.0 + 12.0 + galley.size().x + 12.0 + 12.0 + 16.0;
         let (rect, _) = ui.allocate_exact_size(vec2(w, h), Sense::hover());
@@ -97,5 +105,30 @@ impl Toasts {
     if let Some(next) = self.items.iter().map(|t| t.expires_at).reduce(f64::min) {
       ctx.request_repaint_after(Duration::from_secs_f64((next - now).max(0.0)));
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn rtl_toast_wraps_logical_summary_before_visual_reordering() {
+    let ctx = egui::Context::default();
+    crate::theme::apply(&ctx);
+    let before = i18n::current();
+    i18n::set_current(i18n::Lang::Hebrew);
+    let logical = i18n::fmt_logical("Couldn't load models: {message}", &[("message", "upstream connection timed out after waiting for model catalog response from remote gateway endpoint")]);
+    let mut rendered = String::new();
+    let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+      let font_id = FontId::new(14.0, egui::FontFamily::Proportional);
+      rendered = i18n::wrapped_visual_lines(ui.ctx(), i18n::current(), &logical, &font_id, MAX_WIDTH - 80.0);
+    });
+    out.textures_delta.clear();
+    i18n::set_current(before);
+    let lines: Vec<&str> = rendered.lines().collect();
+    assert!(lines.len() >= 2, "expected long diagnostic toast to wrap: {rendered:?}");
+    let visual_summary = i18n::visual_rtl("לא ניתן לטעון מודלים");
+    assert!(lines[0].contains(&visual_summary), "expected Hebrew summary ({visual_summary:?}) on first wrapped row, got {lines:?}");
   }
 }

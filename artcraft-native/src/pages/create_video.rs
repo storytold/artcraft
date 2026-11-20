@@ -237,7 +237,7 @@ impl CreateVideoPage {
     let model = common::selected_model(&env.catalog.video_page, self.settings.model.as_deref(), DEFAULT_VIDEO_MODEL).cloned();
     for path in paths {
       let Some(kind) = RefKind::from_path(path) else {
-        env.toasts.error(i18n::fmt("{file} isn't a supported file", &[("file", &common::file_name(path))]));
+        env.toasts.error(i18n::fmt_logical("{file} isn't a supported file", &[("file", &common::file_name(path))]));
         continue;
       };
       match (self.settings.input_mode, kind) {
@@ -250,8 +250,8 @@ impl CreateVideoPage {
         },
         (InputMode::Keyframe, _) => {
           let msg = match kind {
-            RefKind::Video => i18n::fmt("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
-            _ => i18n::t("Audio references aren't available here").to_owned(),
+            RefKind::Video => i18n::fmt_logical("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
+            _ => i18n::tl("Audio references aren't available here").to_owned(),
           };
           env.toasts.error(msg);
         },
@@ -266,9 +266,9 @@ impl CreateVideoPage {
           };
           if max == 0 {
             let msg = match kind {
-              RefKind::Image => i18n::t("Image references aren't available here").to_owned(),
-              RefKind::Video => i18n::fmt("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
-              RefKind::Audio => i18n::t("Audio references aren't available here").to_owned(),
+              RefKind::Image => i18n::tl("Image references aren't available here").to_owned(),
+              RefKind::Video => i18n::fmt_logical("{what} references aren't available here", &[("what", i18n::tl("Video"))]),
+              RefKind::Audio => i18n::tl("Audio references aren't available here").to_owned(),
             };
             env.toasts.error(msg);
           } else if free_slots(&self.refs, kind, l) == 0 {
@@ -293,7 +293,7 @@ impl CreateVideoPage {
       };
       if self.refs.list(kind).iter().any(|r| r.id == ref_id) && self.refs.total_secs(kind) > f32::from(max) + 0.5 {
         self.refs.remove(ref_id);
-        env.toasts.error(i18n::fmt("Total {kind} duration cannot exceed {secs}s", &[("kind", i18n::tl(kind.noun())), ("secs", &max.to_string())]));
+        env.toasts.error(i18n::fmt_logical("Total {kind} duration cannot exceed {secs}s", &[("kind", i18n::tl(kind.noun())), ("secs", &max.to_string())]));
       }
     }
   }
@@ -303,11 +303,11 @@ impl CreateVideoPage {
       return;
     }
     if self.settings.prompt.trim().is_empty() {
-      env.toasts.error(i18n::t("Please enter a prompt to generate video"));
+      env.toasts.error(i18n::tl("Please enter a prompt to generate video"));
       return;
     }
     let Some(model) = model else {
-      env.toasts.error(i18n::t("Please select a model to generate video"));
+      env.toasts.error(i18n::tl("Please select a model to generate video"));
       return;
     };
     if !env.signed_in {
@@ -316,15 +316,15 @@ impl CreateVideoPage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(i18n::fmt("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
+      env.toasts.error(i18n::fmt_logical("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
       return;
     }
     if self.needs_start_frame(model) {
-      env.toasts.error(i18n::t("Please add a starting frame image to generate video"));
+      env.toasts.error(i18n::tl("Please add a starting frame image to generate video"));
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error(i18n::t("Please wait for your references to finish uploading"));
+      env.toasts.error(i18n::tl("Please wait for your references to finish uploading"));
       return;
     }
     self.generating = true;
@@ -461,12 +461,12 @@ impl CreateVideoPage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Video, job_tokens, meta, env.catalog);
-    env.toasts.success(i18n::t("Video generation enqueued!"));
+    env.toasts.success(i18n::tl("Video generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str) {
     self.generating = false;
-    env.toasts.error(if message.is_empty() { i18n::t("Failed to start video generation. Please try again.") } else { message });
+    env.toasts.error(if message.is_empty() { i18n::tl("Failed to start video generation. Please try again.") } else { message });
   }
 
   /// Recreate: the original prompt, model, settings and references.
@@ -620,8 +620,8 @@ fn max_message(kind: RefKind, max: usize, secs: Option<f32>) -> String {
       None => "Max {max} {noun}",
     };
     return match secs {
-      Some(s) => i18n::fmt(key, &[("max", &max.to_string()), ("noun", noun), ("secs", &(s.round() as i64).to_string())]),
-      None => i18n::fmt(key, &[("max", &max.to_string()), ("noun", noun)]),
+      Some(s) => i18n::fmt_logical(key, &[("max", &max.to_string()), ("noun", noun), ("secs", &(s.round() as i64).to_string())]),
+      None => i18n::fmt_logical(key, &[("max", &max.to_string()), ("noun", noun)]),
     };
   }
   let plural = if max == 1 { "" } else { "s" };
@@ -633,9 +633,9 @@ fn max_message(kind: RefKind, max: usize, secs: Option<f32>) -> String {
 
 fn frames_full_message(model: Option<&ModelInfo>) -> &'static str {
   if model.is_some_and(|m| m.end_frame) {
-    i18n::t("First and last frames are already set")
+    i18n::tl("First and last frames are already set")
   } else {
-    i18n::t("The first frame is already set")
+    i18n::tl("The first frame is already set")
   }
 }
 

@@ -225,7 +225,7 @@ impl CharactersModal {
         ui.horizontal(|ui| {
           if widgets::button(ui, None, i18n::t("Save"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
             if self.name.trim().is_empty() {
-              actions.push(CharactersAction::Toast(i18n::t("Name cannot be empty").to_owned()));
+              actions.push(CharactersAction::Toast(i18n::tl("Name cannot be empty").to_owned()));
             } else {
               actions.push(CharactersAction::Edit { token: c.token.clone(), name: self.name.trim().to_owned(), description: self.description.trim().to_owned() });
               self.view = View::List;
@@ -272,7 +272,7 @@ impl CharactersModal {
                 actions.push(CharactersAction::Upload { ref_id: img.id, path });
                 self.image = Some(img);
               },
-              Err(err) => actions.push(CharactersAction::Toast(i18n::fmt("Failed to upload {file}: {err}", &[("file", &crate::pages::common::file_name(&path)), ("err", &err.to_string())]))),
+              Err(err) => actions.push(CharactersAction::Toast(i18n::fmt_logical("Failed to upload {file}: {err}", &[("file", &crate::pages::common::file_name(&path)), ("err", &err.to_string())]))),
             }
           }
         }
@@ -285,8 +285,8 @@ impl CharactersModal {
         ui.horizontal(|ui| {
           if ui.add_enabled_ui(!uploading, |ui| widgets::button(ui, Some(Icon::Sparkles), i18n::t("Create"), widgets::Kind::Primary, 0.0, theme::CONTROL_H)).inner.clicked() {
             match (self.name.trim(), self.image.as_ref().and_then(|i| i.token.clone())) {
-              ("", _) => actions.push(CharactersAction::Toast(i18n::t("Please enter a character name").to_owned())),
-              (_, None) => actions.push(CharactersAction::Toast(i18n::t("Please upload a reference image").to_owned())),
+              ("", _) => actions.push(CharactersAction::Toast(i18n::tl("Please enter a character name").to_owned())),
+              (_, None) => actions.push(CharactersAction::Toast(i18n::tl("Please upload a reference image").to_owned())),
               (name, Some(image_token)) => {
                 let description = Some(self.description.trim().to_owned()).filter(|d| !d.is_empty());
                 actions.push(CharactersAction::Create { image_token, name: name.to_owned(), description });

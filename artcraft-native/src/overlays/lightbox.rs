@@ -56,11 +56,16 @@ impl Lightbox {
 
     let typing = ctx.memory(|m| m.focused().is_some());
     if !typing && !self.confirm_delete {
-      let (left, right) = ctx.input(|i| (i.key_pressed(Key::ArrowLeft) || i.key_pressed(Key::ArrowUp), i.key_pressed(Key::ArrowRight) || i.key_pressed(Key::ArrowDown)));
-      if let (true, Some(t)) = (left, &prev) {
+      let rtl = i18n::is_rtl();
+      let (go_prev, go_next) = ctx.input(|i| {
+        let horiz_prev = if rtl { i.key_pressed(Key::ArrowRight) } else { i.key_pressed(Key::ArrowLeft) };
+        let horiz_next = if rtl { i.key_pressed(Key::ArrowLeft) } else { i.key_pressed(Key::ArrowRight) };
+        (horiz_prev || i.key_pressed(Key::ArrowUp), horiz_next || i.key_pressed(Key::ArrowDown))
+      });
+      if let (true, Some(t)) = (go_prev, &prev) {
         actions.push(LightboxAction::Navigate(t.clone()));
       }
-      if let (true, Some(t)) = (right, &next) {
+      if let (true, Some(t)) = (go_next, &next) {
         actions.push(LightboxAction::Navigate(t.clone()));
       }
     }

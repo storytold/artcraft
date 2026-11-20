@@ -30,7 +30,8 @@ pub fn home(ui: &mut Ui, signed_in: bool, requests: &mut Vec<AppRequest>) -> Opt
   ui.add_space(28.0);
   ui.horizontal(|ui| {
     ui.spacing_mut().item_spacing.x = 16.0;
-    let cards: [(Page, Icon, &str, &str); 3] = if rtl { [(Page::CreateAudio, Icon::Music, "Create Audio", "Describe a song, a sound, or a sample."), (Page::CreateVideo, Icon::Video, "Create Video", "Describe a scene. See it in motion."), (Page::CreateImage, Icon::Image, "Create Image", "Describe anything. See it in seconds.")] } else { [(Page::CreateImage, Icon::Image, "Create Image", "Describe anything. See it in seconds."), (Page::CreateVideo, Icon::Video, "Create Video", "Describe a scene. See it in motion."), (Page::CreateAudio, Icon::Music, "Create Audio", "Describe a song, a sound, or a sample.")] };
+    // In RTL, top_down(Align::Max) already causes ui.horizontal to place children right-to-left.
+    let cards = [(Page::CreateImage, Icon::Image, "Create Image", "Describe anything. See it in seconds."), (Page::CreateVideo, Icon::Video, "Create Video", "Describe a scene. See it in motion."), (Page::CreateAudio, Icon::Music, "Create Audio", "Describe a song, a sound, or a sample.")];
     let card_w = (width - 16.0 * (cards.len() - 1) as f32) / cards.len() as f32;
     for (page, icon, title, text) in cards {
       if card(ui, card_w, icon, title, text) {

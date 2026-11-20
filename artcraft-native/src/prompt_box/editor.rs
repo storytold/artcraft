@@ -139,7 +139,10 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
   let output = scroll
     .show(&mut child, |ui| {
       let min_h = height.unwrap_or(MIN_HEIGHT);
-      egui::TextEdit::multiline(prompt).id(id).frame(egui::Frame::NONE).font(FontId::new(FONT_SIZE, FontFamily::Proportional)).hint_text(egui::RichText::new(opts.placeholder).color(theme::MUTED).size(FONT_SIZE)).desired_width(text_width).desired_rows(1).min_size(vec2(text_width, min_h)).return_key(return_key).layouter(&mut layouter).show(ui)
+      let hint_font = FontId::new(FONT_SIZE, FontFamily::Proportional);
+      let logical_hint = i18n::logical_of(opts.placeholder);
+      let shown_hint = if i18n::is_rtl() && i18n::has_rtl_script(logical_hint) { i18n::wrapped_visual_lines(ui.ctx(), i18n::current(), logical_hint, &hint_font, text_width) } else { opts.placeholder.to_owned() };
+      egui::TextEdit::multiline(prompt).id(id).frame(egui::Frame::NONE).font(hint_font).hint_text(egui::RichText::new(shown_hint).color(theme::MUTED).size(FONT_SIZE)).desired_width(text_width).desired_rows(1).min_size(vec2(text_width, min_h)).return_key(return_key).layouter(&mut layouter).show(ui)
     })
     .inner;
   let used_h = child.min_rect().height().clamp(MIN_HEIGHT, max_h);

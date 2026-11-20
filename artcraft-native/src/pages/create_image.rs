@@ -191,9 +191,9 @@ impl CreateImagePage {
         (true, false) => i18n::tl("Video"),
         _ => i18n::tl("Audio"),
       };
-      env.toasts.error(i18n::fmt("{what} references aren't available here", &[("what", what)]));
+      env.toasts.error(i18n::fmt_logical("{what} references aren't available here", &[("what", what)]));
     } else if images.is_empty() {
-      env.toasts.error(i18n::t("Only image files can be added here"));
+      env.toasts.error(i18n::tl("Only image files can be added here"));
     }
     if images.is_empty() {
       return;
@@ -221,11 +221,11 @@ impl CreateImagePage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(i18n::fmt("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
+      env.toasts.error(i18n::fmt_logical("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error(i18n::t("Please wait for your references to finish uploading"));
+      env.toasts.error(i18n::tl("Please wait for your references to finish uploading"));
       return;
     }
     // Other providers take the references as links (when the model takes references there).
@@ -235,7 +235,7 @@ impl CreateImagePage {
       match self.refs.images.iter().map(|r| r.full_url.clone()).collect::<Option<Vec<String>>>() {
         Some(urls) => urls,
         None => {
-          env.toasts.error(i18n::t("A reference image is missing its link. Please add it again."));
+          env.toasts.error(i18n::tl("A reference image is missing its link. Please add it again."));
           return;
         },
       }
@@ -291,12 +291,12 @@ impl CreateImagePage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Image, job_tokens, meta, env.catalog);
-    env.toasts.success(i18n::t("Image generation enqueued!"));
+    env.toasts.success(i18n::tl("Image generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str) {
     self.generating = false;
-    env.toasts.error(if message.is_empty() { i18n::t("Failed to start image generation. Please try again.") } else { message });
+    env.toasts.error(if message.is_empty() { i18n::tl("Failed to start image generation. Please try again.") } else { message });
   }
 
   /// Recreate: the original prompt, model, settings and reference images.
@@ -321,5 +321,5 @@ impl CreateImagePage {
 
 fn max_images_message(max: usize) -> String {
   let key = if max == 1 { "Max {max} image reference" } else { "Max {max} image references" };
-  i18n::fmt(key, &[("max", &max.to_string())])
+  i18n::fmt_logical(key, &[("max", &max.to_string())])
 }
