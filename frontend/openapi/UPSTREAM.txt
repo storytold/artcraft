@@ -1,0 +1,30 @@
+The file next to this note is the utoipa export from storytold/artcraft-services.
+
+Regenerate it there, from that repository:
+
+    SQLX_OFFLINE=true cargo run --bin docs-cli
+
+Copy the resulting api.json here as upstream.openapi.json, then from the
+artcraft repository root run:
+
+    python3 script/openapi/generate_public_openapi.py
+
+Commit both files. CI runs the generator with --check and fails when
+frontend/api.json drifts.
+
+The export still describes library reads as website-session only. The
+public spec overlays the Authorization behavior from
+storytold/artcraft-services#234 at 54a4e47fa681e8a60f9fdb460e677631513225b3.
+
+That pull request accepts an API key or an MCP session token on the
+project, mesh, splat, and job reads. A bad Authorization header is 401
+and does not fall back to a cookie. With no header, the website session
+is unchanged, and GET /v1/jobs/session still lists an anonymous visitor's
+own jobs.
+
+The public spec withholds /v1/internal/*, moderation, impersonation,
+/v1/session_token, and /v1/image_studio/update_job_status. The job-status
+handler in artcraft-services takes no credential; its comment defers
+secrets-based auth. This repository does not publish that route.
+
+Netlify publishes frontend/api.json only. It does not publish this export.

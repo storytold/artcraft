@@ -13,8 +13,8 @@ This guide covers **video generation from URL inputs** — passing image, video,
 URLs directly. The server downloads each URL, stores it as a media file on your account, and then
 runs generation against it. You never have to upload files yourself.
 
-> All examples send **no cookies**. The Omni API is authenticated purely by your API key. If you
-> send session cookies they are ignored.
+> The examples for `/v1/omni_api/*` send **no cookies**. A session cookie is ignored on this route.
+> Library and job reads, below, still accept a website cookie when `Authorization` is absent.
 
 ---
 
@@ -66,7 +66,91 @@ Authorization: Key artcraft_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Authorization: artcraft_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-`Bearer` is recommended. **Do not send cookies.**
+Accepted Authorization forms are Bearer, Key, and the bare credential. `Bearer` is recommended
+for `/v1/omni_api/*`. A session cookie is ignored on this route.
+
+### User-Agent
+
+Send a descriptive `User-Agent` on every request, for example
+`MyTool/1.0 (+https://example.com)`. The rule applies to image generation, uploads, job status,
+and library reads.
+
+Cloudflare answers 403 error 1010 before the API key is checked when the User-Agent is a library
+default. Python urllib's default is one. The body is not the JSON error envelope.
+
+A missing or empty User-Agent is not the verified 1010 block. Send a descriptive User-Agent on
+every request.
+
+A request that already carries `Authorization` still needs that header. A library-default agent
+is **403** even when the key is valid. A descriptive agent with a bad key is **401**, and the
+key is checked only after Cloudflare accepts the agent. Clients must not assume a JSON body
+when the status is 403.
+
+### Library and job reads
+
+These reads accept the same `Authorization` header forms as generation. The header may be an
+API key (`artcraft_api_…`) or an MCP session token (`mcp_session_…`).
+
+An MCP session token is a full account-read credential. Store it securely and revoke it or let
+it expire.
+
+When an Authorization header and a session or visitor cookie are both present, the header wins
+and the cookie is ignored.
+
+A bad Authorization header is 401 and does not fall back to a cookie. That includes a missing
+credential, a malformed scheme, an unknown key, an expired or revoked MCP session, and a banned
+owner.
+
+The rows are the caller's own. A key does not read another account. There is no account id on
+these routes: the list is the caller's rows, so another account's files are not in the response.
+
+The project, mesh, and splat lists do not accept the visitor cookie. With no Authorization
+header they require the website `session` cookie.
+
+With no Authorization header, GET /v1/jobs/session still lists an anonymous visitor's own jobs
+from the visitor cookie. A website `session` cookie wins over the visitor cookie when both are
+present and the header is absent.
+
+GET /v1/jobs/session lists at most 100 jobs from the last 36 hours. Jobs the caller has
+dismissed are omitted. Non-audio complete_success rows are then limited to three so an
+uncleared success list stays short. Audio successes are kept.
+
+Poll GET /v1/jobs/session about every 5 seconds.
+
+| Endpoint                           | What it lists                                          | When Authorization is absent                                            |
+|------------------------------------|--------------------------------------------------------|-------------------------------------------------------------------------|
+| `GET /v1/media_files/project/list` | the caller's saved projects, including 3D Stage scenes | website `session` cookie, otherwise 401                                 |
+| `GET /v1/media_files/mesh/list`    | the caller's meshes                                    | website `session` cookie, otherwise 401                                 |
+| `GET /v1/media_files/splat/list`   | the caller's splats                                    | website `session` cookie, otherwise 401                                 |
+| `GET /v1/jobs/session`             | the caller's jobs from the last 36 hours, at most 100  | website `session` cookie, otherwise the `visitor` cookie, otherwise 401 |
+
+| Parameter             | Applies to                     | Default | Meaning                                                                 |
+|-----------------------|--------------------------------|---------|-------------------------------------------------------------------------|
+| `page_size`           | project, mesh, and splat lists | `100`   | Maximum `1000`.                                                         |
+| `cursor`              | project, mesh, and splat lists | none    | Opaque id from the previous page.                                       |
+| `cursor_is_reversed`  | project, mesh, and splat lists | `false` | Walk backward from `cursor`.                                            |
+| `sort_ascending`      | project, mesh, and splat lists | `false` | `false` is newest first.                                                |
+| `filter_project_type` | project list                   | none    | `scene_3d`, `mood_board`, `workflow`, `video_timeline`, or `editor_2d`. |
+| `include_states`      | `GET /v1/jobs/session`         | none    | Comma-separated `JobStatusPlus` values to keep.                         |
+| `exclude_states`      | `GET /v1/jobs/session`         | none    | The same values, removed from the list.                                 |
+
+`include_states` and `exclude_states` use `pending`, `started`, `complete_success`,
+`complete_failure`, `attempt_failed`, `dead`, `cancelled_by_user`, and
+`cancelled_by_system`.
+
+```bash
+curl -sS \
+  -H "Authorization: Bearer $ARTCRAFT_API_KEY" \
+  -H "User-Agent: MyTool/1.0 (+https://example.com)" \
+  "https://api.storyteller.ai/v1/media_files/project/list?page_size=100&filter_project_type=scene_3d"
+```
+
+```bash
+curl -sS \
+  -H "Authorization: Bearer $ARTCRAFT_API_KEY" \
+  -H "User-Agent: MyTool/1.0 (+https://example.com)" \
+  "https://api.storyteller.ai/v1/jobs/session?include_states=pending,started,complete_success"
+```
 
 ---
 
@@ -615,11 +699,15 @@ while (true) {
 ## Notes & troubleshooting
 
 - **Always send a fresh `idempotency_token`** (UUID). Reusing one is rejected as a duplicate.
-- **No cookies.** The endpoint authenticates only via the `Authorization` header.
+- **Omni API cookies.** A session cookie is ignored on this route. Library reads are the
+  exception, and only when `Authorization` is absent. See Library and job reads.
 - **URL must be `http(s)`** and reachable by the server; redirects are followed.
 - **Type mismatches** (e.g. a `.webm` passed as a reference video, which requires `mp4`) are
   rejected with a `400` describing the unpermitted type.
-- **`401 Unauthorized`** — missing/invalid API key, or the key's owner is banned.
+- **`401 Unauthorized`** — missing, invalid, or banned-owner API key. A bad Authorization
+  header is 401 and does not fall back to a cookie.
+- **`403` Cloudflare error 1010** — the same edge block documented under User-Agent. It applies
+  to image generation as well as this video route. The body is not the JSON error envelope.
 - **`402 Payment required`** — insufficient credits/balance.
 - There is a companion image endpoint, `POST /v1/omni_api/generate/image`, which accepts
   `image_urls` (mutually exclusive with `image_media_tokens`) following the same rules.
