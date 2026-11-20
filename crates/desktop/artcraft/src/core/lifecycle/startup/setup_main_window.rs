@@ -3,6 +3,14 @@ use errors::AnyhowResult;
 use tauri::window::Color;
 use tauri::{AppHandle, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
+/// Pre-paint webview background for Linux. Keep this in sync with the default
+/// dark `--st-bg` in `frontend/apps/artcraft/app/src/styles/base.css`.
+///
+/// The saved theme lives in the frontend, so this Rust-side value cannot follow
+/// it; a light theme may briefly show this color before the webview paints.
+#[cfg(target_os = "linux")]
+const LINUX_PREPAINT_BACKGROUND: Color = Color(18, 19, 22, 255);
+
 pub async fn setup_main_window(
   app: &AppHandle,
 ) -> AnyhowResult<()> {
@@ -12,9 +20,17 @@ pub async fn setup_main_window(
           .title("ArtCraft")
           .resizable(true)
           .fullscreen(false)
-          .background_color(Color(0, 0, 0, 0))
           .enable_clipboard_access()
           .inner_size(2400.0, 1300.0);
+
+  // Tauri passes this color to WebKitGTK as the webview background. An alpha
+  // of zero creates a transparent webview surface, which WebKitGTK can fail
+  // to composite on Wayland (leaving only video layers visible).
+  #[cfg(target_os = "linux")]
+  let win_builder = win_builder.background_color(LINUX_PREPAINT_BACKGROUND);
+
+  #[cfg(not(target_os = "linux"))]
+  let win_builder = win_builder.background_color(Color(0, 0, 0, 0));
 
   #[cfg(target_os = "macos")]
   let win_builder = win_builder
