@@ -77,7 +77,9 @@ export class SaveManager {
       clearTimeout(this.saveTimer);
     }
     this.saveTimer = setTimeout(() => {
-      void this.saveNow();
+      void this.saveNow().catch((error) => {
+        console.error("Failed to autosave project:", error);
+      });
     }, this.debounceMs);
   }
 
@@ -96,11 +98,14 @@ export class SaveManager {
 
     try {
       await this.editor.project.saveCurrentProject();
+    } catch (error) {
+      this.hasPendingSave = true;
+      throw error;
     } finally {
       this.isSaving = false;
-      if (this.hasPendingSave) {
-        this.queueSave();
-      }
+    }
+    if (this.hasPendingSave) {
+      this.queueSave();
     }
   }
 
