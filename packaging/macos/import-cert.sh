@@ -40,8 +40,11 @@ rm -f "$CERT"
 # Allow codesign to access the private key without a GUI prompt.
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" "$KEYCHAIN" >/dev/null
 # Put it on the search list alongside existing user keychains.
-# shellcheck disable=SC2046
-security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+existing_keychains=()
+while IFS= read -r line; do
+  [ -n "$line" ] && existing_keychains+=("$line")
+done < <(security list-keychains -d user | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//')
+security list-keychains -d user -s "$KEYCHAIN" ${existing_keychains[@]+"${existing_keychains[@]}"}
 
 IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | awk '/Developer ID Application/ { print $2; exit }')"
 if [ -z "$IDENTITY" ]; then
@@ -49,7 +52,6 @@ if [ -z "$IDENTITY" ]; then
   echo "error: no 'Developer ID Application' identity in APPLE_CERTIFICATE" >&2
   exit 1
 fi
-KEEP_KEYCHAIN=1
 echo "Imported signing identity $IDENTITY"
 if [ -n "${GITHUB_ENV:-}" ]; then
   { echo "MACOS_SIGN_IDENTITY=$IDENTITY"; echo "MACOS_KEYCHAIN=$KEYCHAIN"; } >>"$GITHUB_ENV"
@@ -57,3 +59,4 @@ else
   echo "MACOS_SIGN_IDENTITY=$IDENTITY"
   echo "MACOS_KEYCHAIN=$KEYCHAIN"
 fi
+KEEP_KEYCHAIN=1
