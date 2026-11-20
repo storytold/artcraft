@@ -60,7 +60,7 @@ fn u16_thumbnail_handles_a_large_averaging_region() {
 }
 
 fn png16(width: u32, height: u32, color: ExtendedColorType, samples: impl IntoIterator<Item = u16>) -> Vec<u8> {
-  let raw: Vec<u8> = samples.into_iter().flat_map(u16::to_be_bytes).collect();
+  let raw: Vec<u8> = samples.into_iter().flat_map(u16::to_ne_bytes).collect();
   let mut bytes = Vec::new();
   PngEncoder::new(&mut bytes).write_image(&raw, width, height, color).unwrap();
   bytes
