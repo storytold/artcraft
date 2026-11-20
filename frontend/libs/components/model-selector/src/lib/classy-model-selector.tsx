@@ -24,6 +24,8 @@ import { defaultModelForPage } from "./defaultModelForPage";
 
 interface ClassyModelSelectorProps {
   items: Omit<PopoverItem, "selected">[];
+  additionalItems?: PopoverItem[];
+  onAdditionalItemSelect?: (item: PopoverItem) => void;
   page: ModelPage;
   mode?: "hoverSelect" | "default" | "toggle" | "button";
   panelTitle?: string;
@@ -131,6 +133,8 @@ function ProviderTooltipContent({
 
 export function ClassyModelSelector({
   items,
+  additionalItems,
+  onAdditionalItemSelect,
   page,
   providersByModel,
   providerTooltipDelayMs = 300,
@@ -188,10 +192,13 @@ export function ClassyModelSelector({
   }, [items, providersByModel, page, selectedProvidersByModel]);
 
   const handleModelSelect = (item: PopoverItem) => {
+    onAdditionalItemSelect?.(item);
+    if (!item.model) return;
     console.log(`Model selector changed on page "${page}": `, item.model);
-    setSelectedModel(page, item.model!);
+    setSelectedModel(page, item.model);
   };
 
+  const additionalSelected = additionalItems?.some((item) => item.selected) ?? false;
   const modelList = useMemo(
     () =>
       items.map((item) => {
@@ -206,7 +213,7 @@ export function ClassyModelSelector({
 
         return {
           ...item,
-          selected: isSameModel(item.model as Model | undefined, selectedModel),
+          selected: !additionalSelected && isSameModel(item.model, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
                 <ProviderTooltipContent
@@ -251,6 +258,7 @@ export function ClassyModelSelector({
       }),
     [
       items,
+      additionalSelected,
       selectedModel,
       selectedProvider,
       selectedProvidersByModel,
@@ -278,13 +286,13 @@ export function ClassyModelSelector({
   if (variant === "embedded") {
     // The trigger pill keeps the mono icon; the color variants are only for
     // list rows.
-    const selectedIcon = selectedModel
+    const selectedIcon = selectedModel && !additionalSelected
       ? getCreatorIcon(selectedModel.creator)
       : modelList.find((i) => i.selected)?.icon;
     return (
       <Tooltip content="Model" position="top" className="z-50" closeOnClick>
         <PopoverMenu
-          items={embeddedList}
+          items={[...embeddedList, ...(additionalItems ?? [])]}
           onSelect={handleModelSelect}
           mode="toggle"
           richList

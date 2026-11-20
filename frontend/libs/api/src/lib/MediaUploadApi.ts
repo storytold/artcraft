@@ -191,6 +191,38 @@ export class MediaUploadApi extends ApiManager {
     return this.Upload({ endpoint, blob, fileName, uuid, options });
   }
 
+  public async ImportGeneratedMedia({
+    kind,
+    blob,
+    fileName,
+    uuid,
+  }: {
+    kind: "image" | "video";
+    blob: Blob;
+    fileName: string;
+    uuid: string;
+  }): Promise<ApiResponse<string>> {
+    const path = kind === "image" ? "image" : "new_video";
+    const response = await this.postForm<{
+      success: boolean;
+      media_file_token?: string;
+      BadInput?: string;
+      error_message?: string;
+      message?: string;
+    }>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/media_files/upload/${path}`,
+      blob,
+      blobFileName: fileName,
+      uuid,
+      formRecord: { is_intermediate_system_file: "false", maybe_title: fileName },
+    });
+    return {
+      success: response.success,
+      data: response.media_file_token,
+      errorMessage: response.BadInput || response.error_message || response.message,
+    };
+  }
+
   public async UploadNewEngineAsset({
     file,
     fileName,

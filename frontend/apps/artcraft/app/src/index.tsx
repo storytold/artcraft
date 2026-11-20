@@ -13,6 +13,7 @@ import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
+import { watchAaoLibraryImports } from "~/components/generation-feed/aaoLibraryImports";
 
 // TODO(bt,2025-04-19): Make these configurable
 const ENV = {
@@ -85,6 +86,8 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
   useEffect(() => {
     SoundManager.install();
   }, []);
+
+  useEffect(watchAaoLibraryImports, []);
 
   // Reconcile the model dropdowns against the backend omni listing once on boot.
   // The store is already seeded with the static overlay, so a failure here is a

@@ -70,6 +70,20 @@ export default defineConfig({
     topLevelAwait(),
   ],
   server: {
+    proxy: {
+      "/aao-media/": {
+        target: "http://127.0.0.1:8771",
+        changeOrigin: true,
+        rewrite: (url) => url.replace(/^\/aao-media/, ""),
+        configure: (proxy) => {
+          proxy.on("proxyReq", (outgoing, incoming) => {
+            if (incoming.headers.origin === `http://${incoming.headers.host}`) {
+              outgoing.removeHeader("origin");
+            }
+          });
+        },
+      },
+    },
     fs: {
       allow: [workspaceRoot],
     },

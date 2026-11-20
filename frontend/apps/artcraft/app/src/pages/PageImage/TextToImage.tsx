@@ -33,6 +33,7 @@ import { useDesktopGenerationFeed } from "~/components/generation-feed/useDeskto
 import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
 import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
 import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
+import { AaoGeneration, useAaoGeneration } from "~/components/generation-feed/AaoGeneration";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
@@ -54,6 +55,11 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+  const aao = useAaoGeneration("image");
+  const modelSelector = (
+    <ClassyModelSelector variant="embedded" items={textToImageModelList} page={PAGE_ID}
+      additionalItems={aao.items} onAdditionalItemSelect={aao.onSelect} />
+  );
 
   const imageCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[PAGE_ID],
@@ -180,7 +186,9 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
       promptBox={
         <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
           <div ref={promptContentRef}>
-            <PromptBoxImage
+            {aao.provider ? (
+              <AaoGeneration key={aao.provider.id} provider={aao.provider} selector={modelSelector} online={aao.online} />
+            ) : <PromptBoxImage
               useJobContext={() => {
                 return jobContext;
               }}
@@ -190,13 +198,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               imageMediaId={imageMediaId}
               url={imageUrl ?? undefined}
               credits={imageCredits}
-              modelSelector={
-                <ClassyModelSelector
-                  variant="embedded"
-                  items={textToImageModelList}
-                  page={PAGE_ID}
-                />
-              }
+              modelSelector={modelSelector}
               onEnqueuePressed={async (prompt, count, subscriberId) => {
                 const modelLabel = selectedImageModel?.fullName ?? "";
                 startBatch(
@@ -210,13 +212,13 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 // pending row appears immediately.
                 window.dispatchEvent(new Event("task-queue-update"));
               }}
-            />
+            />}
           </div>
         </div>
       }
       bottomRight={
         <>
-          <CostCalculatorButton modelPage={PAGE_ID} />
+          {!aao.provider && <CostCalculatorButton modelPage={PAGE_ID} />}
           <HelpMenuButton />
         </>
       }
