@@ -61,7 +61,7 @@ class WorkerUnavailableError extends Error {}
 
 interface ConversionJob {
   id: number;
-  buffer: ArrayBuffer;
+  file: File;
   ext: ConvertibleModelExtension;
   name: string;
   resolve: (glb: ArrayBuffer) => void;
@@ -81,6 +81,8 @@ let workerReady = false;
 let nextJobId = 0;
 // Files wait here and go to the worker one at a time, so the timer covers a
 // single file and replacing the worker costs only the file that was running.
+// A waiting job holds the File, not its bytes: a multi-file pick would
+// otherwise keep every file's buffer in memory until its turn.
 const queuedJobs: ConversionJob[] = [];
 let activeJob: ConversionJob | null = null;
 let activeJobTimer: ReturnType<typeof setTimeout> | undefined;
@@ -92,23 +94,23 @@ async function convert(
 ): Promise<ArrayBuffer> {
   if (getWorker()) {
     try {
-      return await convertInWorker(await file.arrayBuffer(), ext, name);
+      return await convertInWorker(file, ext, name);
     } catch (error) {
       if (!(error instanceof WorkerUnavailableError)) throw error;
     }
   }
-  // The buffer above may already be transferred (detached) to the worker,
-  // so the fallback reads the File again.
+  // A buffer read for the worker went with it (transferred, or dropped
+  // unused), so the fallback reads the File itself.
   return convertModelBufferToGlb(await file.arrayBuffer(), ext, name);
 }
 
 function convertInWorker(
-  buffer: ArrayBuffer,
+  file: File,
   ext: ConvertibleModelExtension,
   name: string,
 ): Promise<ArrayBuffer> {
   return new Promise<ArrayBuffer>((resolve, reject) => {
-    queuedJobs.push({ id: nextJobId++, buffer, ext, name, resolve, reject });
+    queuedJobs.push({ id: nextJobId++, file, ext, name, resolve, reject });
     startNextJob();
   });
 }
@@ -124,15 +126,30 @@ function startNextJob(): void {
   }
   const job = queuedJobs.shift() as ConversionJob;
   activeJob = job;
-  activeJobTimer = setTimeout(() => {
-    replaceWorker(
-      new Error(
-        `Conversion took longer than ${CONVERSION_TIMEOUT_MS / 1000} seconds and was stopped.`,
-      ),
-    );
-  }, CONVERSION_TIMEOUT_MS);
-  const { id, buffer, ext, name } = job;
-  workerInstance.postMessage({ id, buffer, ext, name }, [buffer]);
+  job.file.arrayBuffer().then(
+    (buffer) => {
+      // The worker failed while the file was being read, and whoever handled
+      // that already took this job (every path that retires a worker does).
+      if (activeJob !== job) return;
+      activeJobTimer = setTimeout(() => {
+        replaceWorker(
+          new Error(
+            `Conversion took longer than ${CONVERSION_TIMEOUT_MS / 1000} seconds and was stopped.`,
+          ),
+        );
+      }, CONVERSION_TIMEOUT_MS);
+      const { id, ext, name } = job;
+      workerInstance.postMessage({ id, buffer, ext, name }, [buffer]);
+    },
+    (error: Error) => {
+      if (activeJob !== job) return;
+      // The file can't be read (moved or deleted since it was picked): fail
+      // it alone and let the files behind it run.
+      takeActiveJob();
+      job.reject(error);
+      startNextJob();
+    },
+  );
 }
 
 function getWorker(): Worker | null {

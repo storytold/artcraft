@@ -85,6 +85,44 @@ describe("convertModelToGlb", () => {
     expect(FakeWorker.instances).toHaveLength(1);
   });
 
+  it("reads a file into memory only when its turn comes", async () => {
+    const waitingFile = modelFile("waiting.stl");
+    const readWaitingFile = vi.spyOn(waitingFile, "arrayBuffer");
+    const first = convertModelToGlb(modelFile("first.stl"));
+    const waiting = convertModelToGlb(waitingFile);
+    await settle();
+    const [worker] = FakeWorker.instances;
+    expect(worker.posted).toHaveLength(1);
+    expect(readWaitingFile).not.toHaveBeenCalled();
+
+    worker.finish(0);
+    await first;
+    await settle();
+    expect(readWaitingFile).toHaveBeenCalledTimes(1);
+    worker.finish(1);
+    expect((await waiting).name).toBe("waiting.glb");
+  });
+
+  it("moves on to the next file when one can't be read", async () => {
+    const unreadableFile = Object.assign(new File(["mesh"], "unreadable.stl"), {
+      arrayBuffer: async (): Promise<ArrayBuffer> => {
+        throw new Error("The file could not be read.");
+      },
+    });
+    const unreadable = convertModelToGlb(unreadableFile);
+    const waiting = convertModelToGlb(modelFile("waiting.stl"));
+    const unreadableResult =
+      expect(unreadable).rejects.toThrow("could not be read");
+    await settle();
+    await unreadableResult;
+
+    const [worker] = FakeWorker.instances;
+    expect(worker.posted).toHaveLength(1);
+    worker.finish(0);
+    expect((await waiting).name).toBe("waiting.glb");
+    expect(convertOnMainThread).not.toHaveBeenCalled();
+  });
+
   it("stops a conversion that outlives the time budget", async () => {
     const stuck = convertModelToGlb(modelFile("stuck.stl"));
     const waiting = convertModelToGlb(modelFile("waiting.stl"));
