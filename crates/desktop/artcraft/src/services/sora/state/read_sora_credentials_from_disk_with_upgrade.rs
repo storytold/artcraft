@@ -8,7 +8,8 @@ use openai_sora_client::creds::sora_jwt_bearer_token::SoraJwtBearerToken;
 use openai_sora_client::creds::sora_sentinel::SoraSentinel;
 use openai_sora_client::creds::sora_sentinel_token::SoraSentinelToken;
 use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
-use tokio::fs::{read_to_string, write};
+use std::fs::{read_to_string, OpenOptions};
+use std::io::Write;
 
 pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDataRoot) -> AnyhowResult<SoraCredentialSet> {
   let cookie_file = app_data_root.get_sora_cookie_file_path();
@@ -20,7 +21,7 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
     return Err(anyhow!("Cookie file does not exist: {:?}", cookie_file));
   }
 
-  let value = read_to_string(cookie_file).await?
+  let value = read_to_string(cookie_file)?
       .trim()
       .to_string();
 
@@ -31,14 +32,14 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
   let mut sentinel_token = None;
 
   if bearer_file.exists() {
-    let value = read_to_string(&bearer_file).await?
+    let value = read_to_string(&bearer_file)?
         .trim()
         .to_string();
     bearer = Some(SoraJwtBearerToken::new(value)?);
   }
 
   if legacy_sentinel_file.exists() {
-    let value = read_to_string(&legacy_sentinel_file).await?
+    let value = read_to_string(&legacy_sentinel_file)?
         .trim()
         .to_string();
 
@@ -46,7 +47,7 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
   }
 
   if sentinel_token_file.exists() {
-    let value = read_to_string(&sentinel_token_file).await?
+    let value = read_to_string(&sentinel_token_file)?
         .trim()
         .to_string();
 
@@ -72,7 +73,14 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
       info!("Persisting bearer token value...");
       let value = bearer.token_str();
 
-      write(&bearer_file, value.as_bytes()).await?;
+      let mut file = OpenOptions::new()
+          .create(true)
+          .write(true)
+          .truncate(true)
+          .open(&bearer_file)?;
+
+      file.write_all(value.as_bytes())?;
+      file.flush()?;
     }
   }
 
@@ -81,7 +89,14 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
       info!("Persisting sentinel value...");
       let value = sentinel.get_sentinel();
 
-      write(&legacy_sentinel_file, value.as_bytes()).await?;
+      let mut file = OpenOptions::new()
+          .create(true)
+          .write(true)
+          .truncate(true)
+          .open(&legacy_sentinel_file)?;
+
+      file.write_all(value.as_bytes())?;
+      file.flush()?;
     }
   }
   
@@ -90,7 +105,14 @@ pub async fn read_sora_credentials_from_disk_with_upgrade(app_data_root: &AppDat
       info!("Persisting sentinel token...");
       let value = sentinel_token.to_persistent_storage_json()?;
 
-      write(&sentinel_token_file, value.as_bytes()).await?;
+      let mut file = OpenOptions::new()
+          .create(true)
+          .write(true)
+          .truncate(true)
+          .open(&sentinel_token_file)?;
+
+      file.write_all(value.as_bytes())?;
+      file.flush()?;
     }
   }
 

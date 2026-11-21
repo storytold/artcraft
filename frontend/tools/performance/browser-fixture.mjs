@@ -85,7 +85,8 @@ export async function measureTabChange(target) {
   const counters = window.__ARTCRAFT_COUNTERS__;
   const readsBefore = counters.fileReads;
   const start = performance.now();
-  await window.__ARTCRAFT_BENCH__.tabs.getState().setActiveTab(target);
+  const success = await window.__ARTCRAFT_BENCH__.tabs.getState().setActiveTab(target);
+  if (!success) throw new Error(`Tab change to ${target} failed`);
   const stateReadyMs = performance.now() - start;
   const ready = () => target === "2D"
     ? !!document.querySelector(".konvajs-content canvas")

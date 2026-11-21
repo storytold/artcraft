@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { LoadingBar } from "@storyteller/ui-loading";
 import { usePageSceneStore } from "../PageSceneStore";
 
@@ -6,6 +8,7 @@ import { usePageSceneStore } from "../PageSceneStore";
 // owns the loading bar UI; hosts that want a different visual can
 // build their own component reading from the same store slice.
 export const EditorLoadingBar = () => {
+  const { t: translateUi } = useUiTranslation();
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
   return (
     <LoadingBar
@@ -16,7 +19,7 @@ export const EditorLoadingBar = () => {
       hasSpinner
       progressData={{
         progress: 100,
-        label: "Loading Editor Engine 🦊",
+        label: translateUi("Loading Editor Engine 🦊"),
         message: editorLoader.message ?? "",
       }}
     />

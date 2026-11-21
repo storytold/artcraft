@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { CalculatorIcon, CheckIcon, ChevronRightIcon, CircleAlertIcon, CoinsIcon, GemIcon, HouseIcon, ImagesIcon, MinusIcon, PictureInPicture2Icon, SettingsIcon, SquareIcon, XIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
 import { signal } from "@preact/signals-react";
@@ -116,6 +117,7 @@ const CreditsCoinWithStatus = ({
 }: {
   iconStatus: CreditsIconStatus;
 }) => {
+  const { t } = useTranslation();
   const showBadge = iconStatus !== "hidden";
 
   const badgeColorClass =
@@ -129,10 +131,10 @@ const CreditsCoinWithStatus = ({
 
   const tooltipMessage =
     iconStatus === "failed"
-      ? "Couldn't refresh your balance."
+      ? t("Couldn't refresh your balance.")
       : iconStatus === "recovered"
-        ? "Balance up to date."
-        : "Refreshing your balance — current amount may not be up to date.";
+        ? t("Balance up to date.")
+        : t("Refreshing your balance — current amount may not be up to date.");
 
   const showRetry = iconStatus === "slow" || iconStatus === "failed";
 
@@ -159,7 +161,7 @@ const CreditsCoinWithStatus = ({
               className="h-7 self-start px-2 text-xs"
               onClick={handleRetry}
             >
-              Retry
+              {t("Retry")}
             </Button>
           )}
         </div>
@@ -180,6 +182,7 @@ const CreditsCoinWithStatus = ({
 };
 
 export const TopBar = ({ pageName }: Props) => {
+  const { t } = useTranslation();
   useSignals();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -432,7 +435,7 @@ export const TopBar = ({ pageName }: Props) => {
       >
         <nav
           className="mx-auto grid h-[56px] w-screen grid-cols-3 items-center justify-between ps-3"
-          aria-label="navigation"
+          aria-label={t("navigation")}
           data-tauri-drag-region
         >
           <div
@@ -451,7 +454,7 @@ export const TopBar = ({ pageName }: Props) => {
               />
             </div> */}
             <MenuIconSelector
-              menuItems={appMenuTabs}
+              menuItems={appMenuTabs.map((item) => ({ ...item, label: t(item.label), description: item.description ? t(item.description) : undefined, tooltipContent: typeof item.tooltipContent === "string" ? t(item.tooltipContent) : item.tooltipContent }))}
               activeMenu={tabStore.activeTabId}
               disabled={disableTabSwitcher()}
               onMenuChange={(tabId) => {
@@ -501,7 +504,7 @@ export const TopBar = ({ pageName }: Props) => {
                 {pageCrumbs.map((crumb, i) => {
                   const isLast = i === pageCrumbs.length - 1;
                   return (
-                    <Fragment key={`${crumb}-${i}`}>
+                    <Fragment key={`${t(crumb)}-${i}`}>
                       {i > 0 && (
                         <ChevronRightIcon
                           aria-hidden="true"
@@ -518,7 +521,7 @@ export const TopBar = ({ pageName }: Props) => {
                         aria-current={isLast ? "page" : undefined}
                         data-tauri-drag-region
                       >
-                        {crumb}
+                        {t(crumb)}
                       </span>
                     </Fragment>
                   );
@@ -553,7 +556,7 @@ export const TopBar = ({ pageName }: Props) => {
                   <div className="w-72 p-3 text-white">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium text-white/70">
-                        Your credit balance
+                        {t("Your credit balance")}
                       </span>
                       <button
                         className="text-sm font-medium text-primary transition-colors hover:text-primary-300"
@@ -562,7 +565,7 @@ export const TopBar = ({ pageName }: Props) => {
                           toggleCreditsModal();
                         }}
                       >
-                        Buy credits
+                        {t("Buy credits")}
                       </button>
                     </div>
                     <div className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-white">
@@ -578,7 +581,7 @@ export const TopBar = ({ pageName }: Props) => {
                       }}
                     >
                       <CalculatorIcon />
-                      Cost calculator
+                      {t("Cost calculator")}
                     </button>
 
                     <div className="mt-3 flex gap-2">
@@ -590,7 +593,7 @@ export const TopBar = ({ pageName }: Props) => {
                           handleOpenBillingSettings();
                         }}
                       >
-                        See details
+                        {t("See details")}
                       </Button>
                       <Button
                         variant="primary"
@@ -601,7 +604,7 @@ export const TopBar = ({ pageName }: Props) => {
                         }}
                         icon={GemIcon}
                       >
-                        Support
+                        {t("Support")}
                       </Button>
                     </div>
                   </div>
@@ -613,9 +616,9 @@ export const TopBar = ({ pageName }: Props) => {
                   variant="primary"
                   icon={GemIcon}
                   onClick={toggleSubscriptionModal}
-                  className="h-8 px-3"
+                  className="h-8 shrink-0 whitespace-nowrap px-3"
                 >
-                  Upgrade
+                  {t("Upgrade")}
                 </Button>
               )}
 
@@ -624,20 +627,20 @@ export const TopBar = ({ pageName }: Props) => {
               <button
                 type="button"
                 onClick={handleOpenGalleryModal}
-                aria-label="My Library"
+                aria-label={t("My Library")}
                 className="flex h-8 items-center gap-1.5 rounded-[3px] border border-white/15 px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-white/30 hover:bg-white/10"
               >
                 <ImagesIcon className="text-[11px]" />
                 <span className="hidden whitespace-nowrap xl:block">
-                  My Library
+                  {t("My Library")}
                 </span>
               </button>
 
               <UploadImagesButton />
 
-              <Tooltip content="Settings" position="bottom" delay={300}>
+              <Tooltip content={t("Settings")} position="bottom" delay={300}>
                 <Button
-                  aria-label="Settings"
+                  aria-label={t("Settings")}
                   variant="secondary"
                   icon={SettingsIcon}
                   iconClassName="h-4 w-4 shrink-0"

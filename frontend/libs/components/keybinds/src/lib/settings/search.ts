@@ -10,10 +10,11 @@ export function actionMatchesQuery(
   action: ActionDef,
   bindings: Binding[],
   query: string,
+  localizedLabels: readonly string[] = [],
 ): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  const haystack = `${action.label} ${action.group} ${bindings
+  const haystack = `${action.label} ${action.group} ${localizedLabels.join(" ")} ${bindings
     .map(bindingSearchText)
     .join(" ")}`.toLowerCase();
   // A compact pass strips spaces/`+` so "ctrl+z" / "⇧d" match contiguously…

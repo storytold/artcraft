@@ -441,7 +441,7 @@ export function useEditorActions() {
   useActionHandler(
     "toggle-bookmark",
     () => {
-      void editor.scenes.toggleBookmark({ time: editor.playback.getCurrentTime() });
+      editor.scenes.toggleBookmark({ time: editor.playback.getCurrentTime() });
     },
     undefined,
   );

@@ -162,7 +162,14 @@ impl SoraCredentialManager {
 
     self.holder.set_credentials(&creds)?;
 
-    tokio::fs::write(self.app_data_root.get_sora_legacy_sentinel_file_path(), sentinel.as_bytes()).await?;
+    let mut file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(self.app_data_root.get_sora_legacy_sentinel_file_path())?;
+
+    file.write_all(sentinel.as_bytes())?;
+    file.flush()?;
 
     Ok(creds)
   }

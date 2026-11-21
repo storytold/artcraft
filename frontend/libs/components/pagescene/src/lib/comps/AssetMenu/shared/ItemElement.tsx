@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useState } from "react";
 import { Badge } from "@storyteller/ui-badge";
 import { BoxIcon, FootprintsIcon, MoveIcon } from "lucide-react";
@@ -8,7 +10,6 @@ import { addClipToCharacter } from "../../../actions";
 import { AssetType, ToastTypes } from "../../../enums";
 import { usePageSceneStore } from "../../../PageSceneStore";
 import type { MediaItem } from "../../../models/assets";
-import { clickOnEnterOrSpace } from "@storyteller/common";
 
 interface Props {
   debug?: string;
@@ -39,6 +40,7 @@ const patchExpressionObjectType = (mediaType: string) => {
 };
 
 export const ItemElement = ({ item }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   // Broken thumbnail URL (404, CORS) → swap to the icon placeholder instead
   // of the browser's broken-image glyph + alt text. Keyed by media id, NOT a
@@ -111,10 +113,6 @@ export const ItemElement = ({ item }: Props) => {
       )}
 
       <div
-        // Only animations are added by a click; the rest are dragged in.
-        role={item.type === AssetType.ANIMATION ? "button" : "presentation"}
-        tabIndex={item.type === AssetType.ANIMATION ? 0 : undefined}
-        onKeyDown={clickOnEnterOrSpace}
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-none border border-white/15 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
         onPointerDown={(event) => dragAndDrop.onPointerDown(event, item, editor)}
         onClick={handleClick}
@@ -146,13 +144,11 @@ export const ItemElement = ({ item }: Props) => {
           {item.type === AssetType.ANIMATION ? (
             <>
               <FootprintsIcon  className="mr-1.5" />
-              Add to Character
-            </>
+              {translateUi("Add to Character")}</>
           ) : (
             <>
               <MoveIcon  className="mr-1.5" />
-              Drag to Scene
-            </>
+              {translateUi("Drag to Scene")}</>
           )}
         </div>
       </div>

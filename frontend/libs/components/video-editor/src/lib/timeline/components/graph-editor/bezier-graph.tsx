@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useRef, useState, type PointerEvent } from "react";
 import { useShiftKey } from "../../../hooks/use-shift-key";
@@ -85,6 +87,7 @@ export function BezierGraph({
   onChangeEnd?: (value: NormalizedCubicBezier) => void;
   onCancel?: () => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeHandle, setActiveHandle] = useState<BezierHandle | null>(null);
   const isShiftPressedRef = useShiftKey();
@@ -164,7 +167,7 @@ export function BezierGraph({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
-      <title>Bezier curve editor</title>
+      <title>{translateUi("Bezier curve editor")}</title>
       <line
         x1={p0.x}
         y1={p0.y}

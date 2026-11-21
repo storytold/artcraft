@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
@@ -39,6 +41,7 @@ const BlurPreview = memo(
     isSelected: boolean;
     onSelect: () => void;
   }) => {
+  const { t: translateUi } = useUiTranslation();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -75,7 +78,7 @@ const BlurPreview = memo(
         />
         <div className="absolute right-1 bottom-1 left-1 text-center">
           <span className="rounded bg-black/50 px-1 text-xs text-white">
-            {blur.label}
+            {translateUi(blur.label)}
           </span>
         </div>
       </button>
@@ -149,6 +152,7 @@ function CustomColorPreview({
   onPreview: (color: string) => void;
   onCommit: (color: string) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -158,7 +162,7 @@ function CustomColorPreview({
             isSelected && "border-primary border-2",
           )}
           type="button"
-          aria-label="Pick a custom background color"
+          aria-label={translateUi("Pick a custom background color")}
         >
           <span
             className="absolute inset-0"
@@ -186,6 +190,7 @@ const COLOR_SECTIONS = [
 ] as const;
 
 export function BackgroundContent() {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const activeProject = useEditor((e) => e.project.getActive());
 
@@ -263,7 +268,7 @@ export function BackgroundContent() {
         showTopBorder={false}
       >
         <SectionHeader>
-          <SectionTitle>Blur</SectionTitle>
+          <SectionTitle>{translateUi("Blur")}</SectionTitle>
         </SectionHeader>
         <SectionContent>
           <div className="flex flex-wrap gap-2">{blurPreviews}</div>
@@ -277,7 +282,7 @@ export function BackgroundContent() {
           sectionKey={`settings:background-${section.id}`}
         >
           <SectionHeader>
-            <SectionTitle>{section.title}</SectionTitle>
+            <SectionTitle>{translateUi(section.title)}</SectionTitle>
           </SectionHeader>
           <SectionContent>
             <div className="flex flex-wrap gap-2">

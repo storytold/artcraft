@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useShallow } from "zustand/shallow";
 import { TabSelector, type TabItem } from "@storyteller/ui-tab-selector";
 import { usePageSceneStore, type SceneMode } from "../../PageSceneStore";
@@ -8,6 +9,7 @@ const TABS: TabItem[] = [
 ];
 
 export const SceneModePill = () => {
+  const { t } = useTranslation();
   const { sceneMode, setSceneMode } = usePageSceneStore(
     useShallow((s) => ({
       sceneMode: s.sceneMode,
@@ -18,7 +20,7 @@ export const SceneModePill = () => {
   return (
     <div className="flex justify-center pt-3">
       <TabSelector
-        tabs={TABS}
+        tabs={TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
         activeTab={sceneMode}
         onTabChange={(id) => setSceneMode(id as SceneMode)}
         className="w-auto"

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEditor } from "../../editor/use-editor";
 import { useElementSelection } from "../hooks/element/use-element-selection";
 import {
@@ -86,6 +88,7 @@ export function TimelineToolbar({
 }
 
 function ToolbarLeftSection() {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const mediaAssets = useEditor((currentEditor) =>
     currentEditor.media.getAssets(),
@@ -144,19 +147,19 @@ function ToolbarLeftSection() {
       <TooltipProvider delayDuration={500}>
         <ToolbarButton
           icon={<HugeiconsIcon icon={ScissorIcon} />}
-          tooltip="Split element"
+          tooltip={translateUi("Split element")}
           onClick={({ event }) => handleAction({ action: "split", event })}
         />
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={AlignLeftIcon} />}
-          tooltip="Split left"
+          tooltip={translateUi("Split left")}
           onClick={({ event }) => handleAction({ action: "split-left", event })}
         />
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={AlignRightIcon} />}
-          tooltip="Split right"
+          tooltip={translateUi("Split right")}
           onClick={({ event }) =>
             handleAction({ action: "split-right", event })
           }
@@ -177,7 +180,7 @@ function ToolbarLeftSection() {
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={Copy01Icon} />}
-          tooltip="Duplicate element"
+          tooltip={translateUi("Duplicate element")}
           onClick={({ event }) =>
             handleAction({ action: "duplicate-selected", event })
           }
@@ -185,14 +188,14 @@ function ToolbarLeftSection() {
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={SnowIcon} />}
-          tooltip="Freeze frame (coming soon)"
+          tooltip={translateUi("Freeze frame (coming soon)")}
           disabled={true}
           onClick={({ event: _event }) => {}}
         />
 
         <ToolbarButton
           icon={<HugeiconsIcon icon={Delete02Icon} />}
-          tooltip="Delete element"
+          tooltip={translateUi("Delete element")}
           onClick={({ event }) =>
             handleAction({ action: "delete-selected", event })
           }
@@ -275,6 +278,7 @@ function ToolbarRightSection({
   onZoomChange: (zoom: number) => void;
   onZoom: (options: { direction: "in" | "out" }) => void;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const snappingEnabled = useTimelineStore((s) => s.snappingEnabled);
   const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
   const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
@@ -286,14 +290,14 @@ function ToolbarRightSection({
         <ToolbarButton
           icon={<HugeiconsIcon icon={MagnetIcon} />}
           isActive={snappingEnabled}
-          tooltip="Auto snapping"
+          tooltip={translateUi("Auto snapping")}
           onClick={() => toggleSnapping()}
         />
 
         <ToolbarButton
           icon={<OcRippleIcon size={24} className="scale-110" />}
           isActive={rippleEditingEnabled}
-          tooltip="Ripple editing"
+          tooltip={translateUi("Ripple editing")}
           onClick={() => toggleRippleEditing()}
         />
       </TooltipProvider>

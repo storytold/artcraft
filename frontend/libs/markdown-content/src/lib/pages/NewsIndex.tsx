@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Link } from "react-router-dom";
 import { getNewsPosts } from "../data/content";
 import { ArrowRightIcon } from "lucide-react";
@@ -7,6 +9,7 @@ interface NewsIndexProps {
 }
 
 export const NewsIndex = ({ basePath }: NewsIndexProps) => {
+  const { t: translateUi } = useUiTranslation();
   const items = getNewsPosts();
   const title = "News & Updates";
   const description =
@@ -53,8 +56,7 @@ export const NewsIndex = ({ basePath }: NewsIndexProps) => {
           ))}
           {items.length === 0 && (
             <div className="text-center py-10 opacity-50">
-                No updates yet. Check back soon!
-            </div>
+                {translateUi("No updates yet. Check back soon!")}</div>
           )}
         </div>
       </div>

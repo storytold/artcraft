@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
 import { PromptBoxImage } from "@storyteller/ui-promptbox";
@@ -44,6 +45,7 @@ interface TextToImageProps {
 }
 
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
+  const { t } = useTranslation();
   const textToImageModelList = useTextToImagePageModelList();
   const startBatch = useTextToImageStore((s) => s.startBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -155,8 +157,8 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   return (
     <DesktopCreatePageShell
       hasContent={hasContent}
-      emptyStateTitle="Create Image"
-      emptyStateSubtitle="Add a prompt, then generate"
+      emptyStateTitle={t("Create Image")}
+      emptyStateSubtitle={t("Add a prompt, then generate")}
       bottomOffset={promptHeight + 40}
       listContent={
         <DesktopGenerationGallery

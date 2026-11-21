@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, CrosshairIcon, DownloadIcon, ImagesIcon } from "lucide-react";
 import { Button, GenerateButton } from "@storyteller/ui-button";
@@ -48,6 +50,7 @@ const ANGLES_MODEL_PAGE = ModelPage.Angles;
 // ─── Main Angles Component ─────────────────────────────────────────────────────
 
 export const Angles = () => {
+  const { t: translateUi } = useUiTranslation();
   const anglesModelList = useAnglesPageModelList();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
@@ -221,11 +224,11 @@ export const Angles = () => {
         setIsLoadingImage(false);
       } catch (error) {
         console.error("Error processing image:", error);
-        toast.error("Failed to process image");
+        toast.error(translateUi("Failed to process image"));
         setIsLoadingImage(false);
       }
     },
-    [setSourceImage, setImageDimensions, setIsLoadingImage],
+    [setSourceImage, setImageDimensions, setIsLoadingImage, translateUi],
   );
 
   const handleImageSelect = useCallback((id: string) => {
@@ -240,7 +243,7 @@ export const Angles = () => {
     async (selectedItems: GalleryItem[]) => {
       const item = selectedItems[0];
       if (!item || !item.fullImage) {
-        toast.error("No image selected");
+        toast.error(translateUi("No image selected"));
         return;
       }
 
@@ -269,11 +272,11 @@ export const Angles = () => {
         setIsLoadingImage(false);
       } catch (error) {
         console.error("Error processing gallery image:", error);
-        toast.error("Failed to process image");
+        toast.error(translateUi("Failed to process image"));
         setIsLoadingImage(false);
       }
     },
-    [setSourceImage, setImageDimensions, setIsLoadingImage],
+    [setSourceImage, setImageDimensions, setIsLoadingImage, translateUi],
   );
 
   // ─── Generate with subscriber pattern ───────────────────────────────────────
@@ -303,24 +306,24 @@ export const Angles = () => {
       });
     } catch (error) {
       console.error("Error generating angle:", error);
-      toast.error("Failed to generate angle");
+      toast.error(translateUi("Failed to generate angle"));
       useAnglesStore.getState().removePendingSubscriber(subscriberId);
     }
-  }, [selectedModel, selectedProvider]);
+  }, [selectedModel, selectedProvider, translateUi]);
 
   const handleDownload = useCallback(async () => {
     if (!activeAngle) {
-      toast.error("No image to download");
+      toast.error(translateUi("No image to download"));
       return;
     }
     try {
       await downloadFileFromUrl(activeAngle.imageUrl);
-      toast.success("Image saved to Downloads folder");
+      toast.success(translateUi("Image saved to Downloads folder"));
     } catch (error) {
       console.error("Download failed:", error);
-      toast.error("Failed to download image");
+      toast.error(translateUi("Failed to download image"));
     }
-  }, [activeAngle]);
+  }, [activeAngle, translateUi]);
 
   // Called when user releases the sphere drag — values are already snapped
   const handleSphereDragEnd = useCallback(
@@ -484,8 +487,8 @@ export const Angles = () => {
               <div className="relative aspect-video overflow-hidden border border-ui-panel-border bg-ui-panel">
                 <UploadEntryCard
                   icon={CrosshairIcon}
-                  title="Angles"
-                  description="Generate new camera angles from a single photo. Upload an image to get started."
+                  title={translateUi("Angles")}
+                  description={translateUi("Generate new camera angles from a single photo. Upload an image to get started.")}
                   accentBackgroundClass="bg-lime-500/20"
                   accentBorderClass="border-lime-500/40"
                   accept="image/*"
@@ -524,13 +527,13 @@ export const Angles = () => {
                 {activeAngle ? (
                   <img
                     src={activeAngle.imageUrl}
-                    alt="Generated Angle"
+                    alt={translateUi("Generated Angle")}
                     className="absolute inset-0 h-full w-full object-contain"
                   />
                 ) : sourceImageUrl ? (
                   <img
                     src={sourceImageUrl}
-                    alt="Source"
+                    alt={translateUi("Source")}
                     className="absolute inset-0 h-full w-full object-contain"
                   />
                 ) : (
@@ -549,8 +552,7 @@ export const Angles = () => {
                   onClick={handleChangeImage}
                   className="select-none px-4 py-1.5 text-sm font-medium transition-all"
                 >
-                  Change Image
-                </Button>
+                  {translateUi("Change Image")}</Button>
                 {activeAngle && (
                   <Button
                     variant="primary"
@@ -562,8 +564,7 @@ export const Angles = () => {
                       isProcessing && "cursor-not-allowed opacity-50",
                     )}
                   >
-                    Download
-                  </Button>
+                    {translateUi("Download")}</Button>
                 )}
               </div>
             </div>
@@ -591,7 +592,7 @@ export const Angles = () => {
                     className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronUpIcon
-                      
+
                       className="text-[10px]" />
                   </button>
                   <button
@@ -599,7 +600,7 @@ export const Angles = () => {
                     className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronDownIcon
-                      
+
                       className="text-[10px]" />
                   </button>
                   <button
@@ -607,7 +608,7 @@ export const Angles = () => {
                     className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronLeftIcon
-                      
+
                       className="text-[10px]" />
                   </button>
                   <button
@@ -615,7 +616,7 @@ export const Angles = () => {
                     className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-[3px] p-1 text-base-fg/40 transition-colors hover:text-base-fg/80"
                   >
                     <ChevronRightIcon
-                      
+
                       className="text-[10px]" />
                   </button>
                   <OrbitSphere
@@ -633,8 +634,7 @@ export const Angles = () => {
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-center gap-3">
                     <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      Rotation
-                    </span>
+                      {translateUi("Rotation")}</span>
                     <div className="min-w-0 flex-1">
                       <SliderV2
                         min={-180}
@@ -652,8 +652,7 @@ export const Angles = () => {
 
                   <div className="flex items-center gap-3">
                     <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      Tilt
-                    </span>
+                      {translateUi("Tilt")}</span>
                     <div className="min-w-0 flex-1">
                       <SliderV2
                         min={-60}
@@ -671,8 +670,7 @@ export const Angles = () => {
 
                   <div className="flex items-center gap-3">
                     <span className="w-16 shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-fg/60">
-                      Zoom
-                    </span>
+                      {translateUi("Zoom")}</span>
                     <div className="min-w-0 flex-1">
                       <SliderV2
                         min={0}
@@ -730,8 +728,7 @@ export const Angles = () => {
                     credits={anglesCredits}
                     className="whitespace-nowrap px-5 py-1.5 text-sm"
                   >
-                    Generate
-                  </GenerateButton>
+                    {translateUi("Generate")}</GenerateButton>
                 </div>
               </div>
             </div>

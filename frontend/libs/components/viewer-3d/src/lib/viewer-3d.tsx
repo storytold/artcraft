@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -56,6 +58,7 @@ export function Viewer3D({
   showGrid = false,
   onThumbnailCapture,
 }: Viewer3DProps) {
+  const { t: translateUi } = useUiTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -408,8 +411,9 @@ export function Viewer3D({
 
     if (SPLAT_EXTENSIONS.includes(urlExtension)) {
       console.log(`[Viewer3D] splat format detected (.${urlExtension})`);
-      void new SplatMesh({ url: modelUrl }).initialized
-        .then((mesh) => {
+      new SplatMesh({
+        url: modelUrl,
+        onLoad: (mesh) => {
           if (cancelled) {
             mesh.dispose();
             return;
@@ -433,10 +437,8 @@ export function Viewer3D({
           }
 
           console.log("Splat loaded");
-        })
-        .catch((error) =>
-          console.error("[Viewer3D] splat load failed:", error),
-        );
+        },
+      });
     } else if (!GLTF_EXTENSIONS.includes(urlExtension)) {
       // Known non-glTF model format with no loader wired here (obj, fbx,
       // pmx, …). Show the fallback shape rather than spamming a parse error.
@@ -561,7 +563,6 @@ export function Viewer3D({
 
   return (
     <div
-      role="presentation"
       className={`relative h-full w-full overflow-hidden rounded-l-xl bg-[#282828] ${className}`}
       onMouseDown={stopPropagation}
       onMouseMove={stopPropagation}
@@ -607,7 +608,7 @@ export function Viewer3D({
                     label: name,
                     value: String(index),
                   })),
-                  { label: "T-pose (none)", value: NO_ANIMATION_VALUE },
+                  { label: translateUi("T-pose (none)"), value: NO_ANIMATION_VALUE },
                 ]}
               />
             </div>

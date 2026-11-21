@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { GenerationProvider } from "@storyteller/common";
 
 interface GenericProviderBillingBlockProps {
@@ -5,26 +6,29 @@ interface GenericProviderBillingBlockProps {
 }
 
 export function GenericProviderBillingBlock({
-  provider
+  provider,
 }: GenericProviderBillingBlockProps) {
+  const { t: tr } = useTranslation();
 
   const serviceProviderName = getServiceProviderName(provider);
 
   return (
     <div className="flex w-full flex-col gap-3 text-base-fg">
-      <p className="hud-label text-base-fg/55">Billing</p>
+      <p className="hud-label text-base-fg/55">{tr("Billing")}</p>
       <h2 className="font-display text-2xl font-medium tracking-[-0.02em]">
-        Set up {serviceProviderName}
+        {tr("Set up {{provider}}", { provider: serviceProviderName })}
       </h2>
       <p className="text-sm leading-relaxed text-base-fg/60">
-        Please set up {serviceProviderName} on their website to use it with
-        ArtCraft.
+        {tr(
+          "Please set up {{provider}} on their website to use it with ArtCraft.",
+          { provider: serviceProviderName },
+        )}
       </p>
     </div>
   );
 }
 
-function getServiceProviderName(provider: GenerationProvider) : string {
+function getServiceProviderName(provider: GenerationProvider): string {
   switch (provider) {
     case GenerationProvider.Sora:
       return "Sora";

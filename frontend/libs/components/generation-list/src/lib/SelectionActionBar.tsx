@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import type { CSSProperties, ReactNode } from "react";
 import { XIcon } from "lucide-react";
 import { useGallerySelectionStore } from "./gallery-selection-store";
@@ -23,6 +25,7 @@ export function SelectionActionBar({
   className,
   style,
 }: SelectionActionBarProps) {
+  const { t: translateUi } = useUiTranslation();
   const active = useGallerySelectionStore((s) => s.active);
   const count = useGallerySelectionStore((s) => s.ids.size);
   const setActive = useGallerySelectionStore((s) => s.setActive);
@@ -36,12 +39,11 @@ export function SelectionActionBar({
     >
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
         <span className="px-1 text-sm font-medium text-white/80">
-          {count} selected
-        </span>
+          {count} {" "}{translateUi("selected")}</span>
         {children}
         <button
           type="button"
-          aria-label="Exit selection"
+          aria-label={translateUi("Exit selection")}
           onClick={() => setActive(false)}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >

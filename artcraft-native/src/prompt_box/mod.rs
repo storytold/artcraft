@@ -2,6 +2,7 @@
 //! keyframe slots beside the prompt, a toolbar of page-specific pickers, clear-all, the credit
 //! cost and the generate button; plus drag & drop, pasted images and the focus-mode modal.
 
+use crate::i18n::t as ui_text;
 pub mod deck;
 pub mod editor;
 pub mod model_selector;
@@ -183,7 +184,7 @@ fn generate_cluster(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<P
     let (rect, resp) = ui.allocate_exact_size(vec2(galley.size().x + 22.0, 36.0), Sense::hover());
     icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.left() + 7.0, rect.center().y), vec2(14.0, 14.0)), Icon::Coins, ink);
     ui.painter().galley(pos2(rect.left() + 20.0, rect.center().y - galley.size().y / 2.0), galley, ink);
-    resp.on_hover_text(format!("{credits} credit{} cost", if credits == 1 { "" } else { "s" }));
+    resp.on_hover_text((if crate::i18n::is_chinese() { format!("消耗 {credits} 积分") } else { format!("{credits} credit{} cost", if credits == 1 { "" } else { "s" }) }));
   }
 }
 
@@ -192,7 +193,7 @@ fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: 
   let (rule, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
   ui.painter().rect_filled(rule, 0.0, theme::fade(theme::INK, 0.15));
   let clearable = !prompt.is_empty() || !refs.is_empty() || extra_input;
-  let resp = ui.add_enabled_ui(clearable, |ui| widgets::ghost(ui, Icon::Eraser, None, "Clear all", false)).inner;
+  let resp = ui.add_enabled_ui(clearable, |ui| widgets::ghost(ui, Icon::Eraser, None, ui_text("Clear all"), false)).inner;
   if resp.clicked() {
     if refs.is_empty() {
       prompt.clear();
@@ -206,15 +207,15 @@ fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: 
 fn confirm_clear(ctx: &egui::Context, id: Id, state: &mut PromptBoxState, actions: &mut Vec<PromptBoxAction>) {
   let mut choice = None;
   let resp = widgets::modal(ctx, id.with("confirm-clear"), 420.0, |ui| {
-    ui.label(widgets::heading("Clear all?", 20.0));
+    ui.label(widgets::heading(ui_text("Clear all?"), 20.0));
     ui.add_space(8.0);
-    ui.label(egui::RichText::new("This clears the prompt and also removes the attached references.").color(theme::MUTED));
+    ui.label(egui::RichText::new(ui_text("This clears the prompt and also removes the attached references.")).color(theme::MUTED));
     ui.add_space(16.0);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-      if widgets::button(ui, None, "Clear all", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, None, ui_text("Clear all"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
         choice = Some(true);
       }
-      if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
         choice = Some(false);
       }
     });
@@ -230,7 +231,7 @@ fn confirm_clear(ctx: &egui::Context, id: Id, state: &mut PromptBoxState, action
 /// The chevron centred on the box's bottom edge that toggles the tall editor.
 fn expand_toggle(ui: &mut Ui, id: Id, rect: Rect, state: &mut PromptBoxState) {
   let button = Rect::from_center_size(pos2(rect.center().x, rect.bottom() - 6.0), vec2(38.0, 16.0));
-  let resp = ui.interact(button, id.with("expand"), Sense::click()).on_hover_text(if state.editor.expanded { "Collapse" } else { "Expand" }).on_hover_cursor(egui::CursorIcon::PointingHand);
+  let resp = ui.interact(button, id.with("expand"), Sense::click()).on_hover_text(if state.editor.expanded { ui_text("Collapse") } else { ui_text("Expand") }).on_hover_cursor(egui::CursorIcon::PointingHand);
   let ink = theme::fade(Color32::WHITE, if resp.hovered() { 0.9 } else { 0.3 });
   icons::paint(ui.painter(), Rect::from_center_size(button.center(), vec2(12.0, 12.0)), if state.editor.expanded { Icon::ChevronUp } else { Icon::ChevronDown }, ink);
   if resp.clicked() {
@@ -333,7 +334,7 @@ fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state
   let mut done = false;
   let closed = widgets::modal(ctx, props.id.with("focus-mode"), 896.0, |ui| {
     ui.set_height(height);
-    ui.label(widgets::heading("Prompt", 22.0));
+    ui.label(widgets::heading(ui_text("Prompt"), 22.0));
     ui.add_space(10.0);
     let editor_h = (height - 160.0 - if refs.is_empty() { 0.0 } else { 80.0 }).max(120.0);
     let out = editor_ui(ui, prompt, state, props, cache, Some(editor_h));
@@ -353,7 +354,7 @@ fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state
     ui.horizontal(|ui| {
       ui.push_id("focus-toolbar", |ui| ui.horizontal(|ui| slots(ui, Slot::ToolbarLeft)));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::button(ui, None, "Done", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, ui_text("Done"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
           done = true;
         }
         ui.push_id("focus-clear", |ui| clear_all_button(ui, prompt, refs, state, props.extra_input, actions));

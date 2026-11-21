@@ -38,7 +38,7 @@ fi
 cd "${frontend_path}"
 if [[ ! -f node_modules/vite/package.json ]]; then
   # Do not use the legacy install helper: its failure recovery deletes caches.
-  npm install --ignore-scripts
+  npm install
 fi
 
 exec node "${frontend_path}/scripts/unix-dev.mjs"

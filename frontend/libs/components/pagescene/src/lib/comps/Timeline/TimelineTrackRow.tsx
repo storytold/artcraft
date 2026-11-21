@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext, useRef } from "react";
 import { DynamicIcon } from "@storyteller/icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
@@ -32,6 +34,7 @@ export const TimelineTrackRow = ({
   track,
   duration,
 }: TimelineTrackRowProps) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const laneRef = useRef<HTMLDivElement>(null);
   const draggingId = useRef<string | null>(null);
@@ -127,7 +130,7 @@ export const TimelineTrackRow = ({
             <button
               key={`ease-${kf.id}`}
               type="button"
-              title="Edit easing"
+              title={translateUi("Edit easing")}
               data-easing-chip
               className={`absolute top-1/2 flex h-5 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border bg-ui-controls ${
                 active
@@ -179,7 +182,7 @@ export const TimelineTrackRow = ({
 
       <button
         type="button"
-        title="Add keyframe at playhead"
+        title={translateUi("Add keyframe at playhead")}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base-fg/70 hover:bg-white/10 hover:text-base-fg"
         onClick={() => {
           if (editor) addKeyframe(editor, item.id);

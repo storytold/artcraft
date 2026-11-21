@@ -67,7 +67,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
       e.currentTarget.focus();
     } else if (scene.value.token) {
       setIsSaving(true);
-      void renameScene(
+      renameScene(
         scene.value.title!, //guarunteed by input
         scene.value.token,
       );

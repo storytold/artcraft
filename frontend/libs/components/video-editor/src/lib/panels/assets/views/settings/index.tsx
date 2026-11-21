@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState } from "react";
 import { PanelView } from "../base-panel";
@@ -97,6 +99,7 @@ function useCanvasDimensionDraft({
 }
 
 export function SettingsView() {
+  const { t: translateUi } = useUiTranslation();
   const [view, setView] = useState<SettingsView>("project-info");
   const editor = useEditor();
   const activeProject = useEditor((e) => e.project.getActive());
@@ -223,8 +226,8 @@ export function SettingsView() {
           }}
         >
           <TabsList>
-            <TabsTrigger value="project-info">Project info</TabsTrigger>
-            <TabsTrigger value="background">Background</TabsTrigger>
+            <TabsTrigger value="project-info">{translateUi("Project info")}</TabsTrigger>
+            <TabsTrigger value="background">{translateUi("Background")}</TabsTrigger>
           </TabsList>
         </Tabs>
       }
@@ -233,7 +236,7 @@ export function SettingsView() {
         <div className="flex flex-col">
           <Section showTopBorder={false}>
             <SectionHeader>
-              <SectionTitle className="flex-1">Name</SectionTitle>
+              <SectionTitle className="flex-1">{translateUi("Name")}</SectionTitle>
               <span className="text-sm truncate">
                 {activeProject.metadata.name}
               </span>
@@ -241,7 +244,7 @@ export function SettingsView() {
           </Section>
           <Section showTopBorder={false}>
             <SectionHeader className="justify-between">
-              <SectionTitle className="flex-1">Frame rate</SectionTitle>
+              <SectionTitle className="flex-1">{translateUi("Frame rate")}</SectionTitle>
               <Select
                 value={String(
                   Math.round(frameRateToFloat(activeProject.settings.fps)),
@@ -252,12 +255,12 @@ export function SettingsView() {
                 }}
               >
                 <SelectTrigger className="bg-transparent border-none p-1 h-auto">
-                  <SelectValue placeholder="Select a frame rate" />
+                  <SelectValue placeholder={translateUi("Select a frame rate")} />
                 </SelectTrigger>
                 <SelectContent>
                   {FPS_PRESETS.map((preset) => (
                     <SelectItem key={preset.value} value={preset.value}>
-                      {preset.label}
+                      {translateUi(preset.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -270,13 +273,13 @@ export function SettingsView() {
             sectionKey="settings:aspect-ratio"
           >
             <SectionHeader>
-              <SectionTitle className="flex-1">Aspect ratio</SectionTitle>
+              <SectionTitle className="flex-1">{translateUi("Aspect ratio")}</SectionTitle>
             </SectionHeader>
             <SectionContent className="px-2 flex flex-col gap-1 pb-2">
               {presetItems.map((preset) => (
                 <AspectRatioItem
                   key={preset.id}
-                  label={preset.label}
+                  label={translateUi(preset.label)}
                   previewIcon={<AspectRatioPreview ratio={preset.ratio} />}
                   isSelected={selectedPresetId === preset.id}
                   onClick={() => {
@@ -289,7 +292,7 @@ export function SettingsView() {
               <div className="pb-2">
                 <AspectRatioItem
                   key="custom"
-                  label="Custom"
+                  label={translateUi("Custom")}
                   previewIcon={<OcSquarePlusIcon />}
                   isSelected={isCustomSelected}
                   onClick={selectCustomCanvasSize}
@@ -298,7 +301,7 @@ export function SettingsView() {
                       <NumberField
                         value={widthDraft.displayValue}
                         className="w-full"
-                        aria-label="Canvas width"
+                        aria-label={translateUi("Canvas width")}
                         onFocus={widthDraft.onFocus}
                         onChange={widthDraft.onChange}
                         onBlur={widthDraft.onBlur}
@@ -306,7 +309,7 @@ export function SettingsView() {
                       <NumberField
                         value={heightDraft.displayValue}
                         className="w-full"
-                        aria-label="Canvas height"
+                        aria-label={translateUi("Canvas height")}
                         onFocus={heightDraft.onFocus}
                         onChange={heightDraft.onChange}
                         onBlur={heightDraft.onBlur}

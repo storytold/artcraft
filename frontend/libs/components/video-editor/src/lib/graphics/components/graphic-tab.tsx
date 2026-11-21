@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useRef } from "react";
 import { useElementPlayhead } from "../../panels/properties/hooks/use-element-playhead";
@@ -94,6 +96,7 @@ function StrokeSection({
   element: GraphicElement;
   trackId: string;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const definition = graphicsRegistry.get(element.definitionId);
   const { localTime, isPlayheadWithinElementRange } = useElementPlayhead({
@@ -170,7 +173,7 @@ function StrokeSection({
           </Button>
         }
       >
-        <SectionTitle>Stroke</SectionTitle>
+        <SectionTitle>{translateUi("Stroke")}</SectionTitle>
       </SectionHeader>
       <SectionContent
         className={cn(!isStrokeEnabled && "pointer-events-none opacity-50")}

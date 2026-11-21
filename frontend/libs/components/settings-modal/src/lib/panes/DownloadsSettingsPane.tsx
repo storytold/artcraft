@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import {
@@ -25,6 +26,7 @@ const FILENAME_OPTIONS = [
 ];
 
 export const DownloadsSettingsPane = () => {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState<
     AppPreferencesPayload | undefined
   >(undefined);
@@ -63,7 +65,7 @@ export const DownloadsSettingsPane = () => {
       : "";
   const currentDownloadLabel =
     "system" in outerDownloadObject
-      ? "System Download Directory"
+      ? t("System Download Directory")
       : downloadDirectory;
 
   const reloadPreferences = async () => {
@@ -147,10 +149,9 @@ export const DownloadsSettingsPane = () => {
     <div className="space-y-4 pt-3 text-base-fg">
       {settingsError && <p role="alert" className="text-red-400">{settingsError}</p>}
       <div className="space-y-2">
-        <Label htmlFor="download-path">Default Download Directory</Label>
+        <Label htmlFor="download-path">{t("Default Download Directory")}</Label>
         <p className="text-xs opacity-70">
-          This is where downloads are placed after downloading. The current path
-          is:
+          {t("This is where downloads are placed after downloading. The current path is:")}
         </p>
         <div className="mt-1 border border-ui-panel-border bg-ui-sunken px-3 py-2 text-base-fg">
           <pre className="whitespace-pre-wrap break-all font-mono text-xs">
@@ -161,27 +162,27 @@ export const DownloadsSettingsPane = () => {
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={openDirectoryPicker}>
           <FolderIcon />
-          Choose Directory
+          {t("Choose Directory")}
         </Button>
         <Button variant="destructive" onClick={clearDirectory}>
           <RotateCcwIcon />
-          Use Default
+          {t("Use Default")}
         </Button>
         <Button variant="secondary" onClick={showDirectory}>
           <SearchIcon />
-          Show Directory
+          {t("Show Directory")}
         </Button>
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
-          <Label htmlFor="auto-download">Auto Download</Label>
+          <Label htmlFor="auto-download">{t("Auto Download")}</Label>
           <p className="text-xs opacity-70">
-            Downloads to your system the minute generations complete
+            {t("Downloads to your system the minute generations complete")}
           </p>
         </div>
         <Switch
           id="auto-download"
-          label="Auto Download"
+          label={t("Auto Download")}
           enabled={preferences?.auto_download ?? false}
           setEnabled={toggleAutoDownload}
           disabled={!preferences || saving}
@@ -190,31 +191,28 @@ export const DownloadsSettingsPane = () => {
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor="ask-location-before-download">
-            Ask location before download
+            {t("Ask location before download")}
           </Label>
           <p className="text-xs opacity-70">
-            When on, a system file picker appears every time you download from
-            the lightbox or anywhere in the app, letting you choose the save
-            location for that file. When off, downloads go straight to the
-            default download directory above.
+            {t("When on, a system file picker appears every time you download from the lightbox or anywhere in the app, letting you choose the save location for that file. When off, downloads go straight to the default download directory above.")}
           </p>
         </div>
         <Switch
           id="ask-location-before-download"
-          label="Ask location before download"
+          label={t("Ask location before download")}
           enabled={askLocationBeforeDownload}
           setEnabled={toggleAskLocationBeforeDownload}
         />
       </div>
       <fieldset disabled={!preferences || saving} className="flex flex-col gap-2 border-0 p-0">
-        <Label htmlFor="download-filename-mode">Preferred download naming scheme</Label>
+        <Label htmlFor="download-filename-mode">{t("Preferred download naming scheme")}</Label>
         <p className="text-xs opacity-70">
-          {"The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files."}
+          {t("The ArtCraft convention is {model}_{date}.{ext}, with a batch number when a generation produces several files.")}
         </p>
         <div className="max-w-xs">
           <Select
             id="download-filename-mode"
-            options={FILENAME_OPTIONS}
+            options={FILENAME_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
             value={filenameMode}
             onChange={(value) => {
               setFormatError(null);
@@ -228,7 +226,7 @@ export const DownloadsSettingsPane = () => {
         </div>
         {filenameMode === "custom" && (
           <>
-            <Label htmlFor="download-filename-format">Custom format</Label>
+            <Label htmlFor="download-filename-format">{t("Custom format")}</Label>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 id="download-filename-format"
@@ -239,15 +237,15 @@ export const DownloadsSettingsPane = () => {
                 spellCheck={false}
                 className="min-w-0 flex-1 rounded-[3px] border border-ui-controls-border bg-ui-controls px-3 py-2 font-mono text-xs outline-none focus:border-base-fg/40"
               />
-              <Button variant="secondary" onClick={saveCustomFormat}>Save format</Button>
+              <Button variant="secondary" onClick={saveCustomFormat}>{t("Save format")}</Button>
             </div>
             <p className="text-xs opacity-70">
-              {"Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted."}
+              {t("Tokens: {model}, {date}, {YYYY}, {YY}, {MM}, {DD}, {HH}, {mm}, {SS}, {batch_index}. The file extension is added automatically. Batch numbers are added automatically if omitted.")}
             </p>
-            <p className="text-xs opacity-70">Changes apply after you click Save format.</p>
+            <p className="text-xs opacity-70">{t("Changes apply after you click Save format.")}</p>
           </>
         )}
-        {formatError && <p role="alert" className="text-xs text-red-400">{formatError}</p>}
+        {formatError && <p role="alert" className="text-xs text-red-400">{t(formatError)}</p>}
       </fieldset>
     </div>
   );

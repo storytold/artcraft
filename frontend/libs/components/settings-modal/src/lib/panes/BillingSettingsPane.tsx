@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useEffect } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
@@ -16,6 +17,7 @@ import { invoke } from "@tauri-apps/api/core";
 interface BillingSettingsPaneProps {}
 
 export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
+  const { t, i18n } = useTranslation();
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
 
   const creditsStore = useCreditsState();
@@ -33,13 +35,13 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
   const canCancelPlan = subscriptionStore.canCancelPlan();
 
   const nextBillAt =
-    subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString();
+    subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString(i18n.language);
   const subscriptionEndAt =
-    subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString();
+    subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString(i18n.language);
 
   const changeOrUpgradePlanButtonLabel = canCancelPlan
-    ? "Change plan"
-    : "Upgrade plan";
+    ? t("Change plan")
+    : t("Upgrade plan");
 
   useEffect(() => {
     creditsStore.fetchFromServer();
@@ -49,10 +51,9 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
   return (
     <>
       <div className="flex flex-col gap-0.5 pt-3 text-base-fg">
-        <Label>Support ArtCraft</Label>
+        <Label>{t("Support ArtCraft")}</Label>
         <p className="text-xs opacity-70">
-          You do not have to purchase anything from us to use ArtCraft, but you
-          can support ArtCraft development by subscribing or buying credits.
+          {t("You do not have to purchase anything from us to use ArtCraft, but you can support ArtCraft development by subscribing or buying credits.")}
         </p>
       </div>
 
@@ -60,7 +61,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
       <div className="space-y-4 text-base-fg">
         <div className="space-y-2">
-          <Label>Current ArtCraft Plan</Label>
+          <Label>{t("Current ArtCraft Plan")}</Label>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 font-display text-2xl font-medium tracking-[-0.02em]">
               <StarIcon className="text-lg text-base-fg/70" />
@@ -91,14 +92,14 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
         {subscriptionEndAt && (
           <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/50">
             <InfoIcon />
-            Subscription ends on {subscriptionEndAt}
+            {t("Subscription ends on {{date}}", { date: subscriptionEndAt })}
           </div>
         )}
 
         {nextBillAt && (
           <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-base-fg/50">
             <InfoIcon />
-            Next payment on {nextBillAt}
+            {t("Next payment on {{date}}", { date: nextBillAt })}
           </div>
         )}
 
@@ -106,7 +107,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
         <div className="flex flex-col">
           <Label htmlFor="credits" className="flex items-center gap-2">
-            Your ArtCraft credit balance
+            {t("Your ArtCraft credit balance")}
           </Label>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -128,18 +129,20 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 };
 
 const CancelPlanButton = () => {
+  const { t } = useTranslation();
   const handleClick = async () => {
     await invoke("storyteller_open_customer_portal_cancel_plan_command");
   };
 
   return (
     <Button variant="secondary" className="h-9 shrink-0 px-3" onClick={handleClick}>
-      Cancel plan
+      {t("Cancel plan")}
     </Button>
   );
 };
 
 const BuyCreditsButton = () => {
+  const { t } = useTranslation();
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   return (
@@ -148,23 +151,24 @@ const BuyCreditsButton = () => {
       className="h-9 shrink-0 px-4"
       onClick={() => toggleCreditsModal()}
     >
-      Buy credits
+      {t("Buy credits")}
     </Button>
   );
 };
 
 const CreditsTally = ({ creditsStore }: { creditsStore: CreditsState }) => {
+  const { t } = useTranslation();
   return (
     <ul className="mt-4 divide-y divide-ui-panel-border border border-ui-panel-border">
       <li className="flex items-baseline justify-between gap-3 px-3 py-2">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-          Monthly credits (refilled monthly)
+          {t("Monthly credits (refilled monthly)")}
         </span>
         <span className="text-sm font-medium">{creditsStore.monthlyCredits}</span>
       </li>
       <li className="flex items-baseline justify-between gap-3 px-3 py-2">
         <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-base-fg/50">
-          Purchased credits
+          {t("Purchased credits")}
         </span>
         <span className="text-sm font-medium">{creditsStore.bankedCredits}</span>
       </li>

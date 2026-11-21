@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
@@ -55,6 +57,7 @@ export function UploadModalSplat(props: Props) {
 
 
   const UploaderModalContent = () => {
+  const { t: translateUi } = useUiTranslation();
     switch (uploaderState.status) {
       case UploaderStates.ready:
         return (
@@ -90,7 +93,7 @@ export function UploadModalSplat(props: Props) {
       case UploaderStates.success: {
         return (
           <UploadSuccess
-            title="Splat"
+            title={translateUi("Splat")}
             onOk={() => {
               galleryModalVisibleViewMode.value = true;
               galleryModalVisibleDuringDrag.value = true;

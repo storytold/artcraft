@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
 import { ArrowUpFromLineIcon, FootprintsIcon, LayersIcon, SearchIcon } from "lucide-react";
@@ -40,6 +42,7 @@ type AnimationsTab = {
 // pointer-drag onto characters/timeline rows via DndAsset), but only
 // animations, split into All / Presets / Uploaded tabs.
 export const AnimationsModal = () => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
 
   const {
@@ -129,21 +132,21 @@ export const AnimationsModal = () => {
 
   const tabs = useMemo<AnimationsTab[]>(
     () => [
-      { id: "all", label: "All", icon: LayersIcon, items: allAnimations },
+      { id: "all", label: translateUi("All"), icon: LayersIcon, items: allAnimations },
       {
         id: "presets",
-        label: "Presets",
+        label: translateUi("Presets"),
         icon: FootprintsIcon,
         items: defaultAnimations,
       },
       {
         id: "uploaded",
-        label: "Uploaded",
+        label: translateUi("Uploaded"),
         icon: ArrowUpFromLineIcon,
         items: userAnimations,
       },
     ],
-    [allAnimations, defaultAnimations, userAnimations],
+    [allAnimations, defaultAnimations, userAnimations, translateUi],
   );
 
   const currentTab = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
@@ -173,18 +176,16 @@ export const AnimationsModal = () => {
     ) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
-          <p className="text-sm text-white/70">No uploaded animations yet.</p>
+          <p className="text-sm text-white/70">{translateUi("No uploaded animations yet.")}</p>
           <p className="text-xs text-white/40">
-            Upload a Mixamo GLB or FBX to add your own clips.
-          </p>
+            {translateUi("Upload a Mixamo GLB or FBX to add your own clips.")}</p>
           <Button
             variant="primary"
             icon={ArrowUpFromLineIcon}
             className="mt-3"
             onClick={handleOpenUpload}
           >
-            Upload animation
-          </Button>
+            {translateUi("Upload animation")}</Button>
         </div>
       );
     }
@@ -230,8 +231,7 @@ export const AnimationsModal = () => {
           <div className="relative col-span-3 flex h-full flex-col p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
             <div className="flex h-10 items-center justify-between gap-2.5">
               <h2 className="font-display text-lg tracking-tight text-white">
-                Animations
-              </h2>
+                {translateUi("Animations")}</h2>
             </div>
             <hr className="my-2 w-full border-white/10" />
             <div className="flex h-full flex-col space-y-2">
@@ -262,13 +262,12 @@ export const AnimationsModal = () => {
                 className="w-full justify-center rounded-[3px] border border-white/10 bg-white/[6%] px-3.5 py-2.5 hover:bg-white/15"
                 onClick={handleOpenUpload}
               >
-                Upload animation
-              </Button>
+                {translateUi("Upload animation")}</Button>
               <Checkbox
                 id="animations-reopen-after-add"
                 checked={reopenAfterDrag}
                 onChange={handleReopenChange}
-                label="Reopen after adding"
+                label={translateUi("Reopen after adding")}
               />
             </div>
           </div>
@@ -279,7 +278,7 @@ export const AnimationsModal = () => {
                   <div className="relative grow">
                     <Input
                       ref={searchInputRef}
-                      placeholder="Search animations"
+                      placeholder={translateUi("Search animations")}
                       className="relative z-[51] grow"
                       inputClassName="bg-white/5 pr-10 placeholder-white/40"
                       icon={SearchIcon}
@@ -317,7 +316,7 @@ export const AnimationsModal = () => {
           isOpen: isUploadModalOpen,
           onClose: () => setIsUploadModalOpen(false),
           onSuccess: handleUploadSuccess,
-          title: "Upload Animation",
+          title: translateUi("Upload Animation"),
           titleIcon: ArrowUpFromLineIcon,
           initialCategory: "animation",
         })}

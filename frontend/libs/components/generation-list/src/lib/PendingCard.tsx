@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, type ReactNode } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
@@ -28,6 +30,7 @@ export const PendingCard = memo(function PendingCard({
   mediaClass,
   recreateSlot,
 }: PendingCardProps) {
+  const { t: translateUi } = useUiTranslation();
   const { progressPercent, timeLabel } = derivePendingStatus(
     progress,
     estimatedTimeLeftMs,
@@ -40,9 +43,7 @@ export const PendingCard = memo(function PendingCard({
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
         <div className="absolute left-2 right-2 top-2 z-10 bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
-          Generating {batchCount} {batchNoun(mediaClass)} · Results may appear
-          one at a time
-        </div>
+          {translateUi("Generating")}{" "}{batchCount} {batchNoun(mediaClass)} {" "}{translateUi("· Results may appear one at a time")}</div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <LoaderCircleIcon className="animate-spin text-2xl text-white/20" />

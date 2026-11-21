@@ -1,6 +1,7 @@
 //! The app frame: a custom title bar (mark, sidebar toggle, account, caption buttons), a sidebar
 //! flush with the window edge, and the content panel's header (breadcrumbs and feed toggles).
 
+use crate::i18n::t as ui_text;
 use egui::{Align2, Color32, FontId, Id, Rect, Sense, Stroke, Ui, pos2, vec2};
 
 use crate::feed::grid::ViewMode;
@@ -41,18 +42,18 @@ pub enum Page {
 impl Page {
   pub fn label(self) -> &'static str {
     match self {
-      Page::Home => "Home",
-      Page::CreateImage => "Image",
-      Page::CreateVideo => "Video",
-      Page::CreateAudio => "Audio",
-      Page::Object3d => "3D Object",
-      Page::World3d => "3D World",
-      Page::EditImage => "Edit Image",
-      Page::Stage3d => "3D Stage",
-      Page::VideoEditor => "Edit Video",
-      Page::RemoveBackground => "BG Remove",
-      Page::FrameExtractor => "Frame Extract",
-      Page::Library => "Library",
+      Page::Home => ui_text("Home"),
+      Page::CreateImage => ui_text("Image"),
+      Page::CreateVideo => ui_text("Video"),
+      Page::CreateAudio => ui_text("Audio"),
+      Page::Object3d => ui_text("3D Object"),
+      Page::World3d => ui_text("3D World"),
+      Page::EditImage => ui_text("Edit Image"),
+      Page::Stage3d => ui_text("3D Stage"),
+      Page::VideoEditor => ui_text("Edit Video"),
+      Page::RemoveBackground => ui_text("BG Remove"),
+      Page::FrameExtractor => ui_text("Frame Extract"),
+      Page::Library => ui_text("Library"),
     }
   }
 
@@ -76,7 +77,7 @@ impl Page {
     match self {
       Page::Home => ("ArtCraft", "Home"),
       Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Object3d | Page::World3d => ("Create", self.label()),
-      Page::Library => ("Assets", "Library"),
+      Page::Library => ("Assets", ui_text("Library")),
       _ => ("Studio", self.label()),
     }
   }
@@ -154,10 +155,10 @@ pub fn titlebar(ui: &mut Ui, account: &Account<'_>, mark: &egui::TextureHandle) 
     ui.painter().rect_filled(mark_rect, theme::RADIUS, theme::WASH);
   }
   ui.painter().image(mark.id(), Rect::from_center_size(mark_rect.center(), vec2(18.0, 16.0)), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), theme::ACCENT);
-  if mark_resp.on_hover_text("Home").on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+  if mark_resp.on_hover_text(ui_text("Home")).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
     action = Some(ShellAction::Navigate(Page::Home));
   }
-  if widgets::ghost(ui, Icon::PanelLeft, None, "Toggle Sidebar", false).clicked() {
+  if widgets::ghost(ui, Icon::PanelLeft, None, ui_text("Toggle Sidebar"), false).clicked() {
     action = Some(ShellAction::ToggleSidebar);
   }
   ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -182,7 +183,7 @@ pub fn titlebar(ui: &mut Ui, account: &Account<'_>, mark: &egui::TextureHandle) 
         }
       },
       None => {
-        if widgets::button(ui, None, "Sign in", widgets::Kind::Primary, 0.0, 28.0).clicked() {
+        if widgets::button(ui, None, ui_text("Sign in"), widgets::Kind::Primary, 0.0, 28.0).clicked() {
           action = Some(ShellAction::SignIn);
         }
       },
@@ -211,7 +212,7 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAc
     }
   }
   ui.add_space(10.0);
-  widgets::section_label(ui, "Resources", theme::SIDEBAR_INK);
+  widgets::section_label(ui, ui_text("Resources"), theme::SIDEBAR_INK);
   for (label, icon, url) in [("Tutorials", Icon::Play, TUTORIALS_URL), ("Discord", Icon::Globe, DISCORD_URL), ("GitHub", Icon::ExternalLink, GITHUB_URL)] {
     if link_row(ui, label, icon) {
       ui.ctx().open_url(egui::OpenUrl::new_tab(url));
@@ -228,7 +229,7 @@ pub fn sidebar(ui: &mut Ui, page: Page, account: &Account<'_>) -> Option<ShellAc
       }
     },
     None => {
-      if widgets::button(&mut foot, Some(Icon::LogIn), "Sign in", widgets::Kind::Primary, bottom.width(), 40.0).clicked() {
+      if widgets::button(&mut foot, Some(Icon::LogIn), ui_text("Sign in"), widgets::Kind::Primary, bottom.width(), 40.0).clicked() {
         action = Some(ShellAction::SignIn);
       }
     },
@@ -253,7 +254,7 @@ fn nav_row(ui: &mut Ui, page: Page, selected: bool) -> bool {
   let font = FontId::new(14.0, if selected { theme::medium() } else { egui::FontFamily::Proportional });
   p.text(pos2(rect.left() + 32.0, rect.center().y), Align2::LEFT_CENTER, page.label(), font, ink);
   if !ready {
-    widgets::badge(p, ui, pos2(rect.right() - 6.0, rect.center().y), "Soon", theme::FAINT);
+    widgets::badge(p, ui, pos2(rect.right() - 6.0, rect.center().y), ui_text("Soon"), theme::FAINT);
   }
   resp.on_hover_cursor(egui::CursorIcon::PointingHand).clicked()
 }
@@ -282,10 +283,10 @@ fn account_row(ui: &mut Ui, name: &str, credits: Option<u64>) -> egui::Response 
   let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
   p.text(avatar.center(), Align2::CENTER_CENTER, initial, FontId::new(13.0, theme::semibold()), Color32::WHITE);
   p.text(pos2(avatar.right() + 10.0, rect.center().y - 8.0), Align2::LEFT_CENTER, name, FontId::new(13.5, theme::medium()), theme::INK);
-  let sub = credits.map_or_else(|| "Account".to_owned(), |c| format!("{} credits", group_thousands(c)));
+  let sub = credits.map_or_else(|| ui_text("Account").to_owned(), |c| (if crate::i18n::is_chinese() { format!("{} 积分", group_thousands(c)) } else { format!("{} credits", group_thousands(c)) }));
   p.text(pos2(avatar.right() + 10.0, rect.center().y + 9.0), Align2::LEFT_CENTER, sub, FontId::new(11.5, egui::FontFamily::Proportional), theme::MUTED);
   icons::paint(p, Rect::from_center_size(pos2(rect.right() - 16.0, rect.center().y), vec2(14.0, 14.0)), Icon::Settings, theme::DIM);
-  resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text("Settings")
+  resp.on_hover_cursor(egui::CursorIcon::PointingHand).on_hover_text(ui_text("Settings"))
 }
 
 /// The feed toggles a page's header shows.
@@ -344,7 +345,7 @@ fn credits_pill(ui: &mut Ui, credits: u64) -> egui::Response {
 }
 
 fn account_menu(ui: &mut Ui, account: &Account<'_>) -> Option<ShellAction> {
-  let name = account.display_name.or(account.username).unwrap_or("Account");
+  let name = account.display_name.or(account.username).unwrap_or(ui_text("Account"));
   let (rect, resp) = ui.allocate_exact_size(vec2(30.0, 30.0), Sense::click());
   ui.painter().circle(rect.center(), 15.0, theme::ACCENT, Stroke::new(if resp.hovered() { 2.0 } else { 0.0 }, Color32::WHITE));
   let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
@@ -358,10 +359,10 @@ fn account_menu(ui: &mut Ui, account: &Account<'_>) -> Option<ShellAction> {
       ui.label(egui::RichText::new(format!("@{u}")).size(11.5).color(theme::MUTED));
     }
     ui.add_space(4.0);
-    if widgets::menu_row(ui, widgets::RowLead::Icon(Icon::Settings), "Settings", None, false, false, false).clicked() {
+    if widgets::menu_row(ui, widgets::RowLead::Icon(Icon::Settings), ui_text("Settings"), None, false, false, false).clicked() {
       action = Some(ShellAction::OpenSettings);
     }
-    if widgets::menu_row(ui, widgets::RowLead::Icon(Icon::LogOut), "Log out", None, false, false, false).clicked() {
+    if widgets::menu_row(ui, widgets::RowLead::Icon(Icon::LogOut), ui_text("Log out"), None, false, false, false).clicked() {
       action = Some(ShellAction::SignOut);
     }
   });

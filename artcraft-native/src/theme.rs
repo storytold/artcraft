@@ -189,5 +189,19 @@ fn install_fonts(ctx: &egui::Context) {
     stack.extend(fallback.iter().cloned());
     fonts.families.insert(family, stack);
   }
+  // Use an installed CJK font without redistributing system font files.
+  let cjk_paths = [
+    "C:/Windows/Fonts/msyh.ttc",
+    "/System/Library/Fonts/PingFang.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+  ];
+  if let Some(bytes) = cjk_paths.iter().find_map(|path| std::fs::read(path).ok()) {
+    fonts.font_data.insert("cjk-fallback".to_owned(), Arc::new(FontData::from_owned(bytes)));
+    for stack in fonts.families.values_mut() {
+      stack.push("cjk-fallback".to_owned());
+    }
+  } else {
+    log::warn!("No system CJK font found; Chinese text may require installing Noto Sans CJK");
+  }
   ctx.set_fonts(fonts);
 }

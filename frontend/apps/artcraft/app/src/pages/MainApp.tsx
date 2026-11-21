@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 // Top-level shell for the artcraft app. Always-mounted chrome
 // (TopBar, login + pricing modals, toaster, Tauri event listeners,
 // background refresh hooks) lives here, and a single tab-driven
@@ -111,6 +113,7 @@ interface Props {
 }
 
 export const MainApp = ({ sceneToken }: Props) => {
+  const { t: translateUi } = useUiTranslation();
   useSignals();
 
   // Background plumbing — should keep running regardless of which tab
@@ -146,7 +149,7 @@ export const MainApp = ({ sceneToken }: Props) => {
   useMediaFileDeletedEvent(async (event) => {
     console.log("Media file deleted event received:", event);
     await SoundManager.playFileDeleted();
-    toast.error("File deleted.");
+    toast.error(translateUi("File deleted."));
   });
 
   // Session probe (runs once per shell mount).
@@ -198,8 +201,7 @@ export const MainApp = ({ sceneToken }: Props) => {
             role="status"
             className="flex h-[calc(100vh-56px)] items-center justify-center text-base-fg/60"
           >
-            Loading…
-          </div>
+            {translateUi("Loading…")}</div>
         }
       >
         <TabBody sceneToken={sceneToken} />

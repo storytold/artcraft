@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useState } from "react";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
@@ -51,6 +53,7 @@ export function UploadModalImage(props: Props) {
 
 
   const UploaderModalContent = () => {
+  const { t: translateUi } = useUiTranslation();
     switch (uploaderState.status) {
       case UploaderStates.ready:
         return (
@@ -82,7 +85,7 @@ export function UploadModalImage(props: Props) {
       case UploaderStates.success: {
         return (
           <UploadSuccess
-            title="Image"
+            title={translateUi("Image")}
             onOk={() => {
               // Open the gallery so the user can drag the freshly
               // uploaded image onto the canvas.

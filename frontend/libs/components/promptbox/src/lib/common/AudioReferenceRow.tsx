@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import {
   forwardRef,
   useCallback,
@@ -67,6 +68,7 @@ export const AudioReferenceRow = forwardRef<
   },
   ref,
 ) {
+  const { t } = useTranslation();
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
@@ -83,7 +85,7 @@ export const AudioReferenceRow = forwardRef<
 
     const audioFiles = files.filter(isAudioFile);
     if (audioFiles.length < files.length) {
-      toast.error(AUDIO_FILE_TYPE_ERROR);
+      toast.error(t(AUDIO_FILE_TYPE_ERROR));
     }
 
     const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
@@ -97,7 +99,7 @@ export const AudioReferenceRow = forwardRef<
       );
       if (currentTotal + duration > maxAudioRefDuration) {
         toast.error(
-          `Total audio duration cannot exceed ${maxAudioRefDuration}s`,
+          t("Total audio duration cannot exceed {{seconds}}s", { seconds: maxAudioRefDuration }),
         );
         break;
       }
@@ -126,7 +128,7 @@ export const AudioReferenceRow = forwardRef<
               newState.status === UploaderStates.imageCreateError
             ) {
               setIsUploadingAudio(false);
-              toast.error("Audio upload failed. Please try again.");
+              toast.error(t("Audio upload failed. Please try again."));
             }
           },
         });
@@ -163,7 +165,7 @@ export const AudioReferenceRow = forwardRef<
           newState.status === UploaderStates.imageCreateError
         ) {
           setIsUploadingImage(false);
-          toast.error("Image upload failed. Please try again.");
+          toast.error(t("Image upload failed. Please try again."));
         }
       },
     });
@@ -216,13 +218,13 @@ export const AudioReferenceRow = forwardRef<
         <div className="flex items-center gap-2 text-base-fg opacity-90">
           <MusicIcon  className="h-3.5 w-3.5" />
           <span className="text-sm font-medium">
-            Audio Track{" "}
+            {t("Audio Track")}{" "}
             <span className="font-semibold text-base-fg/60">
               ({referenceAudios.length}/{maxAudioCount})
             </span>
             {audioRequired && referenceAudios.length === 0 && (
               <span className="ml-1.5 text-xs font-medium text-red-500">
-                required
+                {t("required")}
               </span>
             )}
           </span>
@@ -246,7 +248,7 @@ export const AudioReferenceRow = forwardRef<
               className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
             >
               <PlusIcon  className="h-3 w-3" />
-              {isUploadingAudio ? "Uploading…" : "Add audio"}
+              {isUploadingAudio ? t("Uploading…") : t("Add audio")}
             </button>
             {onPickAudioFromLibrary && (
               <button
@@ -256,7 +258,7 @@ export const AudioReferenceRow = forwardRef<
                 className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
                 <FolderOpenIcon  className="h-3 w-3" />
-                From library
+                {t("From library")}
               </button>
             )}
           </>
@@ -266,7 +268,7 @@ export const AudioReferenceRow = forwardRef<
           <>
             <div className="ms-2 flex items-center gap-2 text-base-fg opacity-90">
               <ImageIcon  className="h-3.5 w-3.5" />
-              <span className="text-sm font-medium">Image</span>
+              <span className="text-sm font-medium">{t("Image")}</span>
             </div>
             {referenceImages.map((image) => (
               <div
@@ -275,12 +277,12 @@ export const AudioReferenceRow = forwardRef<
               >
                 <img
                   src={image.url}
-                  alt="Reference"
+                  alt={t("Reference")}
                   className="h-full w-full object-cover"
                 />
                 <button
                   type="button"
-                  aria-label="Remove image"
+                  aria-label={t("Remove image")}
                   onClick={() => onReferenceImagesChange?.([])}
                   className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                 >
@@ -298,7 +300,7 @@ export const AudioReferenceRow = forwardRef<
                 className="flex h-9 items-center gap-1.5 rounded-[3px] border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
               >
                 <PlusIcon  className="h-3 w-3" />
-                {isUploadingImage ? "Uploading…" : "Add image"}
+                {isUploadingImage ? t("Uploading…") : t("Add image")}
               </button>
             )}
           </>
@@ -317,6 +319,7 @@ function AudioRefTile({
   index: number;
   onRemove: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -341,7 +344,7 @@ function AudioRefTile({
     <div className="group flex h-9 items-center gap-2 rounded-[3px] border border-ui-controls-border bg-ui-controls px-2.5">
       <button
         type="button"
-        aria-label={isPlaying ? "Stop" : "Play"}
+        aria-label={isPlaying ? t("Stop") : t("Play")}
         onClick={togglePlay}
         className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-black transition-transform hover:scale-105"
       >
@@ -351,11 +354,11 @@ function AudioRefTile({
         />
       </button>
       <span className="text-xs font-medium text-base-fg/80">
-        Audio {index + 1} · {audio.duration}s
+        {t("Audio")} {index + 1} · {audio.duration}s
       </span>
       <button
         type="button"
-        aria-label="Remove audio"
+        aria-label={t("Remove audio")}
         onClick={() => onRemove(audio.id)}
         className="flex h-4 w-4 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:text-base-fg"
       >
