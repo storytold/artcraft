@@ -17,6 +17,10 @@ try
     Write-Host ""
 
     npm install --verbose
+    if ($LASTEXITCODE -ne 0)
+    {
+        exit $LASTEXITCODE
+    }
 
     Write-Host "Running dev server..."
     Write-Host ""
