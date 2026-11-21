@@ -5,6 +5,7 @@ use std::fmt::{Display, Formatter};
 pub enum ImagesError {
   IoError(std::io::Error),
   ImageError(image::ImageError),
+  CodecError(craft_image_codecs::CodecError),
 }
 
 impl Error for ImagesError {}
@@ -14,6 +15,7 @@ impl Display for ImagesError {
     match self {
       ImagesError::IoError(err) => write!(f, "IO Error: {}", err),
       ImagesError::ImageError(err) => write!(f, "Image Error: {}", err),
+      ImagesError::CodecError(err) => write!(f, "Codec Error: {}", err),
     }
   }
 }
@@ -27,5 +29,11 @@ impl From<std::io::Error> for ImagesError {
 impl From<image::ImageError> for ImagesError {
   fn from(err: image::ImageError) -> Self {
     ImagesError::ImageError(err)
+  }
+}
+
+impl From<craft_image_codecs::CodecError> for ImagesError {
+  fn from(err: craft_image_codecs::CodecError) -> Self {
+    ImagesError::CodecError(err)
   }
 }

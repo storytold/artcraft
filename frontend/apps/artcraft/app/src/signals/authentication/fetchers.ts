@@ -77,7 +77,6 @@ export const signUp = async ({
     username,
     signupSource,
   });
-  console.log(response);
   if (!response.success || !response.data) {
     setLogoutStates();
     return response.errorMessage ?? "Unknown error";

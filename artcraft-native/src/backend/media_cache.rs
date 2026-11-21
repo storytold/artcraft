@@ -6,16 +6,18 @@
 //! dropped once the cache grows past its budget, so long feeds don't hold every image forever.
 
 use std::collections::HashMap;
-use std::io::Cursor;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
+use craft_image_codecs::{ChannelLayout, DecodeOptions, Format, Image, SampleType};
 use egui::{ColorImage, TextureHandle, TextureOptions};
-use image::AnimationDecoder;
 use log::warn;
 use tokio::runtime::Handle;
 use tokio::sync::Semaphore;
+
+#[cfg(test)]
+mod tests;
 
 /// How many images may download at once.
 const MAX_CONCURRENT_DOWNLOADS: usize = 6;
@@ -192,28 +194,27 @@ async fn download(http: &reqwest::Client, url: &str, animated: bool) -> Option<D
 }
 
 fn decode(bytes: &[u8]) -> Option<ColorImage> {
-  let image = match image::load_from_memory(bytes) {
+  let image = match craft_image_codecs::decode(bytes) {
     Ok(image) => image,
     Err(err) => {
       warn!("Image decode failed: {err}");
       return None;
     },
   };
-  let image = if image.width().max(image.height()) > MAX_DECODED_SIDE { image.thumbnail(MAX_DECODED_SIDE, MAX_DECODED_SIDE) } else { image };
-  Some(to_color_image(image.to_rgba8()))
+  image_to_color_image(image, MAX_DECODED_SIDE)
 }
 
 /// The frames of an animated GIF or WebP (subsampled to the budget), or `None` when it isn't
 /// animated.
 fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
-  let frames = match image::guess_format(bytes).ok()? {
-    image::ImageFormat::Gif => image::codecs::gif::GifDecoder::new(Cursor::new(bytes)).ok()?.into_frames().collect_frames().ok()?,
-    image::ImageFormat::WebP => {
-      let decoder = image::codecs::webp::WebPDecoder::new(Cursor::new(bytes)).ok()?;
-      if !decoder.has_animation() {
+  let opts = DecodeOptions::default();
+  let frames = match craft_image_codecs::detect(bytes)? {
+    Format::Gif => craft_image_codecs::decode_gif_frames(bytes, &opts).ok()?,
+    Format::WebP => {
+      if !craft_image_codecs::webp_is_animated(bytes) {
         return None;
       }
-      decoder.into_frames().collect_frames().ok()?
+      craft_image_codecs::decode_webp_frames(bytes, &opts).ok()?
     },
     _ => return None,
   };
@@ -223,19 +224,84 @@ fn decode_frames(bytes: &[u8]) -> Option<Vec<(ColorImage, f32)>> {
   // Keep every n-th frame, folding the skipped frames' time into the kept one.
   let step = frames.len().div_ceil(ANIMATED_MAX_FRAMES);
   let mut out = Vec::with_capacity(frames.len() / step + 1);
-  for chunk in frames.chunks(step) {
-    let secs: f32 = chunk
-      .iter()
-      .map(|f| {
-        let (n, d) = f.delay().numer_denom_ms();
-        n as f32 / d.max(1) as f32 / 1000.0
-      })
-      .sum();
-    let image = image::DynamicImage::ImageRgba8(chunk[0].buffer().clone()).thumbnail(ANIMATED_SIDE, ANIMATED_SIDE);
+  let mut iter = frames.into_iter();
+  while let Some(first) = iter.next() {
+    let mut count = 1usize;
+    let mut delay_ms = u64::from(first.delay_ms);
+    for skipped in iter.by_ref().take(step - 1) {
+      delay_ms = delay_ms.saturating_add(u64::from(skipped.delay_ms));
+      count += 1;
+    }
+    let secs = delay_ms as f32 / 1000.0;
     // Some encoders write 0 ms delays; browsers treat those as ~100 ms.
-    out.push((to_color_image(image.to_rgba8()), if secs < 0.02 { 0.1 * chunk.len() as f32 } else { secs }));
+    let delay = if secs < 0.02 { 0.1 * count as f32 } else { secs };
+    out.push((image_to_color_image(first.image, ANIMATED_SIDE)?, delay));
   }
   Some(out)
+}
+
+fn image_to_color_image(mut image: Image, max_side: u32) -> Option<ColorImage> {
+  if image.width().max(image.height()) > max_side && image.sample_type() == SampleType::U16 && matches!(image.layout(), ChannelLayout::Gray | ChannelLayout::GrayA | ChannelLayout::Rgb | ChannelLayout::Rgba) {
+    image = thumbnail_u16(&image, max_side)?;
+  }
+  let (w, h) = image.dimensions();
+  let rgba_bytes = if image.layout() == ChannelLayout::Rgba && image.sample_type() == SampleType::U8 { image.into_data() } else { image.to_rgba8() };
+  let rgba = image::RgbaImage::from_raw(w, h, rgba_bytes)?;
+  let rgba = if w.max(h) > max_side { image::DynamicImage::ImageRgba8(rgba).thumbnail(max_side, max_side).into_rgba8() } else { rgba };
+  Some(to_color_image(rgba))
+}
+
+/// Keep the original 16-bit sample precision while averaging each source rectangle.
+/// Wide sums also cover reductions whose 16-bit samples would overflow a U32 sum.
+fn thumbnail_u16(image: &Image, max_side: u32) -> Option<Image> {
+  let (w, h) = image.dimensions();
+  if w == 0 || h == 0 || max_side == 0 {
+    return None;
+  }
+  let ratio = (f64::from(max_side) / f64::from(w)).min(f64::from(max_side) / f64::from(h));
+  let nw = (f64::from(w) * ratio).round().max(1.0) as u32;
+  let nh = (f64::from(h) * ratio).round().max(1.0) as u32;
+
+  let layout = image.layout();
+  let channels = layout.channels();
+  let pixel_bytes = channels * 2;
+  let row_bytes = (w as usize).checked_mul(pixel_bytes)?;
+  let output_bytes = (nw as usize).checked_mul(nh as usize)?.checked_mul(pixel_bytes)?;
+  let mut data = Vec::new();
+  data.try_reserve_exact(output_bytes).ok()?;
+  let rows = image.data().chunks_exact(row_bytes);
+  let x_ratio = w as f32 / nw as f32;
+  let y_ratio = h as f32 / nh as f32;
+
+  // Use the same floating-point box boundaries as the earlier thumbnail path.
+  let source_span = |index: u32, input: u32, ratio: f32| {
+    let offset = index as f32 * ratio;
+    let start = (offset.ceil() as u32).min(input - 1);
+    let end = ((offset + ratio).ceil() as u32).clamp(start + 1, input);
+    start as usize..end as usize
+  };
+  for y in 0..nh {
+    let y_span = source_span(y, h, y_ratio);
+    let band = rows.clone().skip(y_span.start).take(y_span.len());
+    for x in 0..nw {
+      let x_span = source_span(x, w, x_ratio);
+      let bytes = x_span.start * pixel_bytes..x_span.end * pixel_bytes;
+      let count = x_span.len() as u64 * y_span.len() as u64;
+      let mut sums = [0_u64; 4];
+      for row in band.clone() {
+        for pixel in row.get(bytes.clone())?.chunks_exact(pixel_bytes) {
+          for (sum, sample) in sums.iter_mut().zip(pixel.chunks_exact(2)) {
+            *sum += u64::from(u16::from_ne_bytes([sample[0], sample[1]]));
+          }
+        }
+      }
+      for sum in sums.iter().take(channels) {
+        let sample = ((sum + count / 2) / count) as u16;
+        data.extend_from_slice(&sample.to_ne_bytes());
+      }
+    }
+  }
+  Image::from_raw(nw, nh, layout, SampleType::U16, data).ok()
 }
 
 fn to_color_image(rgba: image::RgbaImage) -> ColorImage {
