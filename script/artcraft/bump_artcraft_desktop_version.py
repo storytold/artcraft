@@ -51,29 +51,31 @@ def bump_minor(version):
 def write_version_rs(path, new_version):
     with open(path) as f:
         content = f.read()
-    updated = re.sub(
+    updated, matches = re.subn(
         r'(ARTCRAFT_VERSION:\s*&str\s*=\s*)"(\d+\.\d+\.\d+)"',
         rf'\g<1>"{new_version}"',
         content,
     )
-    if updated == content:
+    if matches == 0:
         raise ValueError(f"Could not find ARTCRAFT_VERSION in {path}")
-    with open(path, "w") as f:
-        f.write(updated)
+    if updated != content:
+        with open(path, "w") as f:
+            f.write(updated)
 
 
 def write_json_version(path, new_version):
     with open(path) as f:
         content = f.read()
-    updated = re.sub(
+    updated, matches = re.subn(
         r'("version"\s*:\s*)"(\d+\.\d+\.\d+)"',
         rf'\g<1>"{new_version}"',
         content,
     )
-    if updated == content:
+    if matches == 0:
         raise ValueError(f"Could not find version field in {path}")
-    with open(path, "w") as f:
-        f.write(updated)
+    if updated != content:
+        with open(path, "w") as f:
+            f.write(updated)
 
 
 def parse_tuple(version):
