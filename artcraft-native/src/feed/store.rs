@@ -96,7 +96,7 @@ impl FeedStore {
           }
         },
         JobPhase::Succeeded => {
-          if !self.seen_complete.insert(job.job_token.clone()) || !self.first_poll_done {
+          if !self.seen_complete.insert(job.job_token.clone()) || (!self.first_poll_done && meta.is_none()) {
             continue;
           }
           if self.seen_running.remove(&job.job_token) {
@@ -124,7 +124,7 @@ impl FeedStore {
       }
     }
     failed.extend(self.failed.drain(..).filter(|f| f.local));
-    // Everything finished before the first poll comes from the library instead.
+    // Historical results on the first poll come from the library instead.
     self.first_poll_done = true;
     pending.sort_by_key(|p| std::cmp::Reverse(p.created_at));
     failed.sort_by_key(|f| std::cmp::Reverse(f.updated_at));
@@ -319,6 +319,26 @@ mod tests {
     let notices = store.apply_jobs(MediaKind::Image, &[job("j1", "nano_banana_pro", "complete_success", &now_rfc3339())], &c);
     assert!(notices.is_empty());
     assert!(store.items.is_empty());
+  }
+
+  #[test]
+  fn first_poll_keeps_results_from_just_enqueued_jobs() {
+    let (c, mut store) = (catalog(), FeedStore::default());
+    let meta = EnqueueMeta { prompt: "p".into(), model_id: "nano_banana_pro".into(), batch_count: 1, ref_image: None, provider: Provider::Artcraft };
+    store.add_enqueued(MediaKind::Image, &["fresh".into()], &meta, &c);
+    let t = now_rfc3339();
+    let jobs = [
+      job("history", "nano_banana_pro", "complete_success", &t),
+      job("fresh", "nano_banana_pro", "complete_success", &t),
+    ];
+
+    let notices = store.apply_jobs(MediaKind::Image, &jobs, &c);
+    assert_eq!(notices, vec![FeedNotice::Completed]);
+    assert!(store.pending.is_empty());
+    assert_eq!(store.ordered_tokens(), ["m_fresh"]);
+
+    assert!(store.apply_jobs(MediaKind::Image, &jobs, &c).is_empty());
+    assert_eq!(store.ordered_tokens(), ["m_fresh"]);
   }
 
   #[test]
