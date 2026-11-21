@@ -14,3 +14,6 @@ $env:SQLX_OFFLINE = "true"
 
 # The config file tells Tauri more instructions for the frontend build.
 cargo tauri dev --config ".\crates\desktop\artcraft\tauri-dev-hot-reload.conf.json"
+
+# Return Cargo's exit status when this script is run with -File.
+exit $LASTEXITCODE
