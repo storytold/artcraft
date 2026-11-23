@@ -1,4 +1,5 @@
 import { useTranslation } from "@storyteller/i18n";
+import { v4 as uuidv4 } from "uuid";
 import { useMemo, useRef, useState, ReactNode } from "react";
 import { toast } from "@storyteller/ui-toaster";
 import {
@@ -275,7 +276,7 @@ export const PromptBoxAudio = ({
         }
         total += duration;
         added.push({
-          id: Math.random().toString(36).substring(7),
+          id: uuidv4(),
           url: item.fullImage,
           file: new File([], "library-audio"),
           mediaToken: item.id,

@@ -1645,5 +1645,13 @@
   "Custom {{number}}": "Custom {{number}}",
   "Transform your image into a 3D object with textures.": "Transform your image into a 3D object with textures.",
   "Generate 3D worlds from an image with World Labs": "Generate 3D worlds from an image with World Labs",
-  "Add a color": "Add a color"
+  "Add a color": "Add a color",
+  "{{name}} file size: {{size}}": "{{name}} file size: {{size}}",
+  "{{total}}s / {{max}}s max": "{{total}}s / {{max}}s max",
+  "View {{name}}": "View {{name}}",
+  "Currently {{name}}": "Currently {{name}}",
+  "No other characters": "No other characters",
+  "No other images": "No other images",
+  "No other videos": "No other videos",
+  "No other audio": "No other audio"
 }

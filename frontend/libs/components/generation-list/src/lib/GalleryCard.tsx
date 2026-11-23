@@ -16,7 +16,7 @@ import {
 } from "@storyteller/model-list";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
-import { is3DMediaClass, type GalleryItem } from "./types";
+import { is3DMediaClass, localizedGalleryLabel, type GalleryItem } from "./types";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
 
@@ -98,6 +98,7 @@ export const GalleryCard = memo(function GalleryCard({
   lastViewed = false,
 }: GalleryCardProps) {
   const { t: translateUi } = useUiTranslation();
+  const label = localizedGalleryLabel(item.label, translateUi);
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
   const [ratio, setRatio] = useState<number | undefined>(cached);
@@ -193,7 +194,7 @@ export const GalleryCard = memo(function GalleryCard({
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
             <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">
-              {title || item.label}
+              {title || label}
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
@@ -213,7 +214,7 @@ export const GalleryCard = memo(function GalleryCard({
           <GalleryThumbnail
             thumbnail={item.thumbnail}
             stillThumbnail={item.stillThumbnail}
-            alt={item.label}
+            alt={label}
             isVideo={isVideo}
             fallbackIcon={mediaIcon}
             onLoad={measureRatio}

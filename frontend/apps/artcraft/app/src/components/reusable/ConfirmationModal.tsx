@@ -28,7 +28,7 @@ export const ConfirmationModal = ({
   okText = "OK",
   okColor = "",
   onCancel,
-  cancelText = "Cancel",
+  cancelText,
   canHide,
 }: Props) => {
   const { t: translateUi } = useUiTranslation();
@@ -90,7 +90,7 @@ export const ConfirmationModal = ({
                     className="px-3 py-2"
                     variant="secondary"
                   >
-                    {cancelText}
+                    {cancelText ?? translateUi("Cancel")}
                   </Button>
                 )}
                 {!!onOk && (

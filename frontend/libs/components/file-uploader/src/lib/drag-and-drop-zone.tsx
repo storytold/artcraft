@@ -46,7 +46,10 @@ export const DragAndDropZone = ({
           </p>
           <p className="flex items-center gap-2 text-sm font-normal">
             <span className="opacity-50">
-              {`${fileName} file size: ${fileSize} `}
+              {translateUi("{{name}} file size: {{size}}", {
+                name: fileName,
+                size: fileSize,
+              })}
             </span>
             <u className="transition-all hover:text-white/80">{translateUi("Change File")}</u>
           </p>

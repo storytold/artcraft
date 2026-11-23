@@ -1645,5 +1645,13 @@
   "Custom {{number}}": "自定义 {{number}}",
   "Transform your image into a 3D object with textures.": "将图片转换为带纹理的 3D 对象。",
   "Generate 3D worlds from an image with World Labs": "使用 World Labs 从图片生成 3D 世界",
-  "Add a color": "添加颜色"
+  "Add a color": "添加颜色",
+  "{{name}} file size: {{size}}": "{{name}} 文件大小：{{size}}",
+  "{{total}}s / {{max}}s max": "{{total}} 秒 / 最多 {{max}} 秒",
+  "View {{name}}": "查看{{name}}",
+  "Currently {{name}}": "当前 {{name}}",
+  "No other characters": "没有其他角色",
+  "No other images": "没有其他图像",
+  "No other videos": "没有其他视频",
+  "No other audio": "没有其他音频"
 }

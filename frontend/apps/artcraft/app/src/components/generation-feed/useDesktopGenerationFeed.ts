@@ -1,5 +1,4 @@
 
-import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -68,12 +67,6 @@ const FAILURE_REASON_LABEL: Record<string, string> = {
 export function useDesktopGenerationFeed(options: {
   mediaType: "image" | "video";
 }) {
-  const { t: translateUi } = useUiTranslation();
-  // Completion subscriptions keep their first callback, so read the current translator through a ref.
-  const translateUiRef = useRef(translateUi);
-  useEffect(() => {
-    translateUiRef.current = translateUi;
-  }, [translateUi]);
   const { mediaType } = options;
   const mediaApiRef = useRef(new MediaFilesApi());
 
@@ -178,7 +171,7 @@ export function useDesktopGenerationFeed(options: {
     addCompletedItems(
       event.generated_images.map((img) => ({
         id: img.media_token,
-        label: translateUiRef.current("Image Generation"),
+        label: "Image Generation",
         thumbnail:
           getThumbnailUrl(img.maybe_thumbnail_template, {
             width: THUMBNAIL_SIZES.LARGE,
@@ -197,7 +190,7 @@ export function useDesktopGenerationFeed(options: {
     addCompletedItems([
       {
         id: video.media_token,
-        label: translateUiRef.current("Video Generation"),
+        label: "Video Generation",
         thumbnail:
           getThumbnailUrl(video.maybe_thumbnail_template, {
             width: THUMBNAIL_SIZES.LARGE,

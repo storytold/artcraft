@@ -1173,7 +1173,10 @@ export const ImagePromptRow = ({
                     </span>
                   </div>
                   <span className="text-[13px] text-base-fg/60">
-                    {totalVideoDuration}s / {maxVideoRefDuration}{translateUi("s max")}</span>
+                    {translateUi("{{total}}s / {{max}}s max", {
+                      total: totalVideoDuration,
+                      max: maxVideoRefDuration,
+                    })}</span>
                 </div>
                 <div className="flex gap-2 items-center">
                   {referenceVideos.map((video) => (
@@ -1278,7 +1281,10 @@ export const ImagePromptRow = ({
                       </span>
                     </div>
                     <span className="text-[13px] text-base-fg/60">
-                      {totalAudioDuration}s / {maxAudioRefDuration}{translateUi("s max")}</span>
+                      {translateUi("{{total}}s / {{max}}s max", {
+                        total: totalAudioDuration,
+                        max: maxAudioRefDuration,
+                      })}</span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">

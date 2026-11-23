@@ -231,8 +231,8 @@ export const markdownToHtml = (
       continue;
     }
 
-    // ATX headings: support #..###### with optional space after hashes
-    const heading = ltrim.match(/^(#{1,6})\s*(.*)$/);
+    // ATX headings require whitespace after the hashes, so #hashtag stays text.
+    const heading = ltrim.match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
       flushParagraph();
       closeListIfOpen();

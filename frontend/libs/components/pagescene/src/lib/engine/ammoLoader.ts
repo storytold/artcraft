@@ -35,8 +35,11 @@ export const ensureAmmoLoaded = (): Promise<void> => {
     script.src = "jsm/libs/ammo.wasm.js";
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () =>
+    script.onerror = () => {
+      script.remove();
+      ammoLoadPromise = null;
       reject(new Error("Failed to load jsm/libs/ammo.wasm.js"));
+    };
     document.body.appendChild(script);
   });
 

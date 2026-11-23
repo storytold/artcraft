@@ -212,7 +212,7 @@ export function MentionChipMenu({
               type="button"
               onClick={onPreview}
               title={translateUi("View full size")}
-              aria-label={`View ${currentName}`}
+              aria-label={translateUi("View {{name}}", { name: currentName })}
               className="group/avatar relative shrink-0 cursor-pointer overflow-hidden rounded-[3px]"
             >
               <ChipAvatar
@@ -267,7 +267,7 @@ export function MentionChipMenu({
             <div className="min-w-0">
               <div className="text-sm font-medium text-base-fg">{translateUi("Replace")}</div>
               <div className="truncate text-[11px] text-base-fg/50">
-                {translateUi("Currently")}{" "}{currentName}
+                {translateUi("Currently {{name}}", { name: currentName })}
               </div>
             </div>
           </div>
@@ -275,7 +275,7 @@ export function MentionChipMenu({
           <div className="max-h-64 overflow-y-auto">
             {replaceItems.length === 0 && (
               <div className="px-2 py-3 text-center text-xs text-base-fg/50">
-                {TYPE_COPY[currentType].empty}
+                {translateUi(TYPE_COPY[currentType].empty)}
               </div>
             )}
             {replaceItems.map((item, i) => (

@@ -190,7 +190,9 @@ class Editor {
     // Ammo.js WASM is a global side-effect script the physics path
     // depends on. The singleton ensures it's appended to document.body
     // exactly once, even across Editor re-construction.
-    ensureAmmoLoaded();
+    void ensureAmmoLoaded().catch((error) => {
+      console.error("Ammo.js failed to load:", error);
+    });
 
     // Version and name.
     this.version = 2.0;
