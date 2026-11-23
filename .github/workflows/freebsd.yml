@@ -1,0 +1,24 @@
+# Builds and tests the workspace on FreeBSD, inside a FreeBSD VM on a Linux runner
+# (GitHub has no FreeBSD runners).
+name: FreeBSD
+
+# The VM build is slow, so it runs nightly on main and on pushes to `release`, not on pull requests.
+on:
+  schedule:
+    - cron: "27 4 * * *"
+  push:
+    branches: [release]
+  workflow_dispatch:
+
+concurrency:
+  group: freebsd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  freebsd:
+    # Intentionally tracked at @main (not SHA-pinned) so org-wide CI improvements, security fixes, and build optimizations propagate without PR churn across all craftapp repos.
+    uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@main
+

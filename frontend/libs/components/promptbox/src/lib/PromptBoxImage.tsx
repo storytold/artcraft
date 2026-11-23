@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType, UploaderState } from "@storyteller/common";
 import { toast } from "@storyteller/ui-toaster";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
@@ -362,7 +363,7 @@ export const PromptBoxImage = ({
       console.warn("Cannot generate image: prompt is empty");
       return;
     }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
+    if (isOverPromptLimit(prompt.length, maxLen)) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -501,11 +502,7 @@ export const PromptBoxImage = ({
                 onBlur={() => setIsFocused(false)}
               />
               <PromptFullscreenButton onClick={openFullscreen} />
-              <span
-                className={`pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              <PromptLengthCounter prompt={prompt} maxLen={maxLen} />
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between gap-2">

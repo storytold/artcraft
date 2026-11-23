@@ -1,0 +1,15 @@
+{
+  "build": {
+    "beforeBuildCommand": ""
+  },
+  "bundle": {
+    "category": "GraphicsAndDesign",
+    "shortDescription": "AI image and video creation",
+    "longDescription": "ArtCraft Studio is a desktop workspace for generating AI images and video.",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    }
+  }
+}
