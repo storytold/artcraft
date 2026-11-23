@@ -281,7 +281,7 @@ export function LoginModal({
                             onSubmit={handleAuthSubmit}
                             isSignUp={isSignUp}
                             onToggleMode={() => setIsSignUp((prev) => !prev)}
-                            errorMessage={t(errorMessage)}
+                            errorMessage={errorMessage}
                             isLoading={isLoading}
                           />}
                         </div>

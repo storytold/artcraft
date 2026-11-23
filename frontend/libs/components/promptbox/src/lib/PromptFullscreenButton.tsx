@@ -23,7 +23,7 @@ export const PromptFullscreenButton = ({
   const { t: translateUi } = useUiTranslation();
   return (
     <div className={`absolute right-0 top-0 z-10 ${className ?? ""}`}>
-      <Tooltip content="Focus mode" position="top" delay={200}>
+      <Tooltip content={translateUi("Focus mode")} position="top" delay={200}>
         <button
           type="button"
           aria-label={translateUi("Expand prompt to focus mode")}

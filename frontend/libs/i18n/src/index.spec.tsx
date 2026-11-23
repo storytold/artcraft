@@ -6,7 +6,8 @@ import en from "./locales/en.json";
 import zhCN from "./locales/zh-CN.json";
 import { i18n, isLocale, LOCALE_STORAGE_KEY, readLocale, setLocale, LocalizedText, Trans, useTranslation } from "./index";
 
-const tokens = (message: string) => [...message.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((match) => match[1]).sort();
+const tokens = (message: string) =>
+  [...new Set([...message.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map((match) => match[1]))].sort();
 
 afterEach(async () => {
   cleanup();

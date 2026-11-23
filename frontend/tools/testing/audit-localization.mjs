@@ -20,7 +20,7 @@ function translated(node) {
 }
 for(const file of tracked.filter(f=>/^frontend\/(apps\/artcraft\/|libs\/)/.test(f) && /\.(tsx?|jsx?)$/.test(f) && !/\.(spec|test|stories)\.|\/(__tests__|fixtures)\//.test(f))) {
   const source=fs.readFileSync(path.join(root,file),'utf8');
-  const ast=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true,file.endsWith('tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
+  const ast=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true);
   function add(node,text,kind){text=clean(text);if(!isEnglish(text)||translated(node))return; rows.push({file,line:ast.getLineAndCharacterOfPosition(node.getStart(ast)).line+1,kind,text,inCatalog:Object.hasOwn(en,text)});}
   function visit(n){
     if(ts.isCallExpression(n) && /^(?:t|tr|translateUi|uiI18n\.t|i18n\.t)$/.test(n.expression.getText()) && n.arguments[0] && ts.isStringLiteralLike(n.arguments[0])) calls.push({file,key:n.arguments[0].text});

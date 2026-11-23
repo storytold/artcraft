@@ -282,7 +282,11 @@ function PresetItem({
           isActive ? "text-primary" : "text-muted-foreground",
         )}
       >
-        {translateUi(preset.label)}
+        {preset.isCustom
+          ? translateUi("Custom {{number}}", {
+              number: preset.label.match(/(\d+)$/)?.[1] ?? preset.label,
+            })
+          : translateUi(preset.label)}
       </span>
       {onDelete && (
         <Button

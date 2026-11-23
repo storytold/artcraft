@@ -1641,6 +1641,8 @@
   "Accepts {{kinds}} files": "Accepts {{kinds}} files",
   "{{kinds}} references aren't available here": "{{kinds}} references aren't available here",
   "Only {{kinds}} files can be added here": "Only {{kinds}} files can be added here",
+  "Focus mode": "Focus mode",
+  "Custom {{number}}": "Custom {{number}}",
   "Transform your image into a 3D object with textures.": "Transform your image into a 3D object with textures.",
   "Generate 3D worlds from an image with World Labs": "Generate 3D worlds from an image with World Labs",
   "Add a color": "Add a color"

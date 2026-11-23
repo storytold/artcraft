@@ -35,6 +35,8 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 beforeEach(() => {
+  // jsdom does not implement scrollIntoView. Extraction scrolls the result list.
+  Element.prototype.scrollIntoView = vi.fn() as typeof Element.prototype.scrollIntoView;
   vi.stubGlobal("React", React);
   vi.stubGlobal(
     "fetch",
@@ -66,6 +68,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   await setLocale("en");
+  Reflect.deleteProperty(Element.prototype, "scrollIntoView");
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.clearAllMocks();

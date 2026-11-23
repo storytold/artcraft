@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium, expect } from "@playwright/test";
-import { installBrowserFixture } from "../performance/browser-fixture.mjs";
-import { installSessionFixture } from "./session-fixture.mjs";
+import { orderedFixtureSource } from "./session-fixture.mjs";
 
 const url = new URL(process.argv[2] || "http://127.0.0.1:5193");
 if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) {
@@ -11,8 +10,7 @@ if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) {
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await context.addInitScript(installBrowserFixture);
-  await context.addInitScript(installSessionFixture);
+  await context.addInitScript({ content: orderedFixtureSource() });
   await context.route("**/*", (route) => {
     const target = route.request().url();
     return target.startsWith(url.origin) || target.startsWith("blob:")

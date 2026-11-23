@@ -4,6 +4,13 @@ import { installBrowserFixture } from "../performance/browser-fixture.mjs";
 
 // Playwright does not preserve call order across separate init scripts.
 // One script installs the browser stub, then the session stub, then the locale.
+export function orderedFixtureSource(options = {}) {
+  return `(() => {
+    (${installBrowserFixture.toString()})();
+    (${installSessionFixture.toString()})(${JSON.stringify(options)});
+  })();`;
+}
+
 export function orderedI18nInitSource(options = {}) {
   return `(() => {
     (${installBrowserFixture.toString()})();

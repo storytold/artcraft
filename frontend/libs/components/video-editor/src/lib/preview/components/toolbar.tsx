@@ -101,7 +101,7 @@ function ZoomSelect() {
   const { isAtFit, zoomPercent, fitToScreen, setViewportPercent } =
     usePreviewViewport();
 
-  const displayLabel = isAtFit ? "Fit" : `${zoomPercent}%`;
+  const displayLabel = isAtFit ? translateUi("Fit") : `${zoomPercent}%`;
 
   const onValueChange = (value: string) => {
     if (value === "fit") {

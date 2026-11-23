@@ -24,6 +24,10 @@ const FIELD_LABEL =
 const FIELD_INPUT =
   "h-10 w-full rounded-[3px] border border-white/15 bg-white/5 px-4 py-2 text-sm font-normal leading-5 text-white placeholder-white/20 outline-none transition-colors focus:border-white/40";
 
+function capitalizeMessage(message: string) {
+  return message.charAt(0).toUpperCase() + message.slice(1);
+}
+
 export const ArtCraftSignUp = ({
   onSubmit,
   isSignUp,
@@ -38,13 +42,9 @@ export const ArtCraftSignUp = ({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    if (errorMessage) {
-      setLocalError(
-        errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1),
-      );
-    } else {
-      setLocalError(undefined);
-    }
+    // Store the source message. Translating it here would rerun on every
+    // language change and replace a newer local validation message.
+    setLocalError(errorMessage || undefined);
   }, [errorMessage]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -84,7 +84,7 @@ export const ArtCraftSignUp = ({
       {localError && (
         <div className="flex items-center justify-center gap-2 border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
           <TriangleAlertIcon />
-          {t(localError)}
+          {capitalizeMessage(t(localError))}
         </div>
       )}
 

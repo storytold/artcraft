@@ -1641,6 +1641,8 @@
   "Accepts {{kinds}} files": "接受 {{kinds}} 文件",
   "{{kinds}} references aren't available here": "此处不可用{{kinds}}参考",
   "Only {{kinds}} files can be added here": "此处只能添加 {{kinds}} 文件",
+  "Focus mode": "专注模式",
+  "Custom {{number}}": "自定义 {{number}}",
   "Transform your image into a 3D object with textures.": "将图片转换为带纹理的 3D 对象。",
   "Generate 3D worlds from an image with World Labs": "使用 World Labs 从图片生成 3D 世界",
   "Add a color": "添加颜色"
