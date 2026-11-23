@@ -126,6 +126,7 @@ const InterfaceFontSetting = () => {
   // null while loading.
   const [families, setFamilies] = useState<string[] | "error" | null>(null);
   const [search, setSearch] = useState("");
+  const [saveFailed, setSaveFailed] = useState(false);
 
   useEffect(() => {
     ListSystemFonts()
@@ -136,9 +137,11 @@ const InterfaceFontSetting = () => {
   const matches = useMemo(() => {
     if (!Array.isArray(families)) return [];
     const query = search.trim().toLowerCase();
-    return query
-      ? families.filter((f) => f.toLowerCase().includes(query))
-      : families;
+    if (!query) return families;
+    const found = families.filter((f) => f.toLowerCase().includes(query));
+    // An exact name goes first so the MAX_LISTED_FONTS cap can't hide it.
+    const exact = found.filter((f) => f.toLowerCase() === query);
+    return [...exact, ...found.filter((f) => f.toLowerCase() !== query)];
   }, [families, search]);
 
   const message =
@@ -151,7 +154,7 @@ const InterfaceFontSetting = () => {
           : null;
 
   const choose = (family: string | null) => {
-    setUiFont(family);
+    setSaveFailed(!setUiFont(family));
     setSelected(family);
   };
 
@@ -163,6 +166,11 @@ const InterfaceFontSetting = () => {
           <p className="text-xs opacity-70">
             Current: {selected ?? "Default"}
           </p>
+          {saveFailed && (
+            <p className="text-xs opacity-70">
+              Applied for now, but couldn't be saved for the next launch.
+            </p>
+          )}
         </div>
         <Button
           variant="secondary"
@@ -183,7 +191,7 @@ const InterfaceFontSetting = () => {
         <p className="text-xs opacity-70">{message}</p>
       ) : (
         <div
-          role="listbox"
+          role="group"
           aria-label="Installed fonts"
           className="max-h-56 overflow-y-auto border border-ui-panel-border"
         >
@@ -192,8 +200,7 @@ const InterfaceFontSetting = () => {
             return (
               <button
                 key={family}
-                role="option"
-                aria-selected={isSelected}
+                aria-pressed={isSelected}
                 className={twMerge(
                   "flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm transition-colors duration-100",
                   isSelected ? "bg-base-fg/10" : "hover:bg-base-fg/[0.06]",

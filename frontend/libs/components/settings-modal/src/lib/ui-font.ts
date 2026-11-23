@@ -9,14 +9,21 @@ export function getStoredUiFont(): string | null {
 }
 
 // Applies the font to the whole interface and remembers it.
-// Pass null to restore the default fonts.
-export function setUiFont(family: string | null) {
-  if (family) {
-    localStorage.setItem(UI_FONT_STORAGE_KEY, family);
-  } else {
-    localStorage.removeItem(UI_FONT_STORAGE_KEY);
-  }
+// Pass null to restore the default fonts. Returns false if the choice
+// applies now but couldn't be saved for the next launch.
+export function setUiFont(family: string | null): boolean {
   applyUiFont(family);
+  try {
+    if (family) {
+      localStorage.setItem(UI_FONT_STORAGE_KEY, family);
+    } else {
+      localStorage.removeItem(UI_FONT_STORAGE_KEY);
+    }
+    return true;
+  } catch {
+    // Storage can be full or unavailable (QuotaExceededError).
+    return false;
+  }
 }
 
 // Re-applies the stored font; call once at startup.
