@@ -170,16 +170,19 @@ export const PromptBox3D = ({
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: translateUi("Wide"),
+      action: "wide",
       selected: true,
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Tall"),
+      action: "tall",
       selected: false,
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Square"),
+      action: "square",
       selected: false,
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -243,11 +246,11 @@ export const PromptBox3D = ({
       prev.map((item) => ({
         ...item,
         selected:
-          (item.label === "Wide" &&
+          (item.action === "wide" &&
             cameraAspectRatio === CameraAspectRatio.HORIZONTAL_3_2) ||
-          (item.label === "Tall" &&
+          (item.action === "tall" &&
             cameraAspectRatio === CameraAspectRatio.VERTICAL_2_3) ||
-          (item.label === "Square" &&
+          (item.action === "square" &&
             cameraAspectRatio === CameraAspectRatio.SQUARE_1_1),
       })),
     );
@@ -262,9 +265,9 @@ export const PromptBox3D = ({
       })),
     );
 
-    // Map the selected label to the corresponding CameraAspectRatio enum value
+    // Map the stable action, not the translated label.
     let newRatio: CameraAspectRatio;
-    switch (selectedItem.label.toLowerCase()) {
+    switch (selectedItem.action) {
       case "wide":
         newRatio = CameraAspectRatio.HORIZONTAL_3_2;
         break;

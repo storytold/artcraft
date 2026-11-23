@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { clickOnEnterOrSpace } from "@storyteller/common";
 
 interface PortalTooltipProps {
   children: React.ReactElement;
@@ -355,6 +356,10 @@ function RichListRow({
 }: RichListRowProps) {
   return (
     <div
+      role="button"
+      aria-disabled={item.disabled || undefined}
+      tabIndex={item.disabled ? -1 : 0}
+      onKeyDown={item.disabled ? undefined : clickOnEnterOrSpace}
       data-selected={item.selected ? "true" : undefined}
       onClick={() => {
         if (!item.disabled) onClick?.();
@@ -1282,6 +1287,12 @@ export const PopoverMenu = ({
 
                             const itemRow = (
                               <div
+                                role="button"
+                                aria-disabled={item.disabled || undefined}
+                                tabIndex={item.disabled ? -1 : 0}
+                                onKeyDown={
+                                  item.disabled ? undefined : clickOnEnterOrSpace
+                                }
                                 data-selected={
                                   item.selected ? "true" : undefined
                                 }

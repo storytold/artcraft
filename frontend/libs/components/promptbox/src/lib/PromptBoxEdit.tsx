@@ -106,6 +106,7 @@ export const PromptBoxEdit = ({
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: translateUi("Auto"),
+      action: "auto",
       selected: aspectRatio === "auto",
       icon: (
         <MoveIcon  className="h-4 w-4" />
@@ -113,16 +114,19 @@ export const PromptBoxEdit = ({
     },
     {
       label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -152,9 +156,7 @@ export const PromptBoxEdit = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected:
-          item.label.toLowerCase() === aspectRatio ||
-          (item.label === "Auto" && aspectRatio === "auto"),
+        selected: item.action === aspectRatio,
       })),
     );
   }, [aspectRatio]);
@@ -169,9 +171,7 @@ export const PromptBoxEdit = ({
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value =
-      selectedItem.label === "Auto" ? "auto" : selectedItem.label.toLowerCase();
-    setAspectRatio(value as any);
+    setAspectRatio(selectedItem.action as any);
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {

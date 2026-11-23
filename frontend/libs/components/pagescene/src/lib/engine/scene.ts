@@ -1028,34 +1028,40 @@ class Scene {
     onComplete: () => void,
     signal?: AbortSignal,
   ): Promise<GLTF> {
-    return new Promise<GLTF>(async (resolve, reject) => {
-      let buffer;
-      try {
-        // Host-supplied CORS-bypassed binary fetch (FetchProxy under
-        // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (
-          await this.deps.fetchAsset(media_url, { signal })
-        ).arrayBuffer();
-      } catch (error) {
-        if ((error as { name?: string })?.name !== "AbortError") {
-          console.error("load GLB from Tauri error:", error);
-        }
-        reject(error);
-        return;
+    let buffer: ArrayBuffer;
+    try {
+      // Host-supplied CORS-bypassed binary fetch (FetchProxy under
+      // Tauri; plain fetch under web hosts that allow it).
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("load GLB from Tauri error:", error);
       }
+      throw error;
+    }
+    // parse() throws on malformed bytes before it calls the error callback.
+    // That throw must reject this promise, so it stays outside the callback.
+    return new Promise<GLTF>((resolve, reject) => {
       const glbLoader = new GLTFLoader();
-      glbLoader.parse(
-        buffer,
-        "", // NB: No relative path to load additional assets!
-        (gltf) => {
-          resolve(gltf);
-          onComplete();
-        },
-        (error) => {
-          console.error("GLTF loader error:", error);
-          reject(error);
-        },
-      );
+      try {
+        glbLoader.parse(
+          buffer,
+          "", // NB: No relative path to load additional assets!
+          (gltf) => {
+            resolve(gltf);
+            onComplete();
+          },
+          (error) => {
+            console.error("GLTF loader error:", error);
+            reject(error);
+          },
+        );
+      } catch (error) {
+        console.error("GLTF loader error:", error);
+        reject(error);
+      }
     });
   }
 
@@ -1070,30 +1076,24 @@ class Scene {
     onComplete: () => void,
     signal?: AbortSignal,
   ): Promise<SplatMesh> {
-    return new Promise(async (resolve, reject) => {
-      let buffer;
-      try {
-        // Host-supplied CORS-bypassed binary fetch (FetchProxy under
-        // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (
-          await this.deps.fetchAsset(media_url, { signal })
-        ).arrayBuffer();
-      } catch (error) {
-        if ((error as { name?: string })?.name !== "AbortError") {
-          console.error("load Splat from Tauri error:", error);
-        }
-        reject(error);
-        return;
+    let buffer: ArrayBuffer;
+    try {
+      // Host-supplied CORS-bypassed binary fetch (FetchProxy under
+      // Tauri; plain fetch under web hosts that allow it).
+      buffer = await (
+        await this.deps.fetchAsset(media_url, { signal })
+      ).arrayBuffer();
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("load Splat from Tauri error:", error);
       }
-
-      new SplatMesh({
-        fileBytes: buffer,
-        onLoad: (mesh) => {
-          resolve(mesh);
-          onComplete();
-        },
-      });
-    });
+      throw error;
+    }
+    const mesh = new SplatMesh({ fileBytes: buffer });
+    // onLoad is not called when initialization rejects.
+    await mesh.initialized;
+    onComplete();
+    return mesh;
   }
 
   /**

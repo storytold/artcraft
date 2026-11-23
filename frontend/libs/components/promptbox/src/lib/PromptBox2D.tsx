@@ -111,16 +111,19 @@ export const PromptBox2D = ({
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
       label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -176,7 +179,7 @@ export const PromptBox2D = ({
   });
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value = selectedItem.label.toLowerCase() as AspectRatio;
+    const value = selectedItem.action as AspectRatio;
     onAspectRatioChange?.(value);
     setAspectRatio(value);
     setAspectRatioList((prev) =>

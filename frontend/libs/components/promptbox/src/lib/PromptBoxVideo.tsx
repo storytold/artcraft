@@ -458,11 +458,13 @@ export const PromptBoxVideo = ({
       ? [
           {
             label: translateUi("Keyframe"),
+            action: "keyframe",
             description: translateUi("First/Last frame"),
             selected: inputMode === "keyframe",
           },
           {
             label: translateUi("Omni Reference"),
+            action: "reference",
             description: translateUi("Multi-media ref"),
             selected: inputMode === "reference",
           },
@@ -471,7 +473,7 @@ export const PromptBoxVideo = ({
 
   const handleInputModeSelect = (selectedItem: PopoverItem) => {
     const mode: VideoInputMode =
-      selectedItem.label === "Omni Reference" ? "reference" : "keyframe";
+      selectedItem.action === "reference" ? "reference" : "keyframe";
     setInputMode(mode);
     // Clear images/videos when switching modes to avoid stale state
     if (mode === "reference") {

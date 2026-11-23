@@ -414,6 +414,7 @@
   "Lasso tool": "Lasso tool",
   "Text tool": "Text tool",
   "Select all": "Select all",
+  "Select {{label}}": "Select {{label}}",
   "Clear selection": "Clear selection",
   "Delete selection": "Delete selection",
   "Group selection": "Group selection",

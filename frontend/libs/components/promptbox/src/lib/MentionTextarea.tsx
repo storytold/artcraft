@@ -636,6 +636,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     },
     ref,
   ) {
+    const { t: translateUi } = useUiTranslation();
     const editorRef = useRef<HTMLDivElement>(null);
     useImperativeHandle(ref, () => editorRef.current!, []);
     const isInternalUpdate = useRef(false);
@@ -1586,6 +1587,10 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         )}
 
         <div
+          role="textbox"
+          aria-multiline="true"
+          aria-label={placeholder || translateUi("Prompt")}
+          tabIndex={disabled ? -1 : 0}
           ref={editorRef}
           contentEditable={!disabled}
           onInput={handleInput}

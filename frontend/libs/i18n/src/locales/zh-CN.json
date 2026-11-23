@@ -414,6 +414,7 @@
   "Lasso tool": "套索工具",
   "Text tool": "文本工具",
   "Select all": "全选",
+  "Select {{label}}": "选择{{label}}",
   "Clear selection": "清除选择",
   "Delete selection": "删除所选内容",
   "Group selection": "将所选内容编组",
