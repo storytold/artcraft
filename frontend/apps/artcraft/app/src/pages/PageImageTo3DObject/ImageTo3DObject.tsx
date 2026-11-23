@@ -7,7 +7,7 @@ export const ImageTo3DObject = () => {
   return (
     <ImageTo3DExperience
       title={translateUi("Generate 3D Object")}
-      subtitle="Transform your image into a 3D object with textures."
+      subtitle={translateUi("Transform your image into a 3D object with textures.")}
       variant="object"
     />
   );

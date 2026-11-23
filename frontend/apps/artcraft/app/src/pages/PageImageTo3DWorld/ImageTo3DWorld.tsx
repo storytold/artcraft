@@ -7,7 +7,7 @@ export const ImageTo3DWorld = () => {
   return (
     <ImageTo3DExperience
       title={translateUi("Image to 3D World")}
-      subtitle="Generate 3D worlds from an image with World Labs"
+      subtitle={translateUi("Generate 3D worlds from an image with World Labs")}
       variant="world"
     />
   );

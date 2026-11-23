@@ -18,11 +18,11 @@ interface Props {
 // no longer spams the board with a swatch on every tick.
 export const ColorPickerPopover = ({ onAdd }: Props) => { const { t: translateUi } = useUiTranslation(); return (
   // Tooltip matches the sibling ToolbarIconButtons (bottom, 300ms, close on click).
-  <Tooltip content="Add color" position="bottom" delay={300} closeOnClick>
+  <Tooltip content={translateUi("Add color")} position="bottom" delay={300} closeOnClick>
     <PopoverMenu
       mode="default"
       position="bottom"
-      panelTitle="Add a color"
+      panelTitle={translateUi("Add a color")}
       panelClassName="w-60"
       triggerIcon={
         <PaletteIcon
