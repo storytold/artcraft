@@ -37,6 +37,11 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 
 export const RemoveBackground = () => {
   const { t: translateUi } = useUiTranslation();
+  // The removal event subscribes once, so the success toast reads the current translator.
+  const translateUiRef = useRef(translateUi);
+  useEffect(() => {
+    translateUiRef.current = translateUi;
+  }, [translateUi]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -269,7 +274,7 @@ export const RemoveBackground = () => {
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
-      toast.success(translateUi("Saved to Library"));
+      toast.success(translateUiRef.current("Saved to Library"));
 
       setImageDimensions({
         width: originalImg.naturalWidth,
@@ -282,7 +287,7 @@ export const RemoveBackground = () => {
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
-      toast.success(translateUi("Saved to Library"));
+      toast.success(translateUiRef.current("Saved to Library"));
     }
   });
 

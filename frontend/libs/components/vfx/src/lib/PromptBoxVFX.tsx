@@ -91,7 +91,11 @@ export const PromptBoxVFX = ({
       const previewUrl = URL.createObjectURL(file);
       const duration = await measureVideoDuration(previewUrl);
       if (duration > MAX_SOURCE_DURATION_S) {
-        onError(`Source video must be ${MAX_SOURCE_DURATION_S}s or shorter`);
+        onError(
+          translateUi("Source video must be {{seconds}}s or shorter", {
+            seconds: MAX_SOURCE_DURATION_S,
+          }),
+        );
         URL.revokeObjectURL(previewUrl);
         return;
       }
@@ -112,14 +116,14 @@ export const PromptBoxVFX = ({
             state.status === UploaderStates.assetError ||
             state.status === UploaderStates.imageCreateError
           ) {
-            onError("Failed to upload source video. Use an MP4 file.");
+            onError(translateUi("Failed to upload source video. Use an MP4 file."));
             setSourceUploading(false);
             URL.revokeObjectURL(previewUrl);
           }
         },
       });
     },
-    [setSource, uploadVideo, onError],
+    [setSource, uploadVideo, onError, translateUi],
   );
 
   const handleImageUpload = useCallback(
@@ -155,8 +159,8 @@ export const PromptBoxVFX = ({
           ) {
             onError(
               kind === "mask"
-                ? "Failed to upload mask image."
-                : "Failed to upload reference image.",
+                ? translateUi("Failed to upload mask image.")
+                : translateUi("Failed to upload reference image."),
             );
             setUploading(false);
             URL.revokeObjectURL(previewUrl);
@@ -164,7 +168,7 @@ export const PromptBoxVFX = ({
         },
       });
     },
-    [setMask, setReference, uploadImage, onError],
+    [setMask, setReference, uploadImage, onError, translateUi],
   );
 
   const openGallery = useCallback((target: SlotKind) => {
@@ -351,12 +355,12 @@ export const PromptBoxVFX = ({
         {/* Bottom row: model + resolution chips on left, prompt toggle + Generate on right.
             Wraps on narrow widths so Generate stays visible on mobile. */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-          <Tooltip content="Model" position="top" closeOnClick>
+          <Tooltip content={translateUi("Model")} position="top" closeOnClick>
             <PopoverMenu
               items={modelItems}
               onSelect={handleModelSelect}
               mode="toggle"
-              panelTitle="Model"
+              panelTitle={translateUi("Model")}
               triggerIcon={
                 <SparklesIcon  className="h-3 w-3" />
               }
@@ -364,19 +368,23 @@ export const PromptBoxVFX = ({
             />
           </Tooltip>
           {!hideResolution && (
-            <Tooltip content="Resolution" position="top" closeOnClick>
+            <Tooltip content={translateUi("Resolution")} position="top" closeOnClick>
               <PopoverMenu
                 items={resolutionItems}
                 onSelect={handleResolutionSelect}
                 mode="toggle"
-                panelTitle="Resolution"
+                panelTitle={translateUi("Resolution")}
                 triggerLabel={resolution}
               />
             </Tooltip>
           )}
 
           <Tooltip
-            content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
+            content={
+              hasPrompt
+                ? translateUi("Edit prompt")
+                : translateUi("Add an optional prompt")
+            }
             position="top"
           >
             <button
@@ -396,7 +404,7 @@ export const PromptBoxVFX = ({
               <span className="truncate">
                 <span className="sm:hidden">{translateUi("Prompt")}</span>
                 <span className="hidden sm:inline">
-                  {hasPrompt ? "Prompt" : "Add prompt"}
+                  {hasPrompt ? translateUi("Prompt") : translateUi("Add prompt")}
                 </span>
               </span>
             </button>

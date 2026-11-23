@@ -247,16 +247,19 @@ export const PromptBoxImage = ({
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <AspectRatioIcon ratio={[16, 10]} />,
     },
     {
       label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <AspectRatioIcon ratio={[10, 16]} />,
     },
     {
       label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <AspectRatioIcon ratio={[1, 1]} />,
     },
@@ -303,10 +306,17 @@ export const PromptBoxImage = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label.toLowerCase() === aspectRatio,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : "Wide",
+        ),
+        selected: item.action === aspectRatio,
       })),
     );
-  }, [aspectRatio]);
+  }, [aspectRatio, translateUi]);
 
   useEffect(() => {
     setResolutionList((prev) =>
@@ -318,11 +328,12 @@ export const PromptBoxImage = ({
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    setAspectRatio(selectedItem.label.toLowerCase() as any);
+    const value = selectedItem.action as typeof aspectRatio;
+    setAspectRatio(value);
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === selectedItem.label,
+        selected: item.action === value,
       })),
     );
   };
@@ -450,7 +461,7 @@ export const PromptBoxImage = ({
 
   const getCurrentLegacyAspectRatioIcon = () => {
     const selected = aspectRatioList.find((item) => item.selected);
-    switch (selected?.label?.toLowerCase()) {
+    switch (selected?.action) {
       case "wide":
         return <AspectRatioIcon ratio={[16, 10]} />;
       case "tall":

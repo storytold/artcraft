@@ -294,7 +294,9 @@ export const ReferenceDeck = ({
       {onClearAll && items.length > 1 && (
         <div className="mb-1.5 flex items-center justify-between px-0.5">
           <span className="text-[11px] font-medium text-base-fg/60">
-            {items.length} {" "}{translateUi("reference")}{items.length !== 1 ? "s" : ""}
+            {items.length === 1
+              ? translateUi("{{count}} reference", { count: items.length })
+              : translateUi("{{count}} references", { count: items.length })}
           </span>
           <button
             type="button"

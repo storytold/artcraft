@@ -19,7 +19,7 @@ export const UploadAssetError = ({
   return (
     <>
       <h3>{translateUi("Error in Uploading")}{" "}{type}</h3>
-      <p>{errorMessage ?? "Unknown Error"}</p>
+      <p>{errorMessage ?? translateUi("Unknown Error")}</p>
       <div className="mt-6 flex justify-end gap-2">
         <Button onClick={onCancel} variant="secondary">
           {translateUi("Cancel")}</Button>

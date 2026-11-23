@@ -912,7 +912,9 @@ const PlaybackControls = ({
       {/* Right stats */}
       <div className="flex w-32 flex-col items-end">
         <span className="font-mono text-xs tabular-nums text-base-fg/60">{formatTime(totalDuration)}</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">{totalBoards} {" "}{translateUi("shot")}{totalBoards !== 1 ? "s" : ""}</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-base-fg/30">{totalBoards === 1
+          ? translateUi("{{count}} shot", { count: totalBoards })
+          : translateUi("{{count}} shots", { count: totalBoards })}</span>
       </div>
     </div>
   );

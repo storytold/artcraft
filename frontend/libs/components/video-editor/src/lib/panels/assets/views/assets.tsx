@@ -707,8 +707,20 @@ function MediaActions({
           </DropdownMenu>
           <TooltipContent>
             <p>
-              {translateUi("Sort by")}{" "}{sortBy} (
-              {sortOrder === "asc" ? "ascending" : "descending"})
+              {translateUi("Sort by {{field}} ({{direction}})", {
+                field:
+                  sortBy === "name"
+                    ? translateUi("Name")
+                    : sortBy === "type"
+                      ? translateUi("Type")
+                      : sortBy === "duration"
+                        ? translateUi("Duration")
+                        : translateUi("File size"),
+                direction:
+                  sortOrder === "asc"
+                    ? translateUi("ascending")
+                    : translateUi("descending"),
+              })}
             </p>
           </TooltipContent>
         </Tooltip>

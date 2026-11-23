@@ -117,7 +117,9 @@ export const PageBackgroundChange = () => {
         >
           <CreateEmptyState
             title={translateUi("No background changes yet")}
-            subtitle="Upload a source video and a reference image, then optionally add a prompt."
+            subtitle={translateUi(
+              "Upload a source video and a reference image, then optionally add a prompt.",
+            )}
           />
         </div>
       ) : (

@@ -421,8 +421,11 @@ function SavedSoundsView() {
     <div className="mt-1 flex h-full flex-col gap-5">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
-          {savedSounds.length} {" "}{translateUi("saved")}{" "}
-          {savedSounds.length === 1 ? "sound" : "sounds"}
+          {savedSounds.length === 1
+            ? translateUi("{{count}} saved sound", { count: savedSounds.length })
+            : translateUi("{{count}} saved sounds", {
+                count: savedSounds.length,
+              })}
         </p>
         <Dialog open={showClearDialog} onOpenChange={setShowClearDialog}>
           <DialogTrigger asChild>
@@ -437,7 +440,10 @@ function SavedSoundsView() {
             <DialogHeader>
               <DialogTitle>{translateUi("Clear all saved sounds?")}</DialogTitle>
               <DialogDescription>
-                {translateUi("This will permanently remove all")}{" "}{savedSounds.length} {" "}{translateUi("saved sounds from your collection. This action cannot be undone.")}</DialogDescription>
+                {translateUi(
+                  "This will permanently remove all {{count}} saved sounds from your collection. This action cannot be undone.",
+                  { count: savedSounds.length },
+                )}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="text" onClick={() => setShowClearDialog(false)}>

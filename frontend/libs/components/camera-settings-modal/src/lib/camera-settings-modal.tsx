@@ -121,7 +121,7 @@ export const CameraSettingsModal = ({
         <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-white/15">
           <div className="flex items-center justify-between gap-2.5 py-0.5">
             <h2 className="hud-label text-base-fg/60">{translateUi("Camera")}</h2>
-            <Tooltip content="Add camera" position="top" delay={200}>
+            <Tooltip content={translateUi("Add camera")} position="top" delay={200}>
               <button
                 className="flex h-6 w-6 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={onAddCamera}
@@ -157,13 +157,13 @@ export const CameraSettingsModal = ({
             <div>
               <div className="flex items-center justify-between gap-2.5 py-0.5 opacity-100">
                 <h2 className="font-display text-[18px] font-semibold">
-                  {selectedCamera?.label || "Camera"}
+                  {selectedCamera?.label || translateUi("Camera")}
                 </h2>
                 <Tooltip
                   content={
                     selectedCamera?.id === "main"
-                      ? "Cannot delete the main camera"
-                      : "Delete camera"
+                      ? translateUi("Cannot delete the main camera")
+                      : translateUi("Delete camera")
                   }
                   position="top"
                   delay={200}

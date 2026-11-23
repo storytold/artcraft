@@ -1,17 +1,16 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { chromium, expect } from "@playwright/test";
-import { installBrowserFixture } from "../performance/browser-fixture.mjs";
-import { installSessionFixture } from "./session-fixture.mjs";
+import { orderedI18nInitSource } from "./session-fixture.mjs";
 
 const url = new URL(process.argv[2] || "http://127.0.0.1:5193");
 if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) throw new Error("Use a local development or preview URL.");
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.addInitScript(installBrowserFixture);
-  await context.addInitScript(installSessionFixture);
-  await context.addInitScript(() => localStorage.setItem("artcraft-locale", "zh-CN"));
+  context.setDefaultTimeout(15_000);
+  context.setDefaultNavigationTimeout(15_000);
+  await context.addInitScript({ content: orderedI18nInitSource() });
   await context.route("**/*", (route) => route.request().url().startsWith(url.origin) || route.request().url().startsWith("blob:") ? route.continue() : route.abort());
   const page = await context.newPage();
   const errors = [];

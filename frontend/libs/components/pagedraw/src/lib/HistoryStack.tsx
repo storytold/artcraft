@@ -92,7 +92,7 @@ export const HistoryStack = ({
             {translateUi("The image may still finish in the background and will be available in your library when it does.")}</p>
         </>
       ),
-      primaryActionText: "Remove",
+      primaryActionText: translateUi("Remove"),
       onPrimaryAction: () => {
         onPendingRemove(id);
         setPendingRemoveTargetId(null);
@@ -329,7 +329,7 @@ export const HistoryStack = ({
                               {translateUi("Images removed here can still be found in the library.")}</p>
                             </>
                           ),
-                          primaryActionText: "Delete",
+                          primaryActionText: translateUi("Delete"),
                           onPrimaryAction: () => {
                             handleOnImageRemove(image);
                             isActionReminderOpen.value = false;
@@ -376,7 +376,7 @@ export const HistoryStack = ({
                       <p className="text-base-fg text-sm opacity-70">
                         {translateUi("Are you sure you want to reset all? This will clear all your work and cannot be undone.")}</p>
                     ),
-                    primaryActionText: "Reset all",
+                    primaryActionText: translateUi("Reset all"),
                     onPrimaryAction: () => {
                       handleClear();
                       isActionReminderOpen.value = false;

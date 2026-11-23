@@ -13,7 +13,9 @@ export const UploadSuccess = ({ title, onOk }: Props) => {
   const { t: translateUi } = useUiTranslation();
   return (
     <>
-      <div className="w-100 text-center opacity-50">{`Added ${title} to your library`}</div>
+      <div className="w-100 text-center opacity-50">
+        {translateUi("Added {{title}} to your library", { title })}
+      </div>
       <div className="mt-6 flex justify-end gap-2">
         <Button onClick={onOk} variant="primary">
           {translateUi("Ok")}</Button>

@@ -121,10 +121,10 @@ const kindOfPath = (path: string): DropKind | null => {
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const listKinds = (labels: string[]) =>
+const listKinds = (labels: string[], orWord = "or") =>
   labels.length <= 1
     ? (labels[0] ?? "")
-    : `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
+    : `${labels.slice(0, -1).join(", ")} ${orWord} ${labels[labels.length - 1]}`;
 
 /**
  * Makes the prompt box a drop target for reference media, and catches
@@ -144,6 +144,7 @@ export function usePromptBoxDrop({
   acceptsAudio,
   onDropFiles,
 }: UsePromptBoxDropOptions) {
+  const { t: translateUi } = useUiTranslation();
   const [dragState, setDragState] = useState<DropDragState>("idle");
   const zoneRef = useRef<HTMLDivElement>(null);
   // Second zone for the focus-mode modal (PromptFullscreenModal); mounted
@@ -199,13 +200,28 @@ export function usePromptBoxDrop({
 
     // Mode-neutral wording: a kind can be off because the model lacks it or
     // because the current input mode (e.g. keyframes) doesn't show it.
+    const describeKinds = (kinds: string[]) =>
+      listKinds(
+        kinds.map((kind) =>
+          translateUi(
+            kind === "video" ? "video" : kind === "audio" ? "audio" : "image",
+          ),
+        ),
+        translateUi("or"),
+      );
     if (rejectedKinds.size > 0) {
       toast.error(
-        `${capitalize(listKinds([...rejectedKinds]))} references aren't available here`,
+        translateUi("{{kinds}} references aren't available here", {
+          kinds: capitalize(describeKinds([...rejectedKinds])),
+        }),
       );
     } else if (unknownCount > 0 && !anyAccepted) {
       toast.error(
-        `Only ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files can be added here`,
+        translateUi("Only {{kinds}} files can be added here", {
+          kinds: describeKinds(
+            acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio),
+          ),
+        }),
       );
     }
   };
@@ -459,7 +475,7 @@ export function PromptBoxDropOverlay({
 
   const kinds = [
     ...(acceptsImages
-      ? [{ icon: ImagesIcon, label: keyframeMode ? "Frames" : "Images" }]
+      ? [{ icon: ImagesIcon, label: keyframeMode ? translateUi("Frames") : translateUi("Images") }]
       : []),
     ...(acceptsVideos ? [{ icon: VideoIcon, label: translateUi("Video") }] : []),
     ...(acceptsAudio ? [{ icon: MusicIcon, label: translateUi("Audio") }] : []),
@@ -486,14 +502,24 @@ export function PromptBoxDropOverlay({
       </div>
       <div className="text-sm font-semibold text-base-fg">
         {rejected
-          ? "That file type isn't supported"
+          ? translateUi("That file type isn't supported")
           : keyframeMode && !acceptsVideos && !acceptsAudio
-            ? "Drop to set your frames"
-            : "Drop to add references"}
+            ? translateUi("Drop to set your frames")
+            : translateUi("Drop to add references")}
       </div>
       <div className="-mt-1 text-xs text-base-fg/60">
         {rejected
-          ? `Accepts ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files`
+          ? translateUi("Accepts {{kinds}} files", {
+              kinds: listKinds(
+                acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio).map(
+                  (kind) =>
+                    translateUi(
+                      kind === "video" ? "video" : kind === "audio" ? "audio" : "image",
+                    ),
+                ),
+                translateUi("or"),
+              ),
+            })
           : kinds.map((kind) => kind.label).join(" · ")}
       </div>
     </div>

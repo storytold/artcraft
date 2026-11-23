@@ -100,12 +100,16 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {isSelectMode ? `Select scenes (${selectedScenes.size})` : "Scenes"}
+            {isSelectMode
+              ? translateUi("Select scenes ({{count}})", {
+                  count: selectedScenes.size,
+                })
+              : translateUi("Scenes")}
           </SheetTitle>
           <SheetDescription>
             {isSelectMode
-              ? "Select scenes to delete"
-              : "Switch between scenes in your project"}
+              ? translateUi("Select scenes to delete")
+              : translateUi("Switch between scenes in your project")}
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 py-4">
@@ -117,7 +121,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
               onClick={handleSelectMode}
             >
               <ListCheck />
-              {isSelectMode ? "Cancel" : "Select"}
+              {isSelectMode ? translateUi("Cancel") : translateUi("Select")}
             </Button>
             {isSelectMode && (
               <DeleteDialog
@@ -132,7 +136,9 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
                     size="sm"
                   >
                     <Trash2 />
-                    {translateUi("Delete (")}{selectedScenes.size})
+                    {translateUi("Delete ({{count}})", {
+                      count: selectedScenes.size,
+                    })}
                   </Button>
                 }
               />
@@ -201,7 +207,15 @@ function DeleteDialog({
         <DialogHeader>
           <DialogTitle>{translateUi("Delete Scenes")}</DialogTitle>
           <DialogDescription>
-            {translateUi("Are you sure you want to delete")}{" "}{count} {" "}{translateUi("scene")}{count === 1 ? "" : "s"}{translateUi("? This action cannot be undone.")}</DialogDescription>
+            {count === 1
+              ? translateUi(
+                  "Are you sure you want to delete {{count}} scene? This action cannot be undone.",
+                  { count },
+                )
+              : translateUi(
+                  "Are you sure you want to delete {{count}} scenes? This action cannot be undone.",
+                  { count },
+                )}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>

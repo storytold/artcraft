@@ -70,9 +70,14 @@ const randomId = () => Math.random().toString(36).substring(7);
 
 // A non-finite duration cap means "no limit" — leave it out of the message.
 const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
-  isFinite(maxTotalSec)
-    ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
-    : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
+  Number.isFinite(maxTotalSec)
+    ? {
+        key: "Max {{count}} videos / {{seconds}}s total",
+        values: { count: maxVideos, seconds: maxTotalSec },
+      }
+    : maxVideos === 1
+      ? { key: "Max {{count}} video", values: { count: maxVideos } }
+      : { key: "Max {{count}} videos", values: { count: maxVideos } };
 
 const randomTitle = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).substring(2, 15)}`;
@@ -360,7 +365,8 @@ export function useDeckMedia<
     const baseVideos = [...referenceVideos];
     const availableSlots = Math.max(0, maxVideos - baseVideos.length);
     if (availableSlots <= 0) {
-      toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
+      const limit = videoLimitMessage(maxVideos, maxVideoTotalSec);
+      toast.error(translateUi(limit.key, limit.values), {
         id: "video-ref-limit",
       });
       return;
@@ -374,9 +380,12 @@ export function useDeckMedia<
       const currentTotal = committed.reduce((sum, v) => sum + v.duration, 0);
 
       if (currentTotal + duration > maxVideoTotalSec) {
-        toast.error(`Total video duration cannot exceed ${maxVideoTotalSec}s`, {
-          id: "video-ref-limit",
-        });
+        toast.error(
+          translateUi("Total video duration cannot exceed {{seconds}}s", {
+            seconds: maxVideoTotalSec,
+          }),
+          { id: "video-ref-limit" },
+        );
         break;
       }
 
@@ -453,7 +462,11 @@ export function useDeckMedia<
       );
 
       if (currentTotal + duration > maxAudioTotalSec) {
-        toast.error(`Total audio duration cannot exceed ${maxAudioTotalSec}s`);
+        toast.error(
+          translateUi("Total audio duration cannot exceed {{seconds}}s", {
+            seconds: maxAudioTotalSec,
+          }),
+        );
         break;
       }
 
@@ -560,7 +573,8 @@ export function useDeckMedia<
       const baseVideos = [...referenceVideos];
       const availableSlots = Math.max(0, maxVideos - baseVideos.length);
       if (availableSlots <= 0) {
-        toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
+        const limit = videoLimitMessage(maxVideos, maxVideoTotalSec);
+        toast.error(translateUi(limit.key, limit.values), {
           id: "video-ref-limit",
         });
         handleGalleryClose();
@@ -603,7 +617,9 @@ export function useDeckMedia<
         }
         if (exceeded) {
           toast.error(
-            `Total video duration cannot exceed ${maxVideoTotalSec}s`,
+            translateUi("Total video duration cannot exceed {{seconds}}s", {
+              seconds: maxVideoTotalSec,
+            }),
             { id: "video-ref-limit" },
           );
         }
@@ -620,9 +636,13 @@ export function useDeckMedia<
       const baseAudios = [...referenceAudios];
       const availableSlots = Math.max(0, maxAudios - baseAudios.length);
       if (availableSlots <= 0) {
-        toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
-          id: "audio-ref-limit",
-        });
+        toast.error(
+          translateUi("Max {{count}} audio tracks / {{seconds}}s total", {
+            count: maxAudios,
+            seconds: maxAudioTotalSec,
+          }),
+          { id: "audio-ref-limit" },
+        );
         handleGalleryClose();
         return;
       }
@@ -667,7 +687,9 @@ export function useDeckMedia<
         }
         if (exceeded) {
           toast.error(
-            `Total audio duration cannot exceed ${maxAudioTotalSec}s`,
+            translateUi("Total audio duration cannot exceed {{seconds}}s", {
+              seconds: maxAudioTotalSec,
+            }),
             { id: "audio-ref-limit" },
           );
         }

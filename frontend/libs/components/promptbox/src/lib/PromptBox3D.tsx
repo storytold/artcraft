@@ -240,6 +240,21 @@ export const PromptBox3D = ({
     );
   }, [resolution]);
 
+  useEffect(() => {
+    setAspectRatioList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : "Wide",
+        ),
+      })),
+    );
+  }, [translateUi]);
+
   // Update aspect ratio list based on the current cameraAspectRatio
   useEffect(() => {
     setAspectRatioList((prev) =>

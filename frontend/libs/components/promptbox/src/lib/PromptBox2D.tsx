@@ -179,6 +179,23 @@ export const PromptBox2D = ({
     }
   });
 
+  useEffect(() => {
+    setAspectRatioList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : item.action === "auto"
+                ? "Auto"
+                : "Wide",
+        ),
+      })),
+    );
+  }, [translateUi]);
+
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     const value = selectedItem.action as AspectRatio;
     onAspectRatioChange?.(value);
@@ -186,7 +203,7 @@ export const PromptBox2D = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === selectedItem.label,
+        selected: item.action === value,
       })),
     );
   };

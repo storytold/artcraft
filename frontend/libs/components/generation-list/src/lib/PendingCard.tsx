@@ -43,7 +43,13 @@ export const PendingCard = memo(function PendingCard({
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
         <div className="absolute left-2 right-2 top-2 z-10 bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
-          {translateUi("Generating")}{" "}{batchCount} {batchNoun(mediaClass)} {" "}{translateUi("· Results may appear one at a time")}</div>
+          {translateUi(
+            "Generating {{count}} {{items}} · Results may appear one at a time",
+            {
+              count: batchCount,
+              items: translateUi(batchNoun(mediaClass)),
+            },
+          )}</div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <LoaderCircleIcon className="animate-spin text-2xl text-white/20" />

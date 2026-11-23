@@ -555,7 +555,7 @@ export const TaskQueue = () => {
   const handleClearCompleted = (onSuccess?: () => void) => {
     setConfirmationConfig({
       isOpen: true,
-      title: translateUi("Clear completed tasks?"),
+      title: "Clear completed tasks?",
       message: "This will remove all completed tasks from the task queue.",
       primaryActionText: "Clear completed",
       primaryActionIcon: BrushIcon,
@@ -571,7 +571,7 @@ export const TaskQueue = () => {
   const handleClearStale = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: translateUi("Clear stale tasks?"),
+      title: "Clear stale tasks?",
       message: "This will remove all stale/stuck in-progress tasks from the queue.",
       primaryActionText: "Clear stale",
       primaryActionIcon: Trash2Icon,
@@ -586,7 +586,7 @@ export const TaskQueue = () => {
   const handleClearFailed = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: translateUi("Clear failed tasks?"),
+      title: "Clear failed tasks?",
       message: "This will remove all failed/cancelled tasks from the queue.",
       primaryActionText: "Clear failed",
       primaryActionIcon: Trash2Icon,
@@ -601,7 +601,7 @@ export const TaskQueue = () => {
   const handleRemoveAll = () => {
     setConfirmationConfig({
       isOpen: true,
-      title: translateUi("Remove all tasks?"),
+      title: "Remove all tasks?",
       message: "This will remove ALL tasks (completed and in-progress) from the queue. This cannot be undone.",
       primaryActionText: "Nuke all",
       primaryActionIcon: BombIcon,

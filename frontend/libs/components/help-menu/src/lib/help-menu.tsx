@@ -186,7 +186,7 @@ export function HelpMenuButton({
 
   // Menu items for the popover
   const menuItems: PopoverItem[] = [
-    { label: "Check for Updates…", selected: false, icon: <RefreshCwIcon className="text-base" />, action: "updates" },
+    { label: translateUi("Check for Updates…"), selected: false, icon: <RefreshCwIcon className="text-base" />, action: "updates" },
     {
       label: translateUi("Tutorials"),
       selected: false,
@@ -345,8 +345,10 @@ export function HelpMenuButton({
     view === "video"
       ? undefined
       : view === "news"
-        ? "News & Updates"
-        : panelTitle;
+        ? translateUi("News & Updates")
+        : panelTitle === "Tutorials"
+          ? translateUi("Tutorials")
+          : panelTitle;
 
   return (
     <div className={className}>
@@ -360,7 +362,7 @@ export function HelpMenuButton({
         triggerIcon={
           <CircleHelpIcon  className="text-base-fg" />
         }
-        triggerLabel="Help"
+        triggerLabel={translateUi("Help")}
         buttonClassName="h-9"
       />
 

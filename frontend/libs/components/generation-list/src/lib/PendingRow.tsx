@@ -80,7 +80,10 @@ export const PendingRow = memo(function PendingRow({
             <>
               <span className="text-white/25">·</span>
               <span className="shrink-0">
-                {batchCount} {batchNoun(mediaClass)}
+                {translateUi("{{count}} {{items}}", {
+                  count: batchCount,
+                  items: translateUi(batchNoun(mediaClass)),
+                })}
               </span>
             </>
           )}

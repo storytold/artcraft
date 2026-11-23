@@ -1,5 +1,5 @@
 
-import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+import { i18n, Trans, useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { ArrowLeftIcon, EyeIcon, ImagesIcon, LoaderCircleIcon, PenIcon, PlusIcon, Trash2Icon, UploadIcon, UsersIcon, XIcon } from "lucide-react";
@@ -55,6 +55,7 @@ export const CharactersModal = ({
   onClose,
   onSelectCharacter,
 }: CharactersModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [view, setView] = useState<ModalView>("list");
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(
     null,
@@ -148,7 +149,11 @@ export const CharactersModal = ({
         () => {
           setPendingCharacters((prev) => {
             if (!prev.some((p) => p.name === pending.name)) return prev;
-            toast.error(`Character "${pending.name}" failed to create`);
+            toast.error(
+              translateUi("Character \"{{name}}\" failed to create", {
+                name: pending.name,
+              }),
+            );
             return prev.filter((p) => p.name !== pending.name);
           });
         },
@@ -157,7 +162,7 @@ export const CharactersModal = ({
     );
 
     return () => timers.forEach(clearTimeout);
-  }, [pendingCharacters]);
+  }, [pendingCharacters, translateUi]);
 
   return (
     <Modal
@@ -280,11 +285,17 @@ const CharacterListView = ({
       title: translateUi("Delete character?"),
       message: (
         <p className="text-sm text-white/70">
-          {translateUi("This will permanently delete")}{" "}<strong>{character.name}</strong>{translateUi(". This action cannot be undone.")}</p>
+          <Trans
+            i18n={i18n}
+            i18nKey="This will permanently delete <name>{{name}}</name>. This action cannot be undone."
+            values={{ name: character.name }}
+            components={{ name: <strong /> }}
+          />
+        </p>
       ),
-      primaryActionText: "Delete",
+      primaryActionText: translateUi("Delete"),
       primaryActionIcon: Trash2Icon,
-      secondaryActionText: "Cancel",
+      secondaryActionText: translateUi("Cancel"),
       primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
       onPrimaryAction: async () => {
         if (actionReminderProps.value) {
@@ -304,9 +315,15 @@ const CharacterListView = ({
               prev.filter((c) => c.token !== character.token),
             );
             storeRemoveCharacter(character.token);
-            toast.success(`Character "${character.name}" deleted`);
+            toast.success(
+              translateUi("Character \"{{name}}\" deleted", {
+                name: character.name,
+              }),
+            );
           } else {
-            toast.error(res.errorMessage || "Failed to delete character");
+            toast.error(
+              res.errorMessage || translateUi("Failed to delete character"),
+            );
           }
         } catch {
           toast.error(translateUi("Failed to delete character"));
@@ -548,7 +565,9 @@ const EditCharacterView = ({
         updateCharacterInStore(character.token, { name: name.trim() });
         onSaved();
       } else {
-        toast.error(res.errorMessage || "Failed to update character");
+        toast.error(
+          res.errorMessage || translateUi("Failed to update character"),
+        );
       }
     } catch {
       toast.error(translateUi("Failed to update character"));
@@ -698,11 +717,15 @@ const NewCharacterView = ({
           if (res.success && res.data) {
             updatedImages.push({ ...img, mediaToken: res.data });
           } else {
-            toast.error(`Failed to upload ${img.file.name}`);
+            toast.error(
+              translateUi("Failed to upload {{name}}", { name: img.file.name }),
+            );
             updatedImages.push(img);
           }
         } catch {
-          toast.error(`Failed to upload ${img.file.name}`);
+          toast.error(
+            translateUi("Failed to upload {{name}}", { name: img.file.name }),
+          );
           updatedImages.push(img);
         }
       }
@@ -794,14 +817,20 @@ const NewCharacterView = ({
       });
 
       if (res.success && res.data) {
-        toast.success(`Character "${name.trim()}" is being created`);
+        toast.success(
+          translateUi("Character \"{{name}}\" is being created", {
+            name: name.trim(),
+          }),
+        );
         // Pass pending info up so the list shows an optimistic card
         onCreated({
           name: name.trim(),
           previewUrl: uploadedImages[0]!.url,
         });
       } else {
-        toast.error(res.errorMessage || "Failed to create character");
+        toast.error(
+          res.errorMessage || translateUi("Failed to create character"),
+        );
       }
     } catch {
       toast.error(translateUi("Failed to create character"));

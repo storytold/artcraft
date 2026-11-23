@@ -366,7 +366,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
         <p className="text-sm text-white/70">
           {translateUi("Are you sure you want to reset the canvas? This will clear all your work and cannot be undone.")}</p>
       ),
-      primaryActionText: "Reset all",
+      primaryActionText: translateUi("Reset all"),
       onPrimaryAction: () => {
         store.setNodes([]);
         store.drawNodes.filter((n) => n.type === "line").forEach((lineNode) => {

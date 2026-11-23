@@ -6,6 +6,7 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+import dayjs from "dayjs";
 import { setLocale } from "@storyteller/i18n";
 import { TagChipInput } from "./tags/TagChipInput";
 import { LightboxModal } from "./lightbox-modal";
@@ -94,6 +95,7 @@ it("preserves prompt data and action targets without refetching when the preview
   const download = vi.fn().mockResolvedValue(undefined);
   const edit = vi.fn();
   const close = vi.fn();
+  const createdAt = "2026-10-13T00:00:00Z";
   render(
     <LightboxModal
       isOpen
@@ -102,7 +104,7 @@ it("preserves prompt data and action targets without refetching when the preview
       imageUrl="https://example.test/original.png"
       mediaId="media_original"
       mediaClass="image"
-      createdAt="2026-10-13T00:00:00Z"
+      createdAt={createdAt}
       onDownloadClicked={download}
       onEditClicked={edit}
     />,
@@ -112,7 +114,9 @@ it("preserves prompt data and action targets without refetching when the preview
   expect(screen.getByText("提示词", { exact: true })).toBeTruthy();
   expect(screen.getByText("Keep 原始 <prompt>")).toBeTruthy();
   expect(screen.getByText("关闭", { exact: true })).toBeTruthy();
-  expect(screen.getByText(/2026年10月13日/)).toBeTruthy();
+  expect(
+    screen.getByText(new RegExp(dayjs(createdAt).format("YYYY年M月D日"))),
+  ).toBeTruthy();
   expect(mocks.getMedia).toHaveBeenCalledTimes(1);
   expect(mocks.getPrompt).toHaveBeenCalledTimes(1);
   await act(async () =>

@@ -1,4 +1,16 @@
+import { installBrowserFixture } from "../performance/browser-fixture.mjs";
+
 // Shared deterministic session fixture. No real account or remote service.
+
+// Playwright does not preserve call order across separate init scripts.
+// One script installs the browser stub, then the session stub, then the locale.
+export function orderedI18nInitSource(options = {}) {
+  return `(() => {
+    (${installBrowserFixture.toString()})();
+    (${installSessionFixture.toString()})(${JSON.stringify(options)});
+    localStorage.setItem("artcraft-locale", "zh-CN");
+  })();`;
+}
 export function installSessionFixture({ withLibraryAndTasks = false } = {}) {
   const invoke = window.__TAURI_INTERNALS__.invoke;
   let loggedIn = true;

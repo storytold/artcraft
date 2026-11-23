@@ -143,7 +143,7 @@ export const markdownToHtml = (
       return renderImage(safeUrl, alt, size);
     });
     // links: [text](url)
-    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
+    out = out.replace(/\[([^\][]+)\]\(([^)]+)\)/g, (_m, label, url) => {
       const safeLabel = String(label || "").replace(/"/g, "&quot;");
       const safeUrl = normalizeLink(String(url || ""));
       return `<a href="${safeUrl}" class="underline hover:opacity-90">${safeLabel}</a>`;

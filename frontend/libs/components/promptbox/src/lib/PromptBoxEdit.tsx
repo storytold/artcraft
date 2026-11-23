@@ -157,10 +157,19 @@ export const PromptBoxEdit = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : item.action === "auto"
+                ? "Auto"
+                : "Wide",
+        ),
         selected: item.action === aspectRatio,
       })),
     );
-  }, [aspectRatio]);
+  }, [aspectRatio, translateUi]);
 
   useEffect(() => {
     setResolutionList((prev) =>

@@ -46,7 +46,10 @@ afterEach(async () => {
 describe("native login modal integration", () => {
   it("preserves entered signup fields and translates validation when language changes", async () => {
     await act(async () => { render(<LoginModal />); });
-    const username = screen.getByPlaceholderText("Username") as HTMLInputElement;
+    const username = screen.getByLabelText("Username") as HTMLInputElement;
+    expect(screen.getByLabelText("Email")).toBeTruthy();
+    expect(screen.getByLabelText("Password")).toBeTruthy();
+    expect(screen.getByLabelText("Confirm Password")).toBeTruthy();
     fireEvent.change(username, { target: { value: "My用户名" } });
     fireEvent.change(screen.getByPlaceholderText("Min. 8 characters"), { target: { value: "local-test-password" } });
     fireEvent.change(screen.getByPlaceholderText("Re-enter password"), { target: { value: "different-password" } });
@@ -54,6 +57,10 @@ describe("native login modal integration", () => {
     expect(screen.getByText("Passwords do not match.")).toBeTruthy();
     await act(() => setLocale("zh-CN"));
     expect(screen.getByText("创建账号")).toBeTruthy();
+    expect(screen.getByLabelText("用户名")).toBeTruthy();
+    expect(screen.getByLabelText("电子邮箱")).toBeTruthy();
+    expect(screen.getByLabelText("密码")).toBeTruthy();
+    expect(screen.getByLabelText("确认密码")).toBeTruthy();
     expect((screen.getByPlaceholderText("用户名") as HTMLInputElement).value).toBe("My用户名");
     expect((screen.getByPlaceholderText("至少 8 个字符") as HTMLInputElement).value).toBe("local-test-password");
     expect(screen.getByText("两次输入的密码不一致。")).toBeTruthy();
@@ -66,6 +73,7 @@ describe("native login modal integration", () => {
     expect(screen.queryByRole("button", { name: "Login with Website" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Scan to Login" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    expect(screen.getByLabelText("Email or Username")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Login with Website" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Scan to Login" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Sign up" }));

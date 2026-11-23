@@ -91,7 +91,7 @@ export const ArtCraftSignUp = ({
       {isSignUp ? (
         <>
           <div className="space-y-2">
-            <label htmlFor="signup-username" className={FIELD_LABEL}>t("Username")</label>
+            <label htmlFor="signup-username" className={FIELD_LABEL}>{t("Username")}</label>
             <Input
               id="signup-username"
               name="username"
@@ -102,7 +102,7 @@ export const ArtCraftSignUp = ({
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="signup-email" className={FIELD_LABEL}>t("Email")</label>
+            <label htmlFor="signup-email" className={FIELD_LABEL}>{t("Email")}</label>
             <Input
               id="signup-email"
               name="email"
@@ -116,7 +116,7 @@ export const ArtCraftSignUp = ({
         </>
       ) : (
         <div className="space-y-2">
-          <label htmlFor="signup-username-or-email" className={FIELD_LABEL}>t("Email or Username")</label>
+          <label htmlFor="signup-username-or-email" className={FIELD_LABEL}>{t("Email or Username")}</label>
           <Input
             id="signup-username-or-email"
             name="usernameOrEmail"
@@ -129,7 +129,7 @@ export const ArtCraftSignUp = ({
       )}
 
       <div className="space-y-2">
-        <label htmlFor="signup-password" className={FIELD_LABEL}>t("Password")</label>
+        <label htmlFor="signup-password" className={FIELD_LABEL}>{t("Password")}</label>
         <div className="relative">
           <Input
             id="signup-password"
@@ -154,7 +154,7 @@ export const ArtCraftSignUp = ({
 
       {isSignUp && (
         <div className="space-y-2">
-          <label htmlFor="signup-confirm-password" className={FIELD_LABEL}>t("Confirm Password")</label>
+          <label htmlFor="signup-confirm-password" className={FIELD_LABEL}>{t("Confirm Password")}</label>
           <div className="relative">
             <Input
               id="signup-confirm-password"
