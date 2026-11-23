@@ -1,3 +1,5 @@
+
+import { i18n as uiI18n } from "@storyteller/i18n";
 import * as THREE from "three";
 import { GLTFLoader, GLTF } from "three/addons/loaders/GLTFLoader.js";
 import { MMDLoader } from "three/addons/loaders/MMDLoader.js";
@@ -91,6 +93,7 @@ class Scene {
   ) {
     this.version = version;
     this.name = name;
+    this.gridHelper;
     this.scene = new THREE.Scene();
     this.hot_items = [];
 
@@ -111,7 +114,7 @@ class Scene {
   initialize() {
     this.scene = new THREE.Scene();
     this.placeholder_manager = new LoadingPlaceHolderManager(this.scene);
-    void this.placeholder_manager.initialize();
+    this.placeholder_manager.initialize();
 
     this._createGrid();
     this._create_base_lighting();
@@ -829,7 +832,7 @@ class Scene {
       }
       // Don't toast aborts — those are us cancelling a superseded load.
       if ((error as { name?: string })?.name !== "AbortError") {
-        toast.error("Failed to load splat.");
+        toast.error(uiI18n.t("Failed to load splat."));
       }
       throw error;
     });
@@ -913,7 +916,7 @@ class Scene {
       }
       // Don't toast aborts — those are us cancelling a superseded load.
       if ((error as { name?: string })?.name !== "AbortError") {
-        toast.error("Failed to load 3D asset.");
+        toast.error(uiI18n.t("Failed to load 3D asset."));
       }
       throw error;
     });
@@ -1038,20 +1041,27 @@ class Scene {
       }
       throw error;
     }
+    // parse() throws on malformed bytes before it calls the error callback.
+    // That throw must reject this promise, so it stays outside the callback.
     return new Promise<GLTF>((resolve, reject) => {
       const glbLoader = new GLTFLoader();
-      glbLoader.parse(
-        buffer,
-        "", // NB: No relative path to load additional assets!
-        (gltf) => {
-          resolve(gltf);
-          onComplete();
-        },
-        (error) => {
-          console.error("GLTF loader error:", error);
-          reject(error);
-        },
-      );
+      try {
+        glbLoader.parse(
+          buffer,
+          "", // NB: No relative path to load additional assets!
+          (gltf) => {
+            resolve(gltf);
+            onComplete();
+          },
+          (error) => {
+            console.error("GLTF loader error:", error);
+            reject(error);
+          },
+        );
+      } catch (error) {
+        console.error("GLTF loader error:", error);
+        reject(error);
+      }
     });
   }
 
@@ -1080,6 +1090,7 @@ class Scene {
       throw error;
     }
     const mesh = new SplatMesh({ fileBytes: buffer });
+    // onLoad is not called when initialization rejects.
     await mesh.initialized;
     onComplete();
     return mesh;

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { ImageIcon, ImagesIcon, LoaderCircleIcon, PlusIcon, SparklesIcon, SquarePenIcon, VideoIcon, XIcon } from "lucide-react";
@@ -17,7 +19,6 @@ import {
   type VFXModelId,
   type VFXResolution,
 } from "./types";
-import { v4 as uuidv4 } from "uuid";
 
 export type VFXUploadFn = (args: {
   title: string;
@@ -46,6 +47,7 @@ export const PromptBoxVFX = ({
   containerClassName,
   hideResolution = false,
 }: PromptBoxVFXProps) => {
+  const { t: translateUi } = useUiTranslation();
   const source = useVFXStore((s) => s.source);
   const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
@@ -89,19 +91,23 @@ export const PromptBoxVFX = ({
       const previewUrl = URL.createObjectURL(file);
       const duration = await measureVideoDuration(previewUrl);
       if (duration > MAX_SOURCE_DURATION_S) {
-        onError(`Source video must be ${MAX_SOURCE_DURATION_S}s or shorter`);
+        onError(
+          translateUi("Source video must be {{seconds}}s or shorter", {
+            seconds: MAX_SOURCE_DURATION_S,
+          }),
+        );
         URL.revokeObjectURL(previewUrl);
         return;
       }
 
       setSourceUploading(true);
       await uploadVideo({
-        title: `vfx-source-${uuidv4()}`,
+        title: `vfx-source-${Math.random().toString(36).slice(2, 10)}`,
         assetFile: file,
         progressCallback: (state) => {
           if (state.status === UploaderStates.success && state.data) {
             setSource({
-              id: uuidv4(),
+              id: Math.random().toString(36).slice(2),
               url: previewUrl,
               mediaToken: state.data,
             });
@@ -110,14 +116,14 @@ export const PromptBoxVFX = ({
             state.status === UploaderStates.assetError ||
             state.status === UploaderStates.imageCreateError
           ) {
-            onError("Failed to upload source video. Use an MP4 file.");
+            onError(translateUi("Failed to upload source video. Use an MP4 file."));
             setSourceUploading(false);
             URL.revokeObjectURL(previewUrl);
           }
         },
       });
     },
-    [setSource, uploadVideo, onError],
+    [setSource, uploadVideo, onError, translateUi],
   );
 
   const handleImageUpload = useCallback(
@@ -137,12 +143,12 @@ export const PromptBoxVFX = ({
 
       setUploading(true);
       await uploadImage({
-        title: `vfx-${kind}-${uuidv4()}`,
+        title: `vfx-${kind}-${Math.random().toString(36).slice(2, 10)}`,
         assetFile: file,
         progressCallback: (state) => {
           if (state.status === UploaderStates.success && state.data) {
             setRef({
-              id: uuidv4(),
+              id: Math.random().toString(36).slice(2),
               url: previewUrl,
               mediaToken: state.data,
             });
@@ -153,8 +159,8 @@ export const PromptBoxVFX = ({
           ) {
             onError(
               kind === "mask"
-                ? "Failed to upload mask image."
-                : "Failed to upload reference image.",
+                ? translateUi("Failed to upload mask image.")
+                : translateUi("Failed to upload reference image."),
             );
             setUploading(false);
             URL.revokeObjectURL(previewUrl);
@@ -162,7 +168,7 @@ export const PromptBoxVFX = ({
         },
       });
     },
-    [setMask, setReference, uploadImage, onError],
+    [setMask, setReference, uploadImage, onError, translateUi],
   );
 
   const openGallery = useCallback((target: SlotKind) => {
@@ -184,7 +190,7 @@ export const PromptBoxVFX = ({
         return;
       }
       const ref = {
-        id: uuidv4(),
+        id: Math.random().toString(36).slice(2),
         url: item.fullImage || item.thumbnail || "",
         mediaToken: item.id,
       };
@@ -259,13 +265,12 @@ export const PromptBoxVFX = ({
           <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4 sm:py-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
-                Prompt (optional)
-              </span>
+                {translateUi("Prompt (optional)")}</span>
               <button
                 type="button"
                 onClick={() => setShowPromptPopover(false)}
                 className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
-                aria-label="Close prompt"
+                aria-label={translateUi("Close prompt")}
               >
                 <XIcon  className="h-3 w-3" />
               </button>
@@ -274,7 +279,7 @@ export const PromptBoxVFX = ({
               ref={promptTextareaRef}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe the new scene, lighting, or change..."
+              placeholder={translateUi("Describe the new scene, lighting, or change...")}
               rows={3}
               className="max-h-40 min-h-[3.5rem] w-full resize-none bg-transparent text-sm text-base-fg placeholder-base-fg/50 focus:outline-none"
               onKeyDown={(e) => {
@@ -322,7 +327,7 @@ export const PromptBoxVFX = ({
         {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
         <div className="flex items-end justify-center gap-3">
           <UploadTile
-            label="Source Video"
+            label={translateUi("Source Video")}
             icon={VideoIcon}
             previewUrl={source?.url}
             isVideo
@@ -335,7 +340,7 @@ export const PromptBoxVFX = ({
           />
           {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
           <UploadTile
-            label="Reference Image"
+            label={translateUi("Reference Image")}
             icon={ImageIcon}
             previewUrl={reference?.url}
             uploading={referenceUploading}
@@ -350,12 +355,12 @@ export const PromptBoxVFX = ({
         {/* Bottom row: model + resolution chips on left, prompt toggle + Generate on right.
             Wraps on narrow widths so Generate stays visible on mobile. */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-          <Tooltip content="Model" position="top" closeOnClick>
+          <Tooltip content={translateUi("Model")} position="top" closeOnClick>
             <PopoverMenu
               items={modelItems}
               onSelect={handleModelSelect}
               mode="toggle"
-              panelTitle="Model"
+              panelTitle={translateUi("Model")}
               triggerIcon={
                 <SparklesIcon  className="h-3 w-3" />
               }
@@ -363,19 +368,23 @@ export const PromptBoxVFX = ({
             />
           </Tooltip>
           {!hideResolution && (
-            <Tooltip content="Resolution" position="top" closeOnClick>
+            <Tooltip content={translateUi("Resolution")} position="top" closeOnClick>
               <PopoverMenu
                 items={resolutionItems}
                 onSelect={handleResolutionSelect}
                 mode="toggle"
-                panelTitle="Resolution"
+                panelTitle={translateUi("Resolution")}
                 triggerLabel={resolution}
               />
             </Tooltip>
           )}
 
           <Tooltip
-            content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
+            content={
+              hasPrompt
+                ? translateUi("Edit prompt")
+                : translateUi("Add an optional prompt")
+            }
             position="top"
           >
             <button
@@ -393,9 +402,9 @@ export const PromptBoxVFX = ({
                 className="hidden h-3 w-3 sm:inline-block"
               />
               <span className="truncate">
-                <span className="sm:hidden">Prompt</span>
+                <span className="sm:hidden">{translateUi("Prompt")}</span>
                 <span className="hidden sm:inline">
-                  {hasPrompt ? "Prompt" : "Add prompt"}
+                  {hasPrompt ? translateUi("Prompt") : translateUi("Add prompt")}
                 </span>
               </span>
             </button>
@@ -413,8 +422,7 @@ export const PromptBoxVFX = ({
               loading={isSubmitting}
               className="border-none bg-primary px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Generate
-            </GenerateButton>
+              {translateUi("Generate")}</GenerateButton>
           </div>
         </div>
 
@@ -465,6 +473,7 @@ const UploadTile = ({
   onPickFromLibrary,
   onClear,
 }: UploadTileProps) => {
+  const { t: translateUi } = useUiTranslation();
   const showHoverMenu = !previewUrl && !uploading;
   const tileSize = tileClassName ?? "h-12 w-12";
   return (
@@ -474,8 +483,7 @@ const UploadTile = ({
         {required && <span className="text-primary-400">*</span>}
         {optional && (
           <span className="rounded bg-base-fg/10 px-1 py-px text-[9px] font-medium normal-case tracking-normal text-base-fg/40">
-            optional
-          </span>
+            {translateUi("optional")}</span>
         )}
       </div>
 
@@ -494,16 +502,14 @@ const UploadTile = ({
                 icon={PlusIcon}
                 className="w-full"
               >
-                Upload
-              </Button>
+                {translateUi("Upload")}</Button>
               <Button
                 variant="action"
                 onClick={onPickFromLibrary}
                 icon={ImagesIcon}
                 className="w-full bg-base-fg/10 hover:bg-base-fg/20"
               >
-                Pick from library
-              </Button>
+                {translateUi("Pick from library")}</Button>
             </div>
           }
         >
@@ -531,7 +537,7 @@ const UploadTile = ({
         >
           {uploading ? (
             <LoaderCircleIcon
-              
+
               className="h-6 w-6 animate-spin text-base-fg" />
           ) : (
             <>

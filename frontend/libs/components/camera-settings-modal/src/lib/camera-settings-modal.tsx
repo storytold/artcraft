@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { PopoverItem } from "@storyteller/ui-popover";
@@ -47,6 +49,7 @@ export const CameraSettingsModal = ({
   disableHotkeyInput,
   enableHotkeyInput,
 }: CameraSettingsModalProps) => {
+  const { t: translateUi } = useUiTranslation();
   const selectedCamera = cameras.find((cam) => cam.id === selectedCameraId);
   const [isDragging, setIsDragging] = useState(false);
   const [tempCameraName, setTempCameraName] = useState<string>("");
@@ -117,8 +120,8 @@ export const CameraSettingsModal = ({
       <div className="grid h-full grid-cols-12 gap-3">
         <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-white/15">
           <div className="flex items-center justify-between gap-2.5 py-0.5">
-            <h2 className="hud-label text-base-fg/60">Camera</h2>
-            <Tooltip content="Add camera" position="top" delay={200}>
+            <h2 className="hud-label text-base-fg/60">{translateUi("Camera")}</h2>
+            <Tooltip content={translateUi("Add camera")} position="top" delay={200}>
               <button
                 className="flex h-6 w-6 items-center justify-center rounded-[3px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={onAddCamera}
@@ -154,13 +157,13 @@ export const CameraSettingsModal = ({
             <div>
               <div className="flex items-center justify-between gap-2.5 py-0.5 opacity-100">
                 <h2 className="font-display text-[18px] font-semibold">
-                  {selectedCamera?.label || "Camera"}
+                  {selectedCamera?.label || translateUi("Camera")}
                 </h2>
                 <Tooltip
                   content={
                     selectedCamera?.id === "main"
-                      ? "Cannot delete the main camera"
-                      : "Delete camera"
+                      ? translateUi("Cannot delete the main camera")
+                      : translateUi("Delete camera")
                   }
                   position="top"
                   delay={200}
@@ -186,8 +189,7 @@ export const CameraSettingsModal = ({
               <div className="space-y-4">
                 <div className="space-y-1">
                   <Label htmlFor="camera-name">
-                    Name
-                  </Label>
+                    {translateUi("Name")}</Label>
                   <Input
                     id="camera-name"
                     type="text"
@@ -202,8 +204,7 @@ export const CameraSettingsModal = ({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="focal-length">
-                    Focal Length
-                  </Label>
+                    {translateUi("Focal Length")}</Label>
                   <div
                     className="mt-1 flex items-center gap-4"
                     onPointerDown={handlePointerDown}
@@ -230,7 +231,7 @@ export const CameraSettingsModal = ({
               </div>
             </div>
             <div className="mt-auto flex justify-end pt-4">
-              <Button onClick={onClose}>Done</Button>
+              <Button onClick={onClose}>{translateUi("Done")}</Button>
             </div>
           </div>
         </div>

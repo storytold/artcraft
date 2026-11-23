@@ -8,7 +8,7 @@
 let ammoLoadPromise: Promise<void> | null = null;
 
 export const ensureAmmoLoaded = (): Promise<void> => {
-  if (ammoLoadPromise !== null) return ammoLoadPromise;
+  if (ammoLoadPromise) return ammoLoadPromise;
 
   ammoLoadPromise = new Promise<void>((resolve, reject) => {
     if (typeof document === "undefined") {
@@ -35,8 +35,11 @@ export const ensureAmmoLoaded = (): Promise<void> => {
     script.src = "jsm/libs/ammo.wasm.js";
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () =>
+    script.onerror = () => {
+      script.remove();
+      ammoLoadPromise = null;
       reject(new Error("Failed to load jsm/libs/ammo.wasm.js"));
+    };
     document.body.appendChild(script);
   });
 

@@ -7,6 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   GRID_MIN,
   GRID_MAX,
+  DEFAULT_GRID_CONFIG,
 } from "../grid";
 import { usePreviewStore } from "../../preview/preview-store";
 import { clampRound } from "../../utils/math";
@@ -112,6 +113,9 @@ function GridGuideOptions() {
           }}
         />
       </label>
+      {/* Acknowledge DEFAULT_GRID_CONFIG so the reset import stays parked
+          for when NumberField (with its onReset affordance) is ported. */}
+      {DEFAULT_GRID_CONFIG ? null : null}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { AnimatePresence, motion } from "framer-motion";
 import { GUIDE_REGISTRY, getGuideById } from "../../guides";
@@ -13,6 +15,7 @@ import { Separator } from "../../components/ui/separator";
 import { cn } from "../../utils/ui";
 
 export function GridPopover({ children }: { children: React.ReactNode }) {
+  const { t: translateUi } = useUiTranslation();
   const activeGuide = usePreviewStore((state) => state.activeGuide);
   const toggleGuide = usePreviewStore((state) => state.toggleGuide);
   const activeGuideDef = getGuideById(activeGuide);
@@ -23,12 +26,12 @@ export function GridPopover({ children }: { children: React.ReactNode }) {
       <PopoverTrigger>{children}</PopoverTrigger>
       <PopoverContent sideOffset={8} className="w-60 px-0">
         <div className="flex flex-col gap-2 px-4">
-          <Label>Guides</Label>
+          <Label>{translateUi("Guides")}</Label>
           <div className="grid grid-cols-3 gap-1">
             {GUIDE_REGISTRY.map((guide) => (
               <GridItem
                 key={guide.id}
-                label={guide.label}
+                label={translateUi(guide.label)}
                 preview={guide.renderPreview()}
                 isSelected={activeGuide === guide.id}
                 onClick={() => toggleGuide(guide.id)}

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { TriangleAlertIcon } from "lucide-react";
 import { useShallow } from "zustand/shallow";
 
@@ -6,6 +8,7 @@ import { Button } from "@storyteller/ui-button";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export function ErrorDialog() {
+  const { t: translateUi } = useUiTranslation();
   const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =
     usePageSceneStore(
       useShallow((s) => ({
@@ -33,8 +36,7 @@ export function ErrorDialog() {
             onClick={() => setShowErrorDialog(false)}
             variant="secondary"
           >
-            Close
-          </Button>
+            {translateUi("Close")}</Button>
         </div>
       </div>
     </Modal>

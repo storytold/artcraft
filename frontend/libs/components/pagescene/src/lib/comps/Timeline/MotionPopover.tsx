@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ReactNode, useRef, useState } from "react";
 import {
   EASING_PRESETS,
@@ -43,6 +45,7 @@ export const MotionPopover = ({
   title = "Motion",
   footer,
 }: MotionPopoverProps) => {
+  const { t: translateUi } = useUiTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState<null | "p1" | "p2">(null);
 
@@ -74,7 +77,6 @@ export const MotionPopover = ({
 
   return (
     <div
-      role="presentation"
       id="motion-popover"
       className="border border-ui-panel-border bg-ui-controls pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none rounded-none p-3"
       style={{ left: `${Math.max(12, Math.min(88, leftPercent))}%` }}
@@ -94,7 +96,7 @@ export const MotionPopover = ({
             <button
               key={p.name}
               type="button"
-              title={p.label}
+              title={translateUi(p.label)}
               onClick={() => commit({ ...preset })}
               className={`flex h-8 items-center justify-center rounded-[3px] border transition-colors ${
                 active

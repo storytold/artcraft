@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, useCallback, type ReactNode } from "react";
 import {
   BoxIcon,
@@ -16,7 +18,7 @@ import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { formatTimeAgo } from "./format-time-ago";
-import { is3DMediaClass, type GalleryItem } from "./types";
+import { is3DMediaClass, localizedGalleryLabel, type GalleryItem } from "./types";
 
 export interface GalleryRowProps {
   item: GalleryItem;
@@ -52,6 +54,8 @@ export const GalleryRow = memo(function GalleryRow({
   onToggleSelect,
   lastViewed = false,
 }: GalleryRowProps) {
+  const { t: translateUi } = useUiTranslation();
+  const label = localizedGalleryLabel(item.label, translateUi);
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
@@ -124,7 +128,7 @@ export const GalleryRow = memo(function GalleryRow({
         <GalleryThumbnail
           thumbnail={item.thumbnail}
           stillThumbnail={item.stillThumbnail}
-          alt={item.label}
+          alt={label}
           isVideo={isVideo}
           fallbackIcon={mediaIcon}
           fallbackIconClassName="text-base text-white/20"
@@ -142,8 +146,7 @@ export const GalleryRow = memo(function GalleryRow({
         {lastViewed && (
           <div className="pointer-events-none absolute left-1 top-1 z-10 flex items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white/80">
             <EyeIcon />
-            Last viewed
-          </div>
+            {translateUi("Last viewed")}</div>
         )}
       </div>
 
@@ -156,7 +159,7 @@ export const GalleryRow = memo(function GalleryRow({
         ) : (
           <div className="flex items-start gap-2">
             <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
-              {title || item.label}
+              {title || label}
             </p>
             {title && (
               <CopyPromptButton

@@ -65,7 +65,8 @@
     "tailwind-merge": "^2.2.2",
     "terser": "^5.30.3",
     "uuid": "^9.0.1",
-    "webm-writer": "^1.0.0"
+    "webm-writer": "^1.0.0",
+    "@storyteller/i18n": "*"
   },
   "devDependencies": {
     "@originjs/vite-plugin-commonjs": "^1.0.3",

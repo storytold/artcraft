@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import {
   Sheet,
@@ -26,6 +28,7 @@ import { useEditorAdapters } from "../../EditorProvider";
 import { useEditor } from "../../editor/use-editor";
 
 export function ScenesView({ children }: { children: React.ReactNode }) {
+  const { t: translateUi } = useUiTranslation();
   const editor = useEditor();
   const scenes = editor.scenes.getScenes();
   const currentScene = editor.scenes.getActiveScene();
@@ -97,12 +100,16 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {isSelectMode ? `Select scenes (${selectedScenes.size})` : "Scenes"}
+            {isSelectMode
+              ? translateUi("Select scenes ({{count}})", {
+                  count: selectedScenes.size,
+                })
+              : translateUi("Scenes")}
           </SheetTitle>
           <SheetDescription>
             {isSelectMode
-              ? "Select scenes to delete"
-              : "Switch between scenes in your project"}
+              ? translateUi("Select scenes to delete")
+              : translateUi("Switch between scenes in your project")}
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 py-4">
@@ -114,7 +121,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
               onClick={handleSelectMode}
             >
               <ListCheck />
-              {isSelectMode ? "Cancel" : "Select"}
+              {isSelectMode ? translateUi("Cancel") : translateUi("Select")}
             </Button>
             {isSelectMode && (
               <DeleteDialog
@@ -129,7 +136,9 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
                     size="sm"
                   >
                     <Trash2 />
-                    Delete ({selectedScenes.size})
+                    {translateUi("Delete ({{count}})", {
+                      count: selectedScenes.size,
+                    })}
                   </Button>
                 }
               />
@@ -137,8 +146,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
           </div>
           {scenes.length === 0 ? (
             <div className="text-muted-foreground text-sm">
-              No scenes available
-            </div>
+              {translateUi("No scenes available")}</div>
           ) : (
             <div className="space-y-2">
               {scenes.map((scene) => (
@@ -184,6 +192,7 @@ function DeleteDialog({
   disabled?: boolean;
   trigger: React.ReactNode;
 }) {
+  const { t: translateUi } = useUiTranslation();
   const [open, setOpen] = useState(false);
 
   const handleDelete = () => {
@@ -196,23 +205,27 @@ function DeleteDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Scenes</DialogTitle>
+          <DialogTitle>{translateUi("Delete Scenes")}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete {count} scene
-            {count === 1 ? "" : "s"}? This action cannot be undone.
-          </DialogDescription>
+            {count === 1
+              ? translateUi(
+                  "Are you sure you want to delete {{count}} scene? This action cannot be undone.",
+                  { count },
+                )
+              : translateUi(
+                  "Are you sure you want to delete {{count}} scenes? This action cannot be undone.",
+                  { count },
+                )}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
+            {translateUi("Cancel")}</Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={disabled}
           >
-            Delete
-          </Button>
+            {translateUi("Delete")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

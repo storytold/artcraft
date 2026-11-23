@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import React, { useState, useRef, useEffect, useReducer } from "react";
 import { createPortal } from "react-dom";
 import { Transition } from "@headlessui/react";
@@ -54,6 +56,7 @@ export const Tooltip = ({
   strategy = "absolute",
   portal = false,
 }: TooltipProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -344,7 +347,6 @@ export const Tooltip = ({
       leaveTo="opacity-0"
     >
       <div
-        role="presentation"
         ref={setTooltipRef}
         {...(portal ? { "data-modal-outside-safe": "" } : {})}
         onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
@@ -380,7 +382,7 @@ export const Tooltip = ({
             {imageSrc && (
               <img
                 src={imageSrc}
-                alt="tooltip"
+                alt={translateUi("tooltip")}
                 className="mb-1 aspect-square w-56 rounded-none"
               />
             )}
@@ -397,7 +399,6 @@ export const Tooltip = ({
 
   return (
     <div
-      role="presentation"
       ref={triggerRef}
       onPointerEnter={() => {
         setIsHoveringTrigger(true);

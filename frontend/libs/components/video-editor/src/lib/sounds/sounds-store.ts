@@ -1,3 +1,5 @@
+
+import { i18n } from "@storyteller/i18n";
 import { create } from "zustand";
 import type { SoundEffect, SavedSound } from "./types";
 import { EditorCore } from "../core";
@@ -185,7 +187,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to save sound";
       set({ savedSoundsError: errorMessage });
-      EditorCore.getInstance().adapters.toast.error("Failed to save sound");
+      EditorCore.getInstance().adapters.toast.error(i18n.t("Failed to save sound"));
       console.error("Failed to save sound:", error);
     }
   },
@@ -202,7 +204,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to remove sound";
       set({ savedSoundsError: errorMessage });
-      EditorCore.getInstance().adapters.toast.error("Failed to remove sound");
+      EditorCore.getInstance().adapters.toast.error(i18n.t("Failed to remove sound"));
       console.error("Failed to remove sound:", error);
     }
   },
@@ -235,7 +237,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
         error instanceof Error ? error.message : "Failed to clear saved sounds";
       set({ savedSoundsError: errorMessage });
       EditorCore.getInstance().adapters.toast.error(
-        "Failed to clear saved sounds",
+        i18n.t("Failed to clear saved sounds"),
       );
       console.error("Failed to clear saved sounds:", error);
     }
@@ -254,7 +256,7 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
       }
     }
     if (!audioUrl) {
-      editor.adapters.toast.error("Sound file not available");
+      editor.adapters.toast.error(i18n.t("Sound file not available"));
       return false;
     }
 

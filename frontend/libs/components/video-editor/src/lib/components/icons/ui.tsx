@@ -1,9 +1,12 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import type { IconProps } from "./types";
 
 export function OcVideoIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -13,7 +16,7 @@ export function OcVideoIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Video</title>
+      <title>{translateUi("Video")}</title>
       <path
         d="M2.41667 11C2.41667 7.70017 2.41667 6.05025 3.65537 5.02513C4.89405 4 6.88771 4 10.875 4H12.0833C16.0706 4 18.0642 4 19.303 5.02513C20.5417 6.05025 20.5417 7.70017 20.5417 11V13C20.5417 16.2998 20.5417 17.9497 19.303 18.9749C18.0642 20 16.0706 20 12.0833 20H10.875C6.88771 20 4.89405 20 3.65537 18.9749C2.41667 17.9497 2.41667 16.2998 2.41667 13V11Z"
         stroke="currentColor"
@@ -34,6 +37,7 @@ export function OcCheckerboardIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -43,7 +47,7 @@ export function OcCheckerboardIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Checkerboard</title>
+      <title>{translateUi("Checkerboard")}</title>
       <path d="M2 0H0V2H2V0Z" fill="currentColor" fillOpacity="0.5" />
       <path d="M2 4H0V6H2V4Z" fill="currentColor" fillOpacity="0.5" />
       <path d="M2 8H0V10H2V8Z" fill="currentColor" fillOpacity="0.5" />
@@ -65,6 +69,7 @@ export function OcSlidersVerticalIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -74,7 +79,7 @@ export function OcSlidersVerticalIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Sliders Vertical</title>
+      <title>{translateUi("Sliders Vertical")}</title>
       <path
         d="M17.5103 2.82471L17.5103 21.1753"
         stroke="currentColor"
@@ -107,6 +112,7 @@ export function OcSocialIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={Math.round(size * (38 / 24))}
@@ -116,7 +122,7 @@ export function OcSocialIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Social media</title>
+      <title>{translateUi("Social media")}</title>
       <path
         d="M2.48387 19.5491C2.59868 20.0193 2.70552 20.4948 2.88633 20.9473C3.07775 21.4262 3.3026 21.8847 3.62924 22.2857C4.07098 22.8288 4.60789 23.2515 5.23598 23.5555C5.68696 23.7737 6.16008 23.9218 6.65912 23.9713C7.38674 24.0433 8.10648 23.9746 8.81911 23.8231C9.26378 23.729 9.70995 23.6432 10.1538 23.5442C13.3768 22.8256 16.6108 22.1577 19.8275 21.4093C20.2543 21.31 20.664 21.1654 21.0675 20.9964C21.8407 20.672 22.4777 20.171 22.9686 19.4917C23.5407 18.6999 23.8513 17.8163 23.8643 16.8288C23.8728 16.1834 23.7735 15.5521 23.6444 14.9251L23.6175 14.8002C23.6071 14.7518 21.3023 4.17237 21.2704 4.03285C21.1826 3.64961 21.0721 3.27439 20.9187 2.91194C20.7321 2.47022 20.512 2.04815 20.2027 1.67925C19.8758 1.28947 19.5002 0.956899 19.0665 0.689289C18.4023 0.279255 17.6869 0.042959 16.9055 0.00601943C16.1998 -0.0272952 15.5107 0.081762 14.8255 0.232175C14.8255 0.232175 14.8202 0.225824 14.8193 0.222467L4.44388 2.48973C4.44443 2.49334 4.44508 2.49692 4.44557 2.50041C4.05809 2.59258 3.66784 2.67478 3.29121 2.80762C2.87866 2.9533 2.47597 3.1249 2.10684 3.36167C1.5255 3.73496 1.05539 4.22125 0.691874 4.81275C0.280021 5.4829 0.0437631 6.20548 0.00614467 6.99499C-0.0274064 7.69941 0.080661 8.38675 0.227418 9.07065"
         fill="#FFFC00"
@@ -153,6 +159,7 @@ export function OcTextWidthIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={Math.round((size * 17) / 24)}
@@ -162,7 +169,7 @@ export function OcTextWidthIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Text width</title>
+      <title>{translateUi("Text width")}</title>
       <path
         d="M3.75 17.17C3.14316 17.7599 0.75 19.3297 0.75 20.17C0.75 21.0103 3.14316 22.5802 3.75 23.17M12.75 17.25C13.3568 17.8398 15.75 19.4097 15.75 20.25C15.75 21.0903 13.3568 22.6602 12.75 23.25M1.17285 20.1495L7.85685 20.1895L15.618 20.2295M8.25 0.75V15.75M8.25 0.75C9.6374 0.75 11.4195 0.78054 12.8384 0.92648C13.4385 0.98819 13.7386 1.01905 14.0041 1.1279C14.5566 1.35428 15.0018 1.85062 15.1694 2.4268C15.25 2.70381 15.25 3.01991 15.25 3.65214M8.25 0.75C6.8626 0.75 5.08047 0.78054 3.66161 0.92648C3.0615 0.98819 2.76144 1.01905 2.49586 1.1279C1.94344 1.35428 1.49816 1.85062 1.33057 2.4268C1.25 2.70381 1.25 3.01991 1.25 3.65214"
         stroke="currentColor"
@@ -178,6 +185,7 @@ export function OcTextHeightIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={Math.round((size * 20) / 23)}
@@ -187,7 +195,7 @@ export function OcTextHeightIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Text height</title>
+      <title>{translateUi("Text height")}</title>
       <path
         d="M12.67 18.9194C13.2599 19.5262 14.8297 21.9194 15.67 21.9194C16.5103 21.9194 18.0802 19.5262 18.67 18.9194M12.75 10.9965C13.3398 10.3897 14.9097 7.99653 15.75 7.99653C16.5903 7.99653 18.1602 10.3897 18.75 10.9965M15.6495 21.4965L15.7295 8.12853M7.75 0.75V21.75M7.75 0.75C9.1374 0.75 11.9195 0.78054 13.3384 0.92648C13.9385 0.98819 14.2386 1.01905 14.5041 1.1279C15.0566 1.35428 15.5018 1.85062 15.6694 2.4268C15.75 2.70381 15.75 3.01991 15.75 3.65214M7.75 0.75C6.3626 0.75 4.58047 0.78054 3.16161 0.92648C2.5615 0.98819 2.26144 1.01905 1.99586 1.1279C1.44344 1.35428 0.99816 1.85062 0.83057 2.4268C0.75 2.70381 0.75 3.01991 0.75 3.65214"
         stroke="currentColor"
@@ -203,6 +211,7 @@ export function OcFontIcon({
   className = "",
   size = 32,
   }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -212,7 +221,7 @@ export function OcFontIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Font</title>
+      <title>{translateUi("Font")}</title>
       <path
         d="M16.4094 3.80541C16.0122 3.80541 15.8136 3.51231 15.6889 3.09844C15.267 1.53634 14.7188 1.07415 14.397 1.07415C14.0737 1.07415 13.5763 1.66034 13.0297 2.87942C12.3075 4.41576 11.8233 6.08898 11.3752 7.69939L14.2181 7.69617C14.3921 8.03758 14.251 8.74455 13.8275 8.93941H11.0173C10.0981 11.9638 9.32336 14.8786 8.40416 17.7323C7.88218 19.3427 7.31096 20.879 6.58873 21.8533C5.79263 22.95 4.30221 24 2.5114 24C1.24421 24 0 23.4154 0 22.1223C0 21.3171 0.845339 20.5618 1.51669 20.5618C1.80558 20.5505 2.07642 20.7019 2.21266 20.9515C2.83476 22.0482 3.4306 22.6827 3.70472 22.6827C3.97884 22.6827 4.20208 22.3171 4.65019 20.7325L7.91337 8.94102L5.56611 8.9378C5.39212 8.42568 5.63998 7.81212 5.93708 7.68973H8.27448C8.7226 6.27578 9.2495 4.82963 9.99471 3.53647C11.1125 1.5621 12.9033 0 15.3639 0C17.2285 0 18 0.879286 18 2.00013C17.9754 3.19667 16.9068 3.80541 16.4094 3.80541Z"
         fill="currentColor"
@@ -226,6 +235,7 @@ export function OcShapesIcon({
   size = 32,
   strokeWidth = 1.5,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -236,7 +246,7 @@ export function OcShapesIcon({
       aria-hidden
       className={className}
     >
-      <title>Shapes</title>
+      <title>{translateUi("Shapes")}</title>
       <defs>
         <clipPath id="clip" clipPathUnits="userSpaceOnUse">
           <path d="M0 0H24V24H0ZM8 8H24V24H8Z" clipRule="evenodd" />
@@ -266,6 +276,7 @@ export function OcMirrorIcon({
   className = "",
   size = 32,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -276,7 +287,7 @@ export function OcMirrorIcon({
       aria-hidden
       className={className}
     >
-      <title>Mirror</title>
+      <title>{translateUi("Mirror")}</title>
       <g clipPath="url(#clip0_5_41)">
         <path
           d="M12 23.2242C5.8043 23.2242 0.7817 18.2016 0.7817 12.0059C0.7817 5.81026 5.8043 0.787682 12 0.787682C18.1957 0.787682 23.2183 5.81026 23.2183 12.0059C23.2183 18.2016 18.1957 23.2242 12 23.2242Z"
@@ -304,6 +315,7 @@ export function OcSquarePlusIcon({
   size = 32,
   strokeWidth = 1.5,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -314,7 +326,7 @@ export function OcSquarePlusIcon({
       aria-hidden
       className={className}
     >
-      <title>Square Plus</title>
+      <title>{translateUi("Square Plus")}</title>
       <defs>
         <mask id="frameMask" maskUnits="userSpaceOnUse">
           <rect width="24" height="24" fill="white" />
@@ -359,6 +371,7 @@ export function OcRippleIcon({
   size = 24,
   strokeWidth = 1.5,
 }: IconProps) {
+  const { t: translateUi } = useUiTranslation();
   return (
     <svg
       width={size}
@@ -369,7 +382,7 @@ export function OcRippleIcon({
       aria-hidden
       className={className}
     >
-      <title>Ripple</title>
+      <title>{translateUi("Ripple")}</title>
       <path
         d="M5 9C4.39316 9.58984 2 11.1597 2 12C2 12.8403 4.39316 14.4102 5 15"
         stroke="currentColor"

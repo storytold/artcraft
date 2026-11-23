@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import * as React from "react";
 import { Dialog as SheetPrimitive } from "radix-ui";
@@ -73,7 +75,7 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
+>(({ side = "right", className, children, ...props }, ref) => { const { t: translateUi } = useUiTranslation(); return (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
@@ -87,12 +89,12 @@ const SheetContent = React.forwardRef<
     >
       <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 cursor-pointer rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
         <X className="size-5" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">{translateUi("Close")}</span>
       </SheetPrimitive.Close>
       {children}
     </SheetPrimitive.Content>
   </SheetPortal>
-));
+); });
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({

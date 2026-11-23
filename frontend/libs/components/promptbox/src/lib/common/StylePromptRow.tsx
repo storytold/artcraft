@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { ChangeEvent } from "react";
 import { TagsIcon, XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -14,9 +15,10 @@ export interface StylePromptRowProps {
 export function StylePromptRow({
   value,
   onChange,
-  placeholder = "Style: e.g. dreamy synth-pop, female vocals",
+  placeholder,
   className = "",
 }: StylePromptRowProps) {
+  const { t } = useTranslation();
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
   };
@@ -35,13 +37,13 @@ export function StylePromptRow({
         type="text"
         value={value}
         onChange={handleChange}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("Style: e.g. dreamy synth-pop, female vocals")}
         className="min-w-0 flex-1 bg-transparent text-sm text-base-fg placeholder:text-base-fg/35 focus:outline-none"
       />
       {value.length > 0 && (
         <button
           type="button"
-          aria-label="Clear style"
+          aria-label={t("Clear style")}
           onClick={() => onChange("")}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] text-base-fg/40 transition-colors hover:bg-white/10 hover:text-base-fg"
         >

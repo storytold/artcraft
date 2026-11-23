@@ -21,6 +21,19 @@ export function is3DMediaClass(mediaClass: string | undefined | null): boolean {
   );
 }
 
+const GENERATION_FALLBACK_LABELS = new Set([
+  "Image Generation",
+  "Video Generation",
+]);
+
+/** Completion rows store these English keys. Translate them when shown. */
+export function localizedGalleryLabel(
+  label: string,
+  translate: (key: string) => string,
+): string {
+  return GENERATION_FALLBACK_LABELS.has(label) ? translate(label) : label;
+}
+
 /** Plural noun for batch captions, e.g. "Generating 4 images". */
 export function batchNoun(mediaClass: GenerationMediaClass): string {
   switch (mediaClass) {

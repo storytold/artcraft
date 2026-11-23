@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
@@ -71,6 +73,7 @@ export const PromptBox2D = ({
   usePrompt2DStore,
   modelSelector,
 }: PromptBox2DProps) => {
+  const { t: translateUi } = useUiTranslation();
   useSignals();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,17 +111,20 @@ export const PromptBox2D = ({
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Wide",
+      label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -173,14 +179,31 @@ export const PromptBox2D = ({
     }
   });
 
+  useEffect(() => {
+    setAspectRatioList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : item.action === "auto"
+                ? "Auto"
+                : "Wide",
+        ),
+      })),
+    );
+  }, [translateUi]);
+
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value = selectedItem.label.toLowerCase() as AspectRatio;
+    const value = selectedItem.action as AspectRatio;
     onAspectRatioChange?.(value);
     setAspectRatio(value);
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === selectedItem.label,
+        selected: item.action === value,
       })),
     );
   };
@@ -348,7 +371,7 @@ export const PromptBox2D = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      void handleGenerate();
+      handleGenerate();
     }
   };
 
@@ -379,7 +402,7 @@ export const PromptBox2D = ({
               setContent(
                 <img
                   src={image.fullUrl ?? image.url}
-                  alt="Reference preview"
+                  alt={translateUi("Reference preview")}
                   className="w-full h-full object-contain"
                 />,
               );
@@ -433,7 +456,7 @@ export const PromptBox2D = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder="Describe your image..."
+                placeholder={translateUi("Describe your image...")}
                 className={`promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
@@ -505,8 +528,7 @@ export const PromptBox2D = ({
                     onClick={onFitPressed}
                   >
                     <FrameIcon  className="h-4 w-4" />
-                    Fit
-                  </Button>
+                    {translateUi("Fit")}</Button>
                 </Tooltip>
               )}
               <GenerationCountPicker
@@ -528,8 +550,7 @@ export const PromptBox2D = ({
                 disabled={isEnqueueing || isDisabled || !prompt.trim()}
                 loading={isEnqueueing}
               >
-                Generate
-              </GenerateButton>
+                {translateUi("Generate")}</GenerateButton>
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
@@ -583,7 +604,7 @@ export const PromptBox2D = ({
         }
       >
         <textarea
-          placeholder="Describe your image..."
+          placeholder={translateUi("Describe your image...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

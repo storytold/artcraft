@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@storyteller/ui-toaster";
 import { UploadImageMedia, UploadVideoMedia } from "@storyteller/api";
@@ -15,6 +17,7 @@ import {
 import { CreateEmptyState } from "~/components/generation-feed/CreateEmptyState";
 
 export const PageBackgroundChange = () => {
+  const { t: translateUi } = useUiTranslation();
   const subTab = useVFXStore((s) => s.subTab);
   const setSubTab = useVFXStore((s) => s.setSubTab);
   const history = useVFXStore((s) => s.history);
@@ -113,8 +116,10 @@ export const PageBackgroundChange = () => {
           style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
           <CreateEmptyState
-            title="No background changes yet"
-            subtitle="Upload a source video and a reference image, then optionally add a prompt."
+            title={translateUi("No background changes yet")}
+            subtitle={translateUi(
+              "Upload a source video and a reference image, then optionally add a prompt.",
+            )}
           />
         </div>
       ) : (

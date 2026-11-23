@@ -1011,7 +1011,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
         const pastedLineNode: LineNode = {
           ...lineNode,
           id: newId,
-          points: lineNode.points.map((point) => point + offset),
+          points: lineNode.points.map((point, index) =>
+            index % 2 === 0 ? point + offset : point + offset,
+          ),
           x: lineNode.x !== undefined ? lineNode.x + offset : undefined,
           y: lineNode.y !== undefined ? lineNode.y + offset : undefined,
         };
@@ -1129,10 +1131,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
       const base64ToFile = (base64: string, filename: string): File => {
         const arr = base64.split(",");
-        // data:<mime>;base64: the text between the first ":" and the ";" after it.
-        const start = arr[0].indexOf(":") + 1;
-        const end = arr[0].indexOf(";", start);
-        const mime = (start > 0 && end !== -1 && arr[0].slice(start, end)) || "image/png";
+        const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
         const bstr = atob(arr[1]);
         let n = bstr.length;
         const u8arr = new Uint8Array(n);
@@ -1168,7 +1167,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
                 console.error("Failed to restore image:", error);
               }
             };
-            void loadImage();
+            loadImage();
           }
 
           return node;

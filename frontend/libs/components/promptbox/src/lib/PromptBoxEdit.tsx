@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { ChevronDownIcon, ChevronUpIcon, EraserIcon, FrameIcon, MaximizeIcon, MousePointerIcon, MoveIcon, PenIcon, RectangleHorizontalIcon, RectangleVerticalIcon, Redo2Icon, RotateCcwIcon, SquareIcon, SquarePenIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DynamicIcon } from "@storyteller/icons";
@@ -11,6 +13,7 @@ import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
 import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
@@ -20,7 +23,6 @@ import {
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { PromptClearAllButton } from "./PromptClearAllButton";
-import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -71,6 +73,7 @@ export const PromptBoxEdit = ({
   onRedo,
   credits,
 }: PromptBoxEditProps) => {
+  const { t: translateUi } = useUiTranslation();
   const [prompt, setPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -103,24 +106,28 @@ export const PromptBoxEdit = ({
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Auto",
+      label: translateUi("Auto"),
+      action: "auto",
       selected: aspectRatio === "auto",
       icon: (
         <MoveIcon  className="h-4 w-4" />
       ),
     },
     {
-      label: "Wide",
+      label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <RectangleHorizontalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <RectangleVerticalIcon  className="h-4 w-4" />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <SquareIcon  className="h-4 w-4" />,
     },
@@ -150,12 +157,19 @@ export const PromptBoxEdit = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected:
-          item.label.toLowerCase() === aspectRatio ||
-          (item.label === "Auto" && aspectRatio === "auto"),
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : item.action === "auto"
+                ? "Auto"
+                : "Wide",
+        ),
+        selected: item.action === aspectRatio,
       })),
     );
-  }, [aspectRatio]);
+  }, [aspectRatio, translateUi]);
 
   useEffect(() => {
     setResolutionList((prev) =>
@@ -167,9 +181,7 @@ export const PromptBoxEdit = ({
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    const value =
-      selectedItem.label === "Auto" ? "auto" : selectedItem.label.toLowerCase();
-    setAspectRatio(value as any);
+    setAspectRatio(selectedItem.action as any);
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
@@ -291,12 +303,12 @@ export const PromptBoxEdit = ({
         {
           value: "marker",
           icon: PenIcon,
-          text: "Marker",
+          text: translateUi("Marker"),
         },
         {
           value: "eraser",
           icon: EraserIcon,
-          text: "Eraser",
+          text: translateUi("Eraser"),
         },
       ]
     : supportsMaskedInpainting
@@ -304,24 +316,24 @@ export const PromptBoxEdit = ({
           {
             value: "edit",
             icon: SquarePenIcon,
-            text: "Edit Region",
+            text: translateUi("Edit Region"),
           },
           {
             value: "eraser",
             icon: EraserIcon,
-            text: "Eraser",
+            text: translateUi("Eraser"),
           },
         ]
       : [
           {
             value: "edit",
             icon: SquarePenIcon,
-            text: "Edit Region",
+            text: translateUi("Edit Region"),
           },
           {
             value: "select",
             icon: MousePointerIcon,
-            text: "Select",
+            text: translateUi("Select"),
           },
         ];
 
@@ -428,7 +440,7 @@ export const PromptBoxEdit = ({
                 <textarea
                   ref={textareaRef}
                   rows={1}
-                  placeholder="Write what you want to change in your image and click generate..."
+                  placeholder={translateUi("Write what you want to change in your image and click generate...")}
                   className={`promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
@@ -507,8 +519,7 @@ export const PromptBoxEdit = ({
                       onClick={onFitPressed}
                     >
                       <FrameIcon  className="h-4 w-4" />
-                      Fit
-                    </Button>
+                      {translateUi("Fit")}</Button>
                   </Tooltip>
                 )}
                 <GenerationCountPicker
@@ -531,8 +542,7 @@ export const PromptBoxEdit = ({
                   loading={isEnqueueing ?? internalEnqueueing}
                   credits={credits}
                 >
-                  Generate
-                </GenerateButton>
+                  {translateUi("Generate")}</GenerateButton>
               </div>
             </div>
           </div>
@@ -586,7 +596,7 @@ export const PromptBoxEdit = ({
         }
       >
         <textarea
-          placeholder="Write what you want to change in your image and click generate..."
+          placeholder={translateUi("Write what you want to change in your image and click generate...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

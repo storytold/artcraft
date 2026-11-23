@@ -220,7 +220,7 @@ export const markdownToHtml = (
 
     // Image/GIF embed: @image(url, size) or @gif(url, size)
     const imageMatch = ltrim.match(
-      /^@(image|gif)\(([^,)]+)(?:,([^)]+))?\)\s*$/,
+      /^@(image|gif)\(([^,)]+)(?:,\s*([^)]+))?\)\s*$/,
     );
     if (imageMatch) {
       flushParagraph();
@@ -231,13 +231,13 @@ export const markdownToHtml = (
       continue;
     }
 
-    // ATX headings: support #..###### with optional space after hashes
-    const heading = ltrim.match(/^(#{1,6})(.*)$/);
+    // ATX headings require whitespace after the hashes, so #hashtag stays text.
+    const heading = ltrim.match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
       flushParagraph();
       closeListIfOpen();
       const level = Math.min(heading[1].length, 6);
-      const text = renderInline((heading[2] || "").trimStart());
+      const text = renderInline(heading[2] || "");
       htmlParts.push(`<h${level}>${text}</h${level}>`);
       continue;
     }
@@ -318,7 +318,7 @@ export const slugify = (s: string): string =>
     .replace(/[_\s]+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/--+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-+|-+$/g, "");
 
 export const pathToFilename = (path: string): string => {
   const parts = path.split("/");

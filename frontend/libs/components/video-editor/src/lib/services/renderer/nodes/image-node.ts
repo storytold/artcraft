@@ -35,7 +35,7 @@ export function loadImageSource({
   const cacheKey = `${url}::${maxSourceSize ?? "full"}`;
 
   const cached = imageSourceCache.get(cacheKey);
-  if (cached !== undefined) return cached;
+  if (cached) return cached;
 
   const promise = (async (): Promise<CachedImageSource> => {
     const image = new Image();

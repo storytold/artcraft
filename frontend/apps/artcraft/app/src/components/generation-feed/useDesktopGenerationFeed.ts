@@ -1,3 +1,4 @@
+
 import { findDesktopModel } from "@storyteller/tauri-api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -295,8 +296,8 @@ export function useDesktopGenerationFeed(options: {
       cancelled = true;
       clearInterval(intervalId);
       window.removeEventListener("task-queue-update", handleTaskUpdate);
-      void unlistenComplete.then((f) => f());
-      void unlistenFailed.then((f) => f());
+      unlistenComplete.then((f) => f());
+      unlistenFailed.then((f) => f());
     };
   }, [load]);
 

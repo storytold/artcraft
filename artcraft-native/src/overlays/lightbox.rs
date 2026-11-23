@@ -1,6 +1,7 @@
 //! The lightbox (`lightbox-modal`): the media large on black (audio as a player panel), prev/next
 //! through the feed, and a side column with the prompt, details and actions.
 
+use crate::i18n::t as ui_text;
 use egui::{Align2, Color32, FontId, Id, Key, Rect, Sense, Ui, pos2, vec2};
 
 use crate::backend::audio::AudioPlayer;
@@ -132,7 +133,7 @@ impl Lightbox {
     }
     if item.kind == MediaKind::Video {
       let play = Rect::from_center_size(rect.center(), vec2(72.0, 72.0));
-      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text("Play in your video player").on_hover_cursor(egui::CursorIcon::PointingHand);
+      let resp = ui.interact(play, Id::new(("lightbox-play", &item.token)), Sense::click()).on_hover_text(ui_text("Play in your video player")).on_hover_cursor(egui::CursorIcon::PointingHand);
       ui.painter().circle_filled(play.center(), 36.0, Color32::from_black_alpha(if resp.hovered() { 200 } else { 150 }));
       icons::paint(ui.painter(), play.shrink(22.0).translate(vec2(3.0, 0.0)), Icon::Play, Color32::WHITE);
       if resp.clicked() {
@@ -166,7 +167,7 @@ impl Lightbox {
     ui.horizontal(|ui| {
       widgets::hud(ui, item.kind.label(), theme::MUTED);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
           actions.push(LightboxAction::Close);
         }
       });
@@ -174,10 +175,10 @@ impl Lightbox {
     ui.add_space(8.0);
     let text = prompt.and_then(|p| p.maybe_positive_prompt.clone()).filter(|t| !t.is_empty());
     ui.horizontal(|ui| {
-      widgets::hud(ui, "Prompt", theme::FAINT);
+      widgets::hud(ui, ui_text("Prompt"), theme::FAINT);
       if let Some(t) = &text {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if ui.add(egui::Button::new(egui::RichText::new("Copy").size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+          if ui.add(egui::Button::new(egui::RichText::new(ui_text("Copy")).size(11.0)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
             actions.push(LightboxAction::CopyPrompt(t.clone()));
           }
         });
@@ -204,11 +205,11 @@ impl Lightbox {
         icons::paint_spinner(ui, rect, theme::FAINT);
       },
       _ => {
-        ui.label(egui::RichText::new("No prompt").size(13.0).color(theme::FAINT));
+        ui.label(egui::RichText::new(ui_text("No prompt")).size(13.0).color(theme::FAINT));
       },
     }
     ui.add_space(14.0);
-    widgets::hud(ui, "Information", theme::FAINT);
+    widgets::hud(ui, ui_text("Information"), theme::FAINT);
     ui.add_space(4.0);
     if let Some(model) = item.model_id.as_deref() {
       info_row(ui, "Model", |ui| {
@@ -250,21 +251,21 @@ impl Lightbox {
     ui.add_space(16.0);
     let w = (ui.available_width() - 8.0) / 2.0;
     // Audio can't be recreated yet (`Audio v1`).
-    if item.prompt_token.is_some() && item.kind != MediaKind::Audio && widgets::button(ui, Some(Icon::RotateCw), "Recreate", widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
+    if item.prompt_token.is_some() && item.kind != MediaKind::Audio && widgets::button(ui, Some(Icon::RotateCw), ui_text("Recreate"), widgets::Kind::Primary, ui.available_width(), theme::CONTROL_H).clicked() {
       actions.push(LightboxAction::Recreate);
     }
     ui.horizontal_wrapped(|ui| {
       ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
-      if item.kind == MediaKind::Image && widgets::button(ui, Some(Icon::Video), "Make Video", widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
+      if item.kind == MediaKind::Image && widgets::button(ui, Some(Icon::Video), ui_text("Make Video"), widgets::Kind::Accent, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::MakeVideo);
       }
-      if widgets::button(ui, Some(Icon::Download), "Download", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Download), ui_text("Download"), widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Download);
       }
-      if widgets::button(ui, Some(Icon::Link), "Share", widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Link), ui_text("Share"), widgets::Kind::Secondary, w, theme::CONTROL_H).clicked() {
         actions.push(LightboxAction::Share);
       }
-      if widgets::button(ui, Some(Icon::Trash), "Delete", widgets::Kind::Danger, w, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, Some(Icon::Trash), ui_text("Delete"), widgets::Kind::Danger, w, theme::CONTROL_H).clicked() {
         self.confirm_delete = true;
       }
     });
@@ -273,15 +274,15 @@ impl Lightbox {
   fn confirm(&mut self, ctx: &egui::Context, actions: &mut Vec<LightboxAction>) {
     let mut choice = None;
     let close = widgets::modal(ctx, Id::new("lightbox-delete"), 420.0, |ui| {
-      ui.label(widgets::heading("Delete this media?", 20.0));
+      ui.label(widgets::heading(ui_text("Delete this media?"), 20.0));
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("This will permanently remove the media from your library. This action cannot be undone.").color(theme::MUTED));
+      ui.label(egui::RichText::new(ui_text("This will permanently remove the media from your library. This action cannot be undone.")).color(theme::MUTED));
       ui.add_space(16.0);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::button(ui, None, "Delete", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, ui_text("Delete"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
           choice = Some(true);
         }
-        if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, ui_text("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
           choice = Some(false);
         }
       });

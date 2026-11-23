@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Modal } from "@storyteller/ui-modal";
@@ -31,6 +32,7 @@ export const PromptClearAllButton = ({
   confirmClear,
   className,
 }: PromptClearAllButtonProps) => {
+  const { t } = useTranslation();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const handleClick = () => {
@@ -48,10 +50,10 @@ export const PromptClearAllButton = ({
 
   return (
     <>
-      <Tooltip content="Clear all" position="top" className="z-50" delay={200}>
+      <Tooltip content={t("Clear all")} position="top" className="z-50" delay={200}>
         <button
           type="button"
-          aria-label="Clear prompt and attached references"
+          aria-label={t("Clear prompt and attached references")}
           onClick={handleClick}
           disabled={disabled}
           className={twMerge(
@@ -69,19 +71,19 @@ export const PromptClearAllButton = ({
       <Modal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
-        title="Clear all?"
+        title={t("Clear all?")}
         className="max-w-md"
         showClose={false}
       >
         <div className="text-sm text-base-fg">
-          This clears the prompt and also removes the attached references.
+          {t("This clears the prompt and also removes the attached references.")}
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setIsConfirmOpen(false)}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>
-            Clear all
+            {t("Clear all")}
           </Button>
         </div>
       </Modal>

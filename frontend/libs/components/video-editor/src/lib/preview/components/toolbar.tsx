@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+
 
 import { useState, useEffect } from "react";
 import { useEditor } from "../../editor/use-editor";
@@ -95,10 +97,11 @@ function TimecodeDisplay() {
 }
 
 function ZoomSelect() {
+  const { t: translateUi } = useUiTranslation();
   const { isAtFit, zoomPercent, fitToScreen, setViewportPercent } =
     usePreviewViewport();
 
-  const displayLabel = isAtFit ? "Fit" : `${zoomPercent}%`;
+  const displayLabel = isAtFit ? translateUi("Fit") : `${zoomPercent}%`;
 
   const onValueChange = (value: string) => {
     if (value === "fit") {
@@ -115,7 +118,7 @@ function ZoomSelect() {
     >
       <SelectTrigger className="tabular-nums">{displayLabel}</SelectTrigger>
       <SelectContent>
-        <SelectItem value="fit">Fit</SelectItem>
+        <SelectItem value="fit">{translateUi("Fit")}</SelectItem>
         <SelectSeparator />
         {PREVIEW_ZOOM_PRESETS.map((preset) => (
           <SelectItem key={preset} value={String(preset)}>

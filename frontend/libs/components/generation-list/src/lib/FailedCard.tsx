@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, type ReactNode } from "react";
 import { CircleAlertIcon, XIcon } from "lucide-react";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
@@ -29,6 +31,7 @@ export const FailedCard = memo(function FailedCard({
   recreateSlot,
   onDismiss,
 }: FailedCardProps) {
+  const { t: translateUi } = useUiTranslation();
   const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
@@ -59,8 +62,7 @@ export const FailedCard = memo(function FailedCard({
             className="flex items-center gap-1.5 rounded-[3px] bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
           >
             <XIcon />
-            Dismiss
-          </button>
+            {translateUi("Dismiss")}</button>
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-6 sm:block">

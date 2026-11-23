@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { Button } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import { ReactNode } from "react";
@@ -43,6 +45,7 @@ export function ActionReminderModal({
   primaryActionIcon: customPrimaryActionIcon = LogInIcon,
   primaryActionBtnClassName: customPrimaryActionBtnClassName = "",
 }: ActionReminderModalProps) {
+  const { t: translateUi } = useUiTranslation();
   let titleText: string | undefined;
   let messageContent: ReactNode;
   let primaryActionBtnText: string;
@@ -52,13 +55,13 @@ export function ActionReminderModal({
   if (!hideTitle) {
     switch (reminderType) {
       case "soraLogin":
-        titleText = customTitle || "Link Your OpenAI Sora Account";
+        titleText = customTitle || translateUi("Link Your OpenAI Sora Account");
         break;
       case "artcraftLogin":
-        titleText = customTitle || "Login to ArtCraft";
+        titleText = customTitle || translateUi("Login to ArtCraft");
         break;
       default:
-        titleText = customTitle || "Action Required";
+        titleText = customTitle || translateUi("Action Required");
         break;
     }
   } else {
@@ -67,42 +70,37 @@ export function ActionReminderModal({
 
   switch (reminderType) {
     case "soraLogin":
-      titleText = customTitle || "Link Your OpenAI Account";
+      titleText = customTitle || translateUi("Link Your OpenAI Account");
       messageContent = customMessage || (
         <p>
-          To use this feature, please connect your OpenAI account. This allows
-          us to leverage your existing subscription.
-        </p>
+          {translateUi("To use this feature, please connect your OpenAI account. This allows us to leverage your existing subscription.")}</p>
       );
-      primaryActionBtnText = customPrimaryActionText || "Login with OpenAI";
+      primaryActionBtnText = customPrimaryActionText || translateUi("Login with OpenAI");
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
     case "artcraftLogin":
       messageContent = customMessage || (
         <p className="text-sm text-white/70">
-          Please log in or sign up to ArtCraft to proceed. This will allow you
-          to save your work and access all features.
-        </p>
+          {translateUi("Please log in or sign up to ArtCraft to proceed. This will allow you to save your work and access all features.")}</p>
       );
-      primaryActionBtnText = customPrimaryActionText || "Login / Sign Up";
+      primaryActionBtnText = customPrimaryActionText || translateUi("Login / Sign Up");
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
     default:
       messageContent = customMessage || (
         <p className="text-sm text-white/70">
-          Please complete the required action.
-        </p>
+          {translateUi("Please complete the required action.")}</p>
       );
-      primaryActionBtnText = customPrimaryActionText || "Proceed";
+      primaryActionBtnText = customPrimaryActionText || translateUi("Proceed");
       primaryActionIcon = customPrimaryActionIcon || LogInIcon;
       primaryActionBtnClassName = customPrimaryActionBtnClassName || "";
       break;
   }
 
   const effectiveSecondaryAction = onSecondaryAction || onClose;
-  const effectiveSecondaryActionText = customSecondaryActionText || "Cancel";
+  const effectiveSecondaryActionText = customSecondaryActionText || translateUi("Cancel");
 
   let modalSpecificClasses = "";
 

@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { memo, useCallback, useState, type ReactNode } from "react";
 import {
   BoxIcon,
@@ -14,7 +16,7 @@ import {
 } from "@storyteller/model-list";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
-import { is3DMediaClass, type GalleryItem } from "./types";
+import { is3DMediaClass, localizedGalleryLabel, type GalleryItem } from "./types";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
 
@@ -95,6 +97,8 @@ export const GalleryCard = memo(function GalleryCard({
   onToggleSelect,
   lastViewed = false,
 }: GalleryCardProps) {
+  const { t: translateUi } = useUiTranslation();
+  const label = localizedGalleryLabel(item.label, translateUi);
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
   const [ratio, setRatio] = useState<number | undefined>(cached);
@@ -190,7 +194,7 @@ export const GalleryCard = memo(function GalleryCard({
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
             <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">
-              {title || item.label}
+              {title || label}
             </p>
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
@@ -210,7 +214,7 @@ export const GalleryCard = memo(function GalleryCard({
           <GalleryThumbnail
             thumbnail={item.thumbnail}
             stillThumbnail={item.stillThumbnail}
-            alt={item.label}
+            alt={label}
             isVideo={isVideo}
             fallbackIcon={mediaIcon}
             onLoad={measureRatio}
@@ -237,8 +241,7 @@ export const GalleryCard = memo(function GalleryCard({
       {lastViewed && (
         <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 rounded-[3px] bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
           <EyeIcon />
-          Last viewed
-        </div>
+          {translateUi("Last viewed")}</div>
       )}
 
       {/* Hover overlay with media type + model badges and quick actions */}

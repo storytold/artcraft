@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { useState } from "react";
 import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => {
+  const { t } = useTranslation();
   const storyboardPageEnabled = useExperimentalStore(
     (s) => s.storyboardPageEnabled,
   );
@@ -48,10 +50,9 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
       <div className="space-y-4 text-base-fg">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <Label htmlFor="experimental-storyboard-page">Storyboard page</Label>
+            <Label htmlFor="experimental-storyboard-page">{t("Storyboard page")}</Label>
             <p className="text-xs opacity-70">
-              Show the Storyboard page in the apps menu. In-development; expect
-              rough edges.
+              {t("Show the Storyboard page in the apps menu. In-development; expect rough edges.")}
             </p>
           </div>
           <Switch
@@ -64,9 +65,9 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
         isOpen={isDisableConfirmOpen}
         onClose={() => setIsDisableConfirmOpen(false)}
         onConfirm={handleConfirmDisable}
-        title="Disable Storyboard page?"
-        text="The Storyboard page will be reset and any unsaved changes will be lost."
-        confirmText="Disable"
+        title={t("Disable Storyboard page?")}
+        text={t("The Storyboard page will be reset and any unsaved changes will be lost.")}
+        confirmText={t("Disable")}
       />
     </>
   );

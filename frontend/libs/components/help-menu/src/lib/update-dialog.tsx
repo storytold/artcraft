@@ -1,3 +1,4 @@
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { CheckForUpdates, InstallUpdate, OpenUrl, type UpdateInfo } from "@storyteller/tauri-api";
@@ -7,6 +8,7 @@ import { Modal } from "@storyteller/ui-modal";
 const RELEASES = "https://github.com/storytold/artcraft/releases";
 
 export function UpdateDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { t: translateUi } = useUiTranslation();
   const [info, setInfo] = useState<UpdateInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -54,8 +56,8 @@ export function UpdateDialog({ isOpen, onClose }: { isOpen: boolean; onClose: ()
     <Modal
       isOpen={isOpen}
       onClose={() => { if (!installing) onClose(); }}
-      title="Check for Updates"
-      accessibleTitle="Check for Updates"
+      title={translateUi("Check for Updates")}
+      accessibleTitle={translateUi("Check for Updates")}
       className="max-w-lg"
       showClose={!installing}
       closeOnEsc={!installing}

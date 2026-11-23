@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { CheckIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { Label } from "@storyteller/ui-label";
@@ -34,6 +35,7 @@ function applyTheme(theme: AppTheme) {
 }
 
 export const AppearanceSettingsPane = () => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<AppTheme>(getStoredTheme());
 
   useEffect(() => {
@@ -44,43 +46,43 @@ export const AppearanceSettingsPane = () => {
     () => [
       {
         id: "gray" as const,
-        label: "Default",
+        label: t("Default"),
         swatch: <Swatch background="#121316" />,
       },
       {
         id: "light" as const,
-        label: "Light",
+        label: t("Light"),
         swatch: <Swatch background="#ffffff" />,
       },
       {
         id: "black" as const,
-        label: "Black",
+        label: t("Black"),
         swatch: <Swatch background="#000000" />,
       },
       {
         id: "aurora" as const,
-        label: "Aurora",
+        label: t("Aurora"),
         swatch: (
           <Swatch background="radial-gradient(28px 14px at 20% 10%, #2d81ff, transparent), radial-gradient(32px 20px at 80% 80%, #1cb6be, transparent), #0d0f16" />
         ),
       },
       {
         id: "sunset" as const,
-        label: "Sunset",
+        label: t("Sunset"),
         swatch: (
           <Swatch background="radial-gradient(28px 14px at 20% 10%, #8b5cf6, transparent), radial-gradient(32px 20px at 80% 80%, #fb923c, transparent), #140b12" />
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
     <div className="space-y-4 pt-3 text-base-fg">
       <div className="flex flex-col gap-0.5">
-        <Label>Themes</Label>
+        <Label>{t("Themes")}</Label>
         <p className="text-xs opacity-70">
-          Choose your preferred look. Applies instantly.
+          {t("Choose your preferred look. Applies instantly.")}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2">

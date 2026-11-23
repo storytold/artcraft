@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 
@@ -18,10 +19,11 @@ export const ExperimentalConfirmModal = ({
   onConfirm,
   title,
   text,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   confirmVariant = "destructive",
 }: Props) => {
+  const { t } = useTranslation();
   return (
     <Modal
       isOpen={isOpen}
@@ -33,10 +35,10 @@ export const ExperimentalConfirmModal = ({
       <div className="text-sm text-base-fg">{text}</div>
       <div className="mt-6 flex justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>
-          {cancelText}
+          {cancelText ?? t("Cancel")}
         </Button>
         <Button variant={confirmVariant} onClick={onConfirm}>
-          {confirmText}
+          {confirmText ?? t("Confirm")}
         </Button>
       </div>
     </Modal>

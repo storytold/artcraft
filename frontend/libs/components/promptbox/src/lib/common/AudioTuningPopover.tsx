@@ -1,3 +1,4 @@
+import { useTranslation } from "@storyteller/i18n";
 import { SlidersHorizontalIcon } from "lucide-react";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
@@ -42,21 +43,22 @@ export function AudioTuningPopover({
   pitch = 0,
   onPitchChange,
 }: AudioTuningPopoverProps) {
+  const { t } = useTranslation();
   const showSampleRate =
     !!sampleRateOptions?.length && onSampleRateChange !== undefined;
 
   return (
     <PopoverMenu
       mode="default"
-      panelTitle="Tuning"
+      panelTitle={t("Tuning")}
       triggerIcon={<SlidersHorizontalIcon  className="h-3.5 w-3.5" />}
-      triggerLabel="Tuning"
+      triggerLabel={t("Tuning")}
     >
       <div className="w-60 space-y-3.5 pb-0.5">
         {showSampleRate && (
           <div>
             <div className="mb-1.5 text-xs font-medium text-base-fg/60">
-              Sample rate
+              {t("Sample rate")}
             </div>
             <div className="flex flex-wrap gap-1">
               {sampleRateOptions.map((hz) => (
@@ -79,7 +81,7 @@ export function AudioTuningPopover({
 
         {showSpeed && (
           <TuningSliderRow
-            label="Speed"
+            label={t("Speed")}
             valueLabel={`${speed.toFixed(2)}×`}
             min={AUDIO_SPEED_MIN}
             max={AUDIO_SPEED_MAX}
@@ -91,7 +93,7 @@ export function AudioTuningPopover({
 
         {showVolume && (
           <TuningSliderRow
-            label="Volume"
+            label={t("Volume")}
             valueLabel={`${volume.toFixed(2)}×`}
             min={AUDIO_VOLUME_MIN}
             max={AUDIO_VOLUME_MAX}
@@ -103,7 +105,7 @@ export function AudioTuningPopover({
 
         {showPitch && (
           <TuningSliderRow
-            label="Pitch"
+            label={t("Pitch")}
             valueLabel={`${pitch > 0 ? "+" : ""}${pitch} st`}
             min={AUDIO_PITCH_MIN}
             max={AUDIO_PITCH_MAX}

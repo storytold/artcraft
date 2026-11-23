@@ -1,3 +1,5 @@
+
+import { LocalizedText } from "@storyteller/i18n";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "../ui/button";
 
@@ -60,18 +62,15 @@ export class EditorErrorBoundary extends Component<
         <div className="bg-background flex h-full w-full flex-col items-center justify-center gap-4 p-6">
           <div className="flex max-w-md flex-col items-center gap-2 text-center">
             <h2 className="text-foreground text-base font-semibold">
-              The editor ran into a problem
-            </h2>
+              <LocalizedText message="The editor ran into a problem" /></h2>
             <p className="text-muted-foreground text-xs">
               {this.state.error.message || "An unexpected error occurred."}
             </p>
             <p className="text-muted-foreground text-[11px]">
-              The full error has been logged to the developer console.
-            </p>
+              <LocalizedText message="The full error has been logged to the developer console." /></p>
           </div>
           <Button variant="outline" size="sm" onClick={this.handleRecover}>
-            Reload editor
-          </Button>
+            <LocalizedText message="Reload editor" /></Button>
         </div>
       );
     }

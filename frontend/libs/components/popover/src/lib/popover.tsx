@@ -1,3 +1,6 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+import { useTranslation } from "@storyteller/i18n";
 import {
   ReactNode,
   useRef,
@@ -160,6 +163,7 @@ function PortalTooltip({
 // toggles on click/tap (works on touch devices). Rendered into a portal so it
 // is never clipped by the popover panel's bounds.
 function InfoHint({ content }: { content: ReactNode }) {
+  const { t: tr } = useTranslation();
   const [open, setOpen] = useState(false);
   const pinnedRef = useRef(false); // opened via click/tap (sticky until dismissed)
   const [position, setPosition] = useState({ top: 0, left: 0, maxWidth: 320 });
@@ -219,7 +223,7 @@ function InfoHint({ content }: { content: ReactNode }) {
       <button
         ref={anchorRef}
         type="button"
-        aria-label="More info"
+        aria-label={tr("More info")}
         className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
         onClick={(e) => {
           // Don't let the click select the row.
@@ -250,7 +254,6 @@ function InfoHint({ content }: { content: ReactNode }) {
       {open &&
         createPortal(
           <div
-            role="presentation"
             // Body-portaled, so inside a Radix modal (promptbox focus mode)
             // taps here must not count as outside clicks on the dialog.
             data-modal-outside-safe=""
@@ -355,8 +358,8 @@ function RichListRow({
     <div
       role="button"
       aria-disabled={item.disabled || undefined}
-      tabIndex={0}
-      onKeyDown={clickOnEnterOrSpace}
+      tabIndex={item.disabled ? -1 : 0}
+      onKeyDown={item.disabled ? undefined : clickOnEnterOrSpace}
       data-selected={item.selected ? "true" : undefined}
       onClick={() => {
         if (!item.disabled) onClick?.();
@@ -608,7 +611,6 @@ function SubmenuFlyout({
   return (
     <>
       <div
-        role="presentation"
         ref={triggerRef}
         onMouseEnter={scheduleOpen}
         onMouseLeave={scheduleClose}
@@ -823,6 +825,7 @@ export const PopoverMenu = ({
   maxListHeight,
   richList = false,
 }: PopoverMenuProps) => {
+  const { t: translateUi } = useUiTranslation();
   // Search leaves so a grouped list resolves to the selected model, not its
   // (also-selected) family group row.
   const selectedItem = items
@@ -1286,8 +1289,10 @@ export const PopoverMenu = ({
                               <div
                                 role="button"
                                 aria-disabled={item.disabled || undefined}
-                                tabIndex={0}
-                                onKeyDown={clickOnEnterOrSpace}
+                                tabIndex={item.disabled ? -1 : 0}
+                                onKeyDown={
+                                  item.disabled ? undefined : clickOnEnterOrSpace
+                                }
                                 data-selected={
                                   item.selected ? "true" : undefined
                                 }
@@ -1433,8 +1438,7 @@ export const PopoverMenu = ({
                             onClick={onAdd}
                             disabled={disableAddButton}
                           >
-                            + Add
-                          </Button>
+                            {translateUi("+ Add")}</Button>
                         )}
                       </div>
                     ) : (
@@ -1602,8 +1606,7 @@ export const PopoverMenu = ({
                             onClick={onAdd}
                             disabled={disableAddButton}
                           >
-                            + Add
-                          </Button>
+                            {translateUi("+ Add")}</Button>
                         )}
                       </div>
                     )}

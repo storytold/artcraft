@@ -2,6 +2,7 @@
 //! Midjourney sign-in window (a system webview, used only to capture the login cookies, like
 //! the Tauri app's), and the accounts rows in Settings.
 
+use crate::i18n::t as ui_text;
 use std::path::Path;
 
 use cookie_store_wrapper::cookie_store::CookieStore;
@@ -41,17 +42,17 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
   let mut action = None;
   let close = widgets::modal(ctx, Id::new("provider-setup"), 460.0, |ui| {
     ui.horizontal(|ui| {
-      widgets::hud(ui, "Connect account", theme::FAINT);
+      widgets::hud(ui, ui_text("Connect account"), theme::FAINT);
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+        if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
           action = Some(SetupAction::Close);
         }
       });
     });
     ui.add_space(6.0);
-    ui.label(widgets::heading(&format!("Set up {name}"), 26.0));
+    ui.label(widgets::heading(&(if crate::i18n::is_chinese() { format!("设置 {name}") } else { format!("Set up {name}") }), 26.0));
     ui.add_space(4.0);
-    ui.label(egui::RichText::new(format!("Add your {name} account to ArtCraft!")).size(14.0).family(theme::medium()));
+    ui.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("将你的 {name} 账户添加到 ArtCraft！") } else { format!("Add your {name} account to ArtCraft!") })).size(14.0).family(theme::medium()));
     ui.add_space(10.0);
     let description = match provider {
       Provider::Fal => format!("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
@@ -64,7 +65,7 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
       ui.add_space(10.0);
     }
     let ready = provider != Provider::Fal || !fal_key.trim().is_empty();
-    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &format!("Set up {name}"), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
+    if ui.add_enabled_ui(ready, |ui| widgets::button(ui, Some(Icon::ChevronRight), &(if crate::i18n::is_chinese() { format!("设置 {name}") } else { format!("Set up {name}") }), widgets::Kind::Primary, ui.available_width(), 40.0)).inner.clicked() {
       action = Some(if provider == Provider::Fal { SetupAction::SaveFalKey } else { SetupAction::ConnectMidjourney });
     }
   });
@@ -99,13 +100,13 @@ pub fn accounts_section(ui: &mut Ui, view: &AccountsView, fal_key: &mut String) 
     None => "Not logged in",
   };
   let (label, kind) = if view.midjourney.is_some() { ("Disconnect", widgets::Kind::Danger) } else { ("Connect", widgets::Kind::Secondary) };
-  if account_row(ui, "Midjourney account", detail, |ui| widgets::button(ui, None, label, kind, 0.0, theme::CONTROL_H).clicked()) {
+  if account_row(ui, ui_text("Midjourney account"), detail, |ui| widgets::button(ui, None, label, kind, 0.0, theme::CONTROL_H).clicked()) {
     action = Some(if view.midjourney.is_some() { AccountAction::DisconnectMidjourney } else { AccountAction::ConnectMidjourney });
   }
   ui.add_space(10.0);
   match &view.fal_key_hint {
     Some(hint) => {
-      if account_row(ui, "FAL API key", hint, |ui| widgets::button(ui, None, "Remove", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked()) {
+      if account_row(ui, ui_text("FAL API key"), hint, |ui| widgets::button(ui, None, ui_text("Remove"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked()) {
         action = Some(AccountAction::RemoveFalKey);
       }
     },
@@ -116,7 +117,7 @@ pub fn accounts_section(ui: &mut Ui, view: &AccountsView, fal_key: &mut String) 
         let save_w = 90.0;
         ui.allocate_ui(vec2(ui.available_width() - save_w - 8.0, theme::CONTROL_H), |ui| text_field(ui, fal_key, true, "Paste your FAL API key"));
         let enabled = !fal_key.trim().is_empty();
-        if ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, "Save", widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked() {
+        if ui.add_enabled_ui(enabled, |ui| widgets::button(ui, None, ui_text("Save"), widgets::Kind::Secondary, save_w, theme::CONTROL_H)).inner.clicked() {
           action = Some(AccountAction::SaveFalKey);
         }
       });
@@ -165,9 +166,9 @@ impl MidjourneyLogin {
     let height = (ctx.content_rect().height() - 120.0).clamp(420.0, 800.0);
     let dismissed = widgets::modal(ctx, Id::new("midjourney-login"), LOGIN_WIDTH, |ui| {
       ui.horizontal(|ui| {
-        ui.label(widgets::heading("Login to Midjourney", 22.0));
+        ui.label(widgets::heading(ui_text("Login to Midjourney"), 22.0));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-          if widgets::ghost(ui, Icon::X, None, "Close", false).clicked() {
+          if widgets::ghost(ui, Icon::X, None, ui_text("Close"), false).clicked() {
             closed = true;
           }
         });
@@ -179,7 +180,7 @@ impl MidjourneyLogin {
         Some(err) => {
           let mut note = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(24.0)).layout(egui::Layout::top_down(egui::Align::Center)));
           note.add_space(rect.height() / 2.0 - 48.0);
-          note.label(egui::RichText::new(format!("Couldn't open the sign-in window: {err}")).size(13.0).color(theme::BAD));
+          note.label(egui::RichText::new((if crate::i18n::is_chinese() { format!("无法打开登录窗口：{err}") } else { format!("Couldn't open the sign-in window: {err}") })).size(13.0).color(theme::BAD));
         },
         None => icons::paint_spinner(ui, Rect::from_center_size(rect.center(), vec2(28.0, 28.0)), theme::MUTED),
       }

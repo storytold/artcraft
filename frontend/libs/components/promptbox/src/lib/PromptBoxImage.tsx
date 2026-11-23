@@ -1,7 +1,11 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
+import { useTranslation } from "@storyteller/i18n";
 import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType, UploaderState } from "@storyteller/common";
 import { toast } from "@storyteller/ui-toaster";
+import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateIconButton } from "@storyteller/ui-button";
@@ -36,8 +40,6 @@ import {
   type DroppedFiles,
 } from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
-import { v4 as uuidv4 } from "uuid";
-import { PromptLengthCounter, isOverPromptLimit } from "./PromptLengthCounter";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -77,6 +79,8 @@ export const PromptBoxImage = ({
   credits,
   modelSelector,
 }: PromptBoxImageProps) => {
+  const { t: translateUi } = useUiTranslation();
+  const { t } = useTranslation();
   useSignals();
   const selectedModel = useMemo(
     () => imageModelForProvider(catalogModel, selectedProvider),
@@ -94,7 +98,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: uuidv4(),
+        id: Math.random().toString(36).substring(7),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -197,13 +201,13 @@ export const PromptBoxImage = ({
   const deckAddActions: DeckAddAction[] = [
     {
       key: "upload-image",
-      label: "Upload",
+      label: translateUi("Upload"),
       group: "image",
       onSelect: deck.openImageUpload,
     },
     {
       key: "library-image",
-      label: "Pick from library",
+      label: translateUi("Pick from library"),
       group: "image",
       onSelect: () => deck.openGallery("start"),
     },
@@ -242,17 +246,20 @@ export const PromptBoxImage = ({
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "Wide",
+      label: translateUi("Wide"),
+      action: "wide",
       selected: aspectRatio === "wide",
       icon: <AspectRatioIcon ratio={[16, 10]} />,
     },
     {
-      label: "Tall",
+      label: translateUi("Tall"),
+      action: "tall",
       selected: aspectRatio === "tall",
       icon: <AspectRatioIcon ratio={[10, 16]} />,
     },
     {
-      label: "Square",
+      label: translateUi("Square"),
+      action: "square",
       selected: aspectRatio === "square",
       icon: <AspectRatioIcon ratio={[1, 1]} />,
     },
@@ -278,7 +285,7 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (imageMediaId && url) {
       const referenceImage: RefImage = {
-        id: uuidv4(),
+        id: Math.random().toString(36).substring(7),
         url: url,
         file: new File([], "library-image"),
         mediaToken: imageMediaId,
@@ -299,10 +306,17 @@ export const PromptBoxImage = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label.toLowerCase() === aspectRatio,
+        label: translateUi(
+          item.action === "tall"
+            ? "Tall"
+            : item.action === "square"
+              ? "Square"
+              : "Wide",
+        ),
+        selected: item.action === aspectRatio,
       })),
     );
-  }, [aspectRatio]);
+  }, [aspectRatio, translateUi]);
 
   useEffect(() => {
     setResolutionList((prev) =>
@@ -314,11 +328,12 @@ export const PromptBoxImage = ({
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    setAspectRatio(selectedItem.label.toLowerCase() as any);
+    const value = selectedItem.action as typeof aspectRatio;
+    setAspectRatio(value);
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === selectedItem.label,
+        selected: item.action === value,
       })),
     );
   };
@@ -378,7 +393,9 @@ export const PromptBoxImage = ({
 
     gtagEvent("enqueue_image");
 
-    const subscriberId = uuidv4();
+    const subscriberId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
 
     setTimeout(() => {
       console.debug("Turn off blocking of prompt box...");
@@ -444,7 +461,7 @@ export const PromptBoxImage = ({
 
   const getCurrentLegacyAspectRatioIcon = () => {
     const selected = aspectRatioList.find((item) => item.selected);
-    switch (selected?.label?.toLowerCase()) {
+    switch (selected?.action) {
       case "wide":
         return <AspectRatioIcon ratio={[16, 10]} />;
       case "tall":
@@ -461,7 +478,7 @@ export const PromptBoxImage = ({
     const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
-      void handleEnqueue();
+      handleEnqueue();
     }
   };
 
@@ -486,7 +503,7 @@ export const PromptBoxImage = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                placeholder="Describe what you want in the image..."
+                placeholder={t("Describe what you want in the image...")}
                 className="promptbox-scrollbar text-md min-h-[2.5em] w-full resize-y overflow-y-auto bg-transparent pr-8 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
@@ -512,7 +529,7 @@ export const PromptBoxImage = ({
               {selectedModel?.canChangeAspectRatio &&
                 !selectedModel?.supportsNewAspectRatio() && (
                   <Tooltip
-                    content="Aspect Ratio (Legacy)"
+                    content={t("Aspect Ratio (Legacy)")}
                     position="top"
                     className="z-50"
                     closeOnClick={true}
@@ -521,7 +538,7 @@ export const PromptBoxImage = ({
                       items={aspectRatioList}
                       onSelect={handleAspectRatioSelect}
                       mode="toggle"
-                      panelTitle="Aspect Ratio (Legacy)"
+                      panelTitle={t("Aspect Ratio (Legacy)")}
                       showIconsInList
                       triggerIcon={getCurrentLegacyAspectRatioIcon()}
                     />
@@ -537,7 +554,7 @@ export const PromptBoxImage = ({
               {selectedModel?.canChangeResolution &&
                 !selectedModel?.supportsNewResolution() && (
                   <Tooltip
-                    content="Resolution"
+                    content={t("Resolution")}
                     position="top"
                     className="z-50"
                     closeOnClick={true}
@@ -546,7 +563,7 @@ export const PromptBoxImage = ({
                       items={resolutionList}
                       onSelect={handleResolutionSelect}
                       mode="toggle"
-                      panelTitle="Resolution"
+                      panelTitle={t("Resolution")}
                       showIconsInList
                       triggerIcon={
                         <MaximizeIcon  className="h-4 w-4" />
@@ -585,7 +602,7 @@ export const PromptBoxImage = ({
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
+              content={isExpanded ? t("Collapse") : t("Expand")}
               position="top"
               className="-mb-2"
             >
@@ -621,7 +638,7 @@ export const PromptBoxImage = ({
         }
       >
         <textarea
-          placeholder="Describe what you want in the image..."
+          placeholder={t("Describe what you want in the image...")}
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded-[3px] bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}

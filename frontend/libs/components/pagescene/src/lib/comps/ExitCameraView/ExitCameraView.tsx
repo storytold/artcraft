@@ -1,3 +1,5 @@
+
+import { useTranslation as useUiTranslation } from "@storyteller/i18n";
 import { useContext } from "react";
 import { LogOutIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -10,6 +12,7 @@ import { EditorStates } from "../../enums";
 // to the free editing view. Positionless by default — the host (Stage3DBody)
 // docks it next to the timeline bar via `className`.
 export const ExitCameraView = ({ className }: { className?: string }) => {
+  const { t: translateUi } = useUiTranslation();
   const editor = useContext(EngineContext);
   const editorState = usePageSceneStore((s) => s.editorState);
   const sceneMode = usePageSceneStore((s) => s.sceneMode);
@@ -30,8 +33,7 @@ export const ExitCameraView = ({ className }: { className?: string }) => {
       )}
     >
       <LogOutIcon  className="h-3.5 w-3.5" />
-      Exit
-    </button>
+      {translateUi("Exit")}</button>
   );
 };
 
