@@ -52,16 +52,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family:
-    "Archivo",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font-family: var(--st-font-display);
   letter-spacing: -0.03em;
 }
 
@@ -75,15 +66,7 @@ h2 {
 }
 
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
+  font-family: var(--st-font-sans);
   color: var(--st-fg);
   background-color: var(--st-bg);
   color-scheme: var(--st-color-scheme, dark);
@@ -131,6 +114,14 @@ body {
 /* The default (the "gray" theme id) is the brutalist system shared with
    artcraft-webapp: near-black surfaces, white/15 hairline borders. */
 :root {
+  /* Interface fonts. The font setting sets --st-ui-font, which replaces
+     system-ui and Archivo; tailwind's font-sans/font-display read these. */
+  --st-font-sans:
+    var(--st-ui-font, system-ui), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --st-font-display:
+    var(--st-ui-font, "Archivo"), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --st-bg: #121316;
   --st-panel: #101014;
   --st-panel-border: rgba(255, 255, 255, 0.15);

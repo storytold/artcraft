@@ -32,6 +32,7 @@ use crate::core::commands::generate::generate_image::generate_image_command::gen
 use crate::core::commands::generate::generate_video::generate_video_command::generate_video_command;
 use crate::core::commands::flip_image::flip_image;
 use crate::core::commands::get_app_info_command::get_app_info_command;
+use crate::core::commands::list_system_fonts_command::list_system_fonts_command;
 use crate::core::commands::load_without_cors_command::load_without_cors_command;
 use crate::core::commands::media_files::media_file_delete_command::media_file_delete_command;
 use crate::core::commands::platform_info_command::platform_info_command;
@@ -255,6 +256,7 @@ pub fn run() {
     estimate_audio_cost_command,
     estimate_mesh_cost_command,
     list_image_models_command,
+    list_system_fonts_command,
     list_video_models_command,
     flip_image,
     generate_image_command,

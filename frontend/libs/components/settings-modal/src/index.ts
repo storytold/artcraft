@@ -4,3 +4,4 @@ export {
   useExperimentalStore,
   useStoryboardPageEnabled,
 } from './lib/experimental-store';
+export { applyStoredUiFont } from './lib/ui-font';

@@ -1,11 +1,18 @@
 import { CheckIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { Label } from "@storyteller/ui-label";
+import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
+import { ListSystemFonts } from "@storyteller/tauri-api";
 import { useEffect, useMemo, useState } from "react";
+import { getStoredUiFont, quoteFontFamily, setUiFont } from "../ui-font";
 
 type AppTheme = "light" | "gray" | "black" | "aurora" | "sunset";
 
 const THEME_STORAGE_KEY = "st-theme";
+
+// Each row previews its own font, and systems can have thousands installed.
+const MAX_LISTED_FONTS = 100;
 
 function getStoredTheme(): AppTheme {
   const value = (localStorage.getItem(THEME_STORAGE_KEY) || "").trim();
@@ -109,6 +116,106 @@ export const AppearanceSettingsPane = () => {
           );
         })}
       </div>
+      <InterfaceFontSetting />
+    </div>
+  );
+};
+
+const InterfaceFontSetting = () => {
+  const [selected, setSelected] = useState<string | null>(getStoredUiFont());
+  // null while loading.
+  const [families, setFamilies] = useState<string[] | "error" | null>(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    ListSystemFonts()
+      .then((result) => setFamilies(result.payload.families))
+      .catch(() => setFamilies("error"));
+  }, []);
+
+  const matches = useMemo(() => {
+    if (!Array.isArray(families)) return [];
+    const query = search.trim().toLowerCase();
+    return query
+      ? families.filter((f) => f.toLowerCase().includes(query))
+      : families;
+  }, [families, search]);
+
+  const message =
+    families === "error"
+      ? "Couldn't load installed fonts."
+      : families === null
+        ? "Loading fonts…"
+        : matches.length === 0
+          ? "No installed fonts match."
+          : null;
+
+  const choose = (family: string | null) => {
+    setUiFont(family);
+    setSelected(family);
+  };
+
+  return (
+    <div className="space-y-2 pt-2">
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <Label>Interface font</Label>
+          <p className="text-xs opacity-70">
+            Current: {selected ?? "Default"}
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          className="text-xs"
+          disabled={!selected}
+          onClick={() => choose(null)}
+        >
+          Restore default
+        </Button>
+      </div>
+      <Input
+        placeholder="Search installed fonts"
+        aria-label="Search installed fonts"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      {message ? (
+        <p className="text-xs opacity-70">{message}</p>
+      ) : (
+        <div
+          role="listbox"
+          aria-label="Installed fonts"
+          className="max-h-56 overflow-y-auto border border-ui-panel-border"
+        >
+          {matches.slice(0, MAX_LISTED_FONTS).map((family) => {
+            const isSelected = selected === family;
+            return (
+              <button
+                key={family}
+                role="option"
+                aria-selected={isSelected}
+                className={twMerge(
+                  "flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm transition-colors duration-100",
+                  isSelected ? "bg-base-fg/10" : "hover:bg-base-fg/[0.06]",
+                )}
+                style={{ fontFamily: `${quoteFontFamily(family)}, sans-serif` }}
+                onClick={() => choose(family)}
+              >
+                <span className="flex-1 truncate">{family}</span>
+                {isSelected && (
+                  <CheckIcon aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                )}
+              </button>
+            );
+          })}
+          {matches.length > MAX_LISTED_FONTS && (
+            <p className="px-2 py-1.5 text-xs opacity-70">
+              {matches.length - MAX_LISTED_FONTS} more. Type to narrow the
+              list.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
