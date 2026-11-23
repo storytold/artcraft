@@ -57,7 +57,7 @@ text leaves so existing error screens update with the selected language.
 The separate `artcraft-native` egui app now has an English/简体中文 selector in
 Settings, saved independently from the Tauri app. Its common dialogs, navigation,
 creation and media controls use a separate Rust dictionary. It loads a system CJK
-font (Windows Microsoft YaHei, macOS PingFang, or Linux Noto Sans CJK); these fonts
+font (Windows Microsoft YaHei, macOS PingFang or Hiragino Sans GB / STHeiti, or Linux Noto Sans CJK); these fonts
 are not redistributed. Native compilation is checked, but native GUI behavior
 and non-Windows font availability have not been validated in this change.
 

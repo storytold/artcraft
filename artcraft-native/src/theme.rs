@@ -190,10 +190,14 @@ fn install_fonts(ctx: &egui::Context) {
     fonts.families.insert(family, stack);
   }
   // Use an installed CJK font without redistributing system font files.
+  // First match wins. PingFang.ttc is gone on macOS 15 and later, so the
+  // later macOS paths cover that case without beating YaHei or Noto.
   let cjk_paths = [
     "C:/Windows/Fonts/msyh.ttc",
     "/System/Library/Fonts/PingFang.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/System/Library/Fonts/Hiragino Sans GB.ttc",
+    "/System/Library/Fonts/STHeiti Medium.ttc",
   ];
   if let Some(bytes) = cjk_paths.iter().find_map(|path| std::fs::read(path).ok()) {
     fonts.font_data.insert("cjk-fallback".to_owned(), Arc::new(FontData::from_owned(bytes)));
