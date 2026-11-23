@@ -78,8 +78,17 @@ it("puts an exact name first so the list cap can't hide it", async () => {
 });
 
 it("still applies the font when it can't be saved", async () => {
-  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-    throw new DOMException("full", "QuotaExceededError");
+  // Only the font write fails; the theme effect also writes on mount.
+  const originalSetItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+    this: Storage,
+    key: string,
+    value: string,
+  ) {
+    if (key === "st-ui-font") {
+      throw new DOMException("full", "QuotaExceededError");
+    }
+    return originalSetItem.call(this, key, value);
   });
   const user = userEvent.setup();
   render(<AppearanceSettingsPane />);
