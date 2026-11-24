@@ -196,7 +196,7 @@ pub enum JobPhase {
 impl JobStatus {
   pub fn phase(&self) -> JobPhase {
     match self.status.as_str() {
-      "pending" | "started" => JobPhase::Running,
+      "pending" | "started" | "attempt_failed" => JobPhase::Running,
       "complete_success" => JobPhase::Succeeded,
       _ => JobPhase::Failed,
     }
@@ -332,5 +332,14 @@ mod tests {
     let job: Job = serde_json::from_value(serde_json::json!({ "job_token": "j", "status": { "status": "something_new" }, "brand_new_field": 1 })).unwrap();
     assert_eq!(job.status.phase(), JobPhase::Failed);
     assert_eq!(job.status.failure_reason(), "Generation failed");
+  }
+  #[test]
+  fn attempt_failed_status_is_still_running() {
+    let job: Job = serde_json::from_value(serde_json::json!({
+        "job_token": "j",
+        "status": { "status": "attempt_failed" }
+    })).unwrap();
+
+    assert_eq!(job.status.phase(), JobPhase::Running);
   }
 }
