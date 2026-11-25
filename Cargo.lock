@@ -1805,7 +1805,7 @@ dependencies = [
 [[package]]
 name = "craft-dds"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "rayon",
 ]
@@ -1813,7 +1813,7 @@ dependencies = [
 [[package]]
 name = "craft-image-codecs"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "craft-dds",
  "craft-jpeg",
@@ -1840,7 +1840,7 @@ dependencies = [
 [[package]]
 name = "craft-jpeg"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "thiserror 2.0.18",
 ]
@@ -1848,7 +1848,7 @@ dependencies = [
 [[package]]
 name = "craft-metadata"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "brotli-decompressor 6.3.2",
  "chrono",
@@ -1860,12 +1860,12 @@ dependencies = [
 [[package]]
 name = "craft-sniff"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 
 [[package]]
 name = "craft-tiff"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "serde",
  "thiserror 2.0.18",
@@ -1875,7 +1875,7 @@ dependencies = [
 [[package]]
 name = "craft-update"
 version = "0.1.0"
-source = "git+https://github.com/aiongg/craft-libs?rev=77ce5025479a912a578177d5457c6fa470e7054b#77ce5025479a912a578177d5457c6fa470e7054b"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "chrono",
  "dunce",
