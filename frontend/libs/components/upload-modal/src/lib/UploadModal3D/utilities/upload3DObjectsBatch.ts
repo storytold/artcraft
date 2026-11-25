@@ -30,63 +30,53 @@ export const upload3DObjectsBatch = async ({
   onOverallProgress: (completed: number, total: number) => void;
   onComplete: (allSucceeded: boolean, anySucceeded: boolean) => void;
 }) => {
-  // JS is single-threaded; these counters are safe across concurrent async callbacks.
-  let completedCount = 0;
   let successCount = 0;
   const completedIndices = new Set<number>();
+
+  const finishFile = (
+    index: number,
+    status: "success" | "error",
+    errorMessage?: string,
+  ) => {
+    if (completedIndices.has(index)) return;
+    completedIndices.add(index);
+    if (status === "success") successCount++;
+    onFileStatusChange(index, status, errorMessage);
+    onOverallProgress(completedIndices.size, files.length);
+  };
 
   files.forEach((_, i) => onFileStatusChange(i, "uploading"));
   onOverallProgress(0, files.length);
 
-  try {
-    await Promise.all(
-      files.map((file, i) =>
-        upload3DObjects({
-          title: file.name.slice(0, file.name.lastIndexOf(".")),
-          assetFile: file,
-          engineCategory,
-          animationType,
-          durationMillis: durationsMillis?.get(file),
-          thumbnailSnapshot: thumbnails.get(file),
-          progressCallback: (state) => {
-            if (state.status === UploaderStates.success) {
-              successCount++;
-              onFileStatusChange(i, "success");
-            } else if (
-              state.status === UploaderStates.assetError ||
-              state.status === UploaderStates.coverCreateError ||
-              state.status === UploaderStates.coverSetError
-            ) {
-              onFileStatusChange(i, "error", state.errorMessage);
-            }
-
-            if (
-              state.status === UploaderStates.success ||
-              state.status === UploaderStates.assetError ||
-              state.status === UploaderStates.coverCreateError ||
-              state.status === UploaderStates.coverSetError
-            ) {
-              if (!completedIndices.has(i)) {
-                completedIndices.add(i);
-                completedCount++;
-                onOverallProgress(completedCount, files.length);
-              }
-            }
-          },
-        }),
-      ),
-    );
-  } catch (err) {
-    files.forEach((_, i) => {
-      if (!completedIndices.has(i)) {
-        onFileStatusChange(
+  await Promise.all(
+    files.map((file, i) =>
+      upload3DObjects({
+        title: file.name.slice(0, file.name.lastIndexOf(".")),
+        assetFile: file,
+        engineCategory,
+        animationType,
+        durationMillis: durationsMillis?.get(file),
+        thumbnailSnapshot: thumbnails.get(file),
+        progressCallback: (state) => {
+          if (state.status === UploaderStates.success) {
+            finishFile(i, "success");
+          } else if (
+            state.status === UploaderStates.assetError ||
+            state.status === UploaderStates.coverCreateError ||
+            state.status === UploaderStates.coverSetError
+          ) {
+            finishFile(i, "error", state.errorMessage);
+          }
+        },
+      }).catch((err: unknown) => {
+        finishFile(
           i,
           "error",
           err instanceof Error ? err.message : "Unexpected error",
         );
-      }
-    });
-  }
+      }),
+    ),
+  );
 
   onComplete(successCount === files.length, successCount > 0);
 };
