@@ -16,7 +16,7 @@ path = "src/lib.rs"
 [dependencies]
 
 # Shared Craft libraries
-craft-sniff = { git = "https://github.com/storytold/craft-libs", rev = "070005125f0af1a5ae4a59002270e5849505bfc0" } # File signature detection
+craft-sniff = { git = "https://github.com/storytold/craft-libs", rev = "16001e7210bee61db60c84fbe18c3c3e2ef4584f" } # File signature detection
 
 [dev-dependencies]
 test_utils = { path = "../../../testing/test_utils" }

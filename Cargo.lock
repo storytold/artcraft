@@ -1805,7 +1805,7 @@ dependencies = [
 [[package]]
 name = "craft-dds"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=057b0e3e01aed74ecc5d18eb047ddd7328b46b1d#057b0e3e01aed74ecc5d18eb047ddd7328b46b1d"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "rayon",
 ]
@@ -1813,7 +1813,7 @@ dependencies = [
 [[package]]
 name = "craft-image-codecs"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=057b0e3e01aed74ecc5d18eb047ddd7328b46b1d#057b0e3e01aed74ecc5d18eb047ddd7328b46b1d"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "craft-dds",
  "craft-jpeg",
@@ -1840,7 +1840,7 @@ dependencies = [
 [[package]]
 name = "craft-jpeg"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=057b0e3e01aed74ecc5d18eb047ddd7328b46b1d#057b0e3e01aed74ecc5d18eb047ddd7328b46b1d"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "thiserror 2.0.18",
 ]
@@ -1848,7 +1848,7 @@ dependencies = [
 [[package]]
 name = "craft-metadata"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=057b0e3e01aed74ecc5d18eb047ddd7328b46b1d#057b0e3e01aed74ecc5d18eb047ddd7328b46b1d"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "brotli-decompressor 6.3.2",
  "chrono",
@@ -1860,26 +1860,26 @@ dependencies = [
 [[package]]
 name = "craft-sniff"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=070005125f0af1a5ae4a59002270e5849505bfc0#070005125f0af1a5ae4a59002270e5849505bfc0"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 
 [[package]]
 name = "craft-tiff"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=057b0e3e01aed74ecc5d18eb047ddd7328b46b1d#057b0e3e01aed74ecc5d18eb047ddd7328b46b1d"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "serde",
  "thiserror 2.0.18",
+ "tiff 0.11.3",
 ]
 
 [[package]]
 name = "craft-update"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=2a24c10817173d26d0ea4689acbbade36f91b5dc#2a24c10817173d26d0ea4689acbbade36f91b5dc"
+source = "git+https://github.com/storytold/craft-libs?rev=16001e7210bee61db60c84fbe18c3c3e2ef4584f#16001e7210bee61db60c84fbe18c3c3e2ef4584f"
 dependencies = [
  "chrono",
  "dunce",
  "flate2",
- "getrandom 0.3.1",
  "log",
  "plist",
  "rustix 1.1.5",

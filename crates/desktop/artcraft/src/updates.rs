@@ -199,7 +199,7 @@ impl Backend for NativeBackend<'_> {
 
   fn check(&self) -> Result<Option<Release>, String> {
     let http = Http::new(&format!("ArtCraft/{ARTCRAFT_VERSION}"))?;
-    craft_update::check_for_update(&APP, &http, ARTCRAFT_VERSION)
+    craft_update::check_for_update(&APP, &http, ARTCRAFT_VERSION).map_err(|error| error.to_string())
   }
 
   fn idle(&self) -> Result<(), String> {
