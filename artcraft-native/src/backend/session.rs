@@ -61,7 +61,7 @@ pub fn load(root: &Path) -> Option<Credentials> {
       Err(err) => warn!("Ignoring unreadable {}: {err}", path.display()),
     }
   }
-  let imported = import_tauri_cookies()?;
+  let imported = import_tauri_cookies(&api_host(root))?;
   info!("Imported the ArtCraft login from the desktop app's cookie jar");
   save(root, &imported);
   Some(imported)
@@ -90,29 +90,66 @@ fn credentials_path(root: &Path) -> PathBuf {
 
 /// Reads `session` and `visitor` for the ArtCraft API from the Tauri HTTP plugin's jar: a JSON
 /// array of `cookie_store` cookies (`{"raw_cookie": "...", "domain": {...}, "expires": {...}}`).
-fn import_tauri_cookies() -> Option<Credentials> {
+fn import_tauri_cookies(host: &ApiHost) -> Option<Credentials> {
   let path = directories::BaseDirs::new()?.cache_dir().join(TAURI_APP_IDENTIFIER).join(TAURI_COOKIES_FILENAME);
   let text = fs::read_to_string(&path).ok()?;
-  let cookies: Vec<serde_json::Value> = serde_json::from_str(&text).ok()?;
-  let now = chrono::Utc::now();
+  credentials_from_jar(&text, host)
+}
+
+fn credentials_from_jar(text: &str, host: &ApiHost) -> Option<Credentials> {
+  // The plugin serializes cookie_store directly, including host-only scope,
+  // path, Secure and expiration. Let the same RFC implementation match them.
+  let store: cookie_store_rfc::CookieStore = serde_json::from_str(text).ok()?;
+  let url = url::Url::parse(&format!("{}/", host.to_api_hostname_and_scheme())).ok()?;
   let mut creds = Credentials::default();
-  for entry in &cookies {
-    let for_api = entry.get("domain").map(|d| d.to_string()).is_some_and(|d| d.contains("storyteller.ai"));
-    let expired = entry.pointer("/expires/AtUtc").and_then(|v| v.as_str()).and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).is_some_and(|t| t < now);
-    let Some(raw) = entry.get("raw_cookie").and_then(|v| v.as_str()) else {
-      continue;
-    };
-    if !for_api || expired {
-      continue;
-    }
-    let Ok(cookie) = cookie::Cookie::parse(raw) else {
-      continue;
-    };
-    match cookie.name() {
-      "session" => creds.session = cookie.value().to_owned(),
-      "visitor" => creds.visitor = Some(cookie.value().to_owned()),
+  for (name, value) in store.get_request_values(&url) {
+    match name {
+      "session" if creds.session.is_empty() => creds.session = value.to_owned(),
+      // Flattening two distinct scopes to one header would pick an arbitrary identity.
+      "session" => return None,
+      "visitor" if creds.visitor.is_none() => creds.visitor = Some(value.to_owned()),
+      "visitor" => return None,
       _ => {},
     }
   }
   (!creds.session.is_empty()).then_some(creds)
+}
+
+#[cfg(test)]
+mod cookie_import_tests {
+  use super::*;
+
+  #[test]
+  fn accepts_parent_domain_and_exact_api_host() {
+    for raw in ["session=valid; Domain=storyteller.ai; Path=/; Secure", "session=valid; Path=/; Secure"] {
+      let jar = jar(raw, "https://api.storyteller.ai/");
+      assert_eq!(credentials_from_jar(&jar, &ApiHost::Storyteller).unwrap().session, "valid");
+    }
+  }
+
+  #[test]
+  fn rejects_unrelated_hosts_paths_and_expired_cookies() {
+    for (raw, source) in [
+      ("session=wrong; Path=/", "https://storyteller.ai.evil.example/"),
+      ("session=wrong; Path=/", "https://notstoryteller.ai/"),
+      ("session=wrong; Path=/", "https://storyteller.ai/"),
+      ("session=wrong; Path=/admin", "https://api.storyteller.ai/"),
+      ("session=wrong; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT", "https://api.storyteller.ai/"),
+    ] {
+      assert!(credentials_from_jar(&jar(raw, source), &ApiHost::Storyteller).is_none(), "accepted {source} {raw}");
+    }
+  }
+
+  #[test]
+  fn import_uses_the_configured_api_host() {
+    let prod = jar("session=prod; Domain=storyteller.ai; Path=/", "https://api.storyteller.ai/");
+    assert!(credentials_from_jar(&prod, &ApiHost::Localhost { port: 12345 }).is_none());
+    let local = jar("session=local; Path=/", "http://localhost:12345/");
+    assert_eq!(credentials_from_jar(&local, &ApiHost::Localhost { port: 12345 }).unwrap().session, "local");
+  }
+
+  fn jar(raw: &str, source: &str) -> String {
+    let cookie = cookie_store_rfc::Cookie::parse(raw.to_owned(), &url::Url::parse(source).unwrap()).unwrap();
+    serde_json::to_string(&vec![cookie]).unwrap()
+  }
 }
