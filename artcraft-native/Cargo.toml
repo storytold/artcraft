@@ -16,6 +16,7 @@ artcraft_client.workspace = true
 artcraft_router.workspace = true
 cookie_store_wrapper.workspace = true
 fal_client.workspace = true
+filesys.workspace = true
 midjourney_client.workspace = true
 tokens.workspace = true
 
