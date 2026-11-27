@@ -1,0 +1,20 @@
+name: Notify Services on Release Change
+
+on:
+  release:
+    types:
+      - published
+      - unpublished
+      - created
+      - edited
+      - deleted
+      - prereleased
+      - released
+
+permissions: {}
+
+jobs:
+  notify:
+    uses: storytold/craft-common-actions/.github/workflows/notify-services.yml@main
+    secrets:
+      ARTCRAFT_SERVICES_DISPATCH_TOKEN: ${{ secrets.ARTCRAFT_SERVICES_DISPATCH_TOKEN }}
