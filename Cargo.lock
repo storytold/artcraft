@@ -390,6 +390,7 @@ dependencies = [
  "anyhow",
  "artcraft_api_defs",
  "artcraft_client",
+ "artcraft_data_dir",
  "artcraft_router",
  "base64 0.22.1",
  "browser_emulation",
@@ -400,7 +401,6 @@ dependencies = [
  "cookie_store_wrapper",
  "craft-image-codecs",
  "craft-update",
- "directories",
  "dirs",
  "discord-rich-presence",
  "enums",
@@ -497,6 +497,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "artcraft_data_dir"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "directories",
+ "log",
+]
+
+[[package]]
 name = "artcraft_native"
 version = "0.1.0"
 dependencies = [
@@ -504,6 +513,7 @@ dependencies = [
  "arboard",
  "artcraft_api_defs",
  "artcraft_client",
+ "artcraft_data_dir",
  "artcraft_router",
  "chrono",
  "cookie",

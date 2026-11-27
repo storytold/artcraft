@@ -8,6 +8,8 @@ use artcraft_client::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::credentials::storyteller_session_cookie::StorytellerSessionCookie;
 use artcraft_client::utils::api_host::ApiHost;
+use anyhow::Context;
+use artcraft_data_dir::DataDir;
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
@@ -30,9 +32,21 @@ impl Credentials {
   }
 }
 
-/// `~/Artcraft`, shared with the Tauri app (`AppDataRoot`).
-pub fn data_root() -> PathBuf {
-  directories::UserDirs::new().map(|d| d.home_dir().to_path_buf()).unwrap_or_else(|| PathBuf::from(".")).join("Artcraft")
+/// `~/Artcraft` (or `ARTCRAFT_DATA_DIR`), shared with the Tauri app (`AppDataRoot`).
+///
+/// Fails, like the Tauri app, when there's no usable folder (no home directory and no
+/// `ARTCRAFT_DATA_DIR`), rather than falling back to a folder in the working directory.
+pub fn data_root() -> anyhow::Result<PathBuf> {
+  let data_dir = DataDir::resolve()?;
+  data_dir.log_choice();
+  create_data_root(&data_dir)
+}
+
+/// Creates the data folder, so one that can't be used (eg. `ARTCRAFT_DATA_DIR` names a file)
+/// stops startup with the folder's name, rather than failing every later save with a warning.
+fn create_data_root(data_dir: &DataDir) -> anyhow::Result<PathBuf> {
+  fs::create_dir_all(&data_dir.path).with_context(|| data_dir.unusable())?;
+  Ok(data_dir.path.clone())
 }
 
 /// The API host from `~/Artcraft/settings/env_configs.json` (production unless it says
@@ -115,4 +129,32 @@ fn import_tauri_cookies() -> Option<Credentials> {
     }
   }
   (!creds.session.is_empty()).then_some(creds)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use artcraft_data_dir::DataDirSource;
+
+  #[test]
+  fn the_data_folder_is_created() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("Artcraft").join("data");
+    let data_dir = DataDir { path: path.clone(), source: DataDirSource::EnvVar };
+    assert_eq!(create_data_root(&data_dir).unwrap(), path);
+    assert!(path.is_dir());
+    // An existing folder is fine too.
+    assert_eq!(create_data_root(&data_dir).unwrap(), path);
+  }
+
+  #[test]
+  fn a_file_in_place_of_the_data_folder_is_an_error() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("not a folder");
+    fs::write(&path, "x").unwrap();
+    let data_dir = DataDir { path: path.clone(), source: DataDirSource::EnvVar };
+    let err = create_data_root(&data_dir).unwrap_err();
+    assert!(format!("{err:#}").contains("(from ARTCRAFT_DATA_DIR) as the data directory"), "{err:#}");
+    assert!(path.is_file(), "the file was left alone");
+  }
 }
