@@ -26,14 +26,21 @@ export const cubicBezierYForX = (easing: EasingSpec, x: number): number => {
   if (x <= 0) return 0;
   if (x >= 1) return 1;
   let t = x;
-  for (let i = 0; i < 8; i++) {
+  let lower = 0;
+  let upper = 1;
+  for (let i = 0; i < 32; i++) {
     const err = bezierAxis(t, easing.p1x, easing.p2x) - x;
-    if (Math.abs(err) < 1e-5) break;
+    if (err === 0) break;
+    if (err < 0) lower = t;
+    else upper = t;
+    if (upper - lower < 1e-8) break;
+
     const d = bezierAxisDerivative(t, easing.p1x, easing.p2x);
-    if (Math.abs(d) < 1e-6) break;
-    t -= err / d;
+    const next = Math.abs(d) > 1e-6 ? t - err / d : NaN;
+    // Flat handles can send Newton outside the curve. Keep a bracket and
+    // bisect whenever its next estimate would leave the valid interval.
+    t = next > lower && next < upper ? next : (lower + upper) / 2;
   }
-  t = Math.max(0, Math.min(1, t));
   return bezierAxis(t, easing.p1y, easing.p2y);
 };
 
