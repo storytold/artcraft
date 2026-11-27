@@ -1,0 +1,57 @@
+name: PR regression checks
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-libraries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SQLX_OFFLINE: 'true'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+        with:
+          toolchain: stable
+      - name: Install native library build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes pkg-config libssl-dev
+      - name: Test offline SQLite, cookie handling, and API bindings
+        run: cargo test --locked -p sqlite_tasks -p cookie_store_wrapper -p artcraft_client
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Test desktop state and media adapters
+        run: npx vitest run --config apps/artcraft/vitest.config.ts
+      - name: Test 3D viewer and resource disposal
+        run: npx vitest run --config libs/components/viewer-3d/vite.config.ts
