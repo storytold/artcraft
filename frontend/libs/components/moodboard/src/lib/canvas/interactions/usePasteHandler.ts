@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import Konva from "konva";
 import { addCanvasImageFromFile } from "../addCanvasImageFile";
+import { stageCenter } from "../useMoodboardImageEntry";
 import type { MoodboardAdapter } from "../../adapter";
 
 // Listens for paste events while the moodboard page is mounted. For each
@@ -33,10 +34,7 @@ export const usePasteHandler = (
       if (fileItems.length === 0) return;
       e.preventDefault();
 
-      const stage = stageRef.current;
-      const center = stage
-        ? { x: stage.width() / 2, y: stage.height() / 2 }
-        : { x: 400, y: 400 };
+      const center = stageCenter(stageRef.current);
 
       for (const file of fileItems) {
         await addCanvasImageFromFile({ file, position: center, adapter });

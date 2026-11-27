@@ -7,7 +7,7 @@ import { measureImage, measureVideo } from "../boards/measureMedia";
 import { addCanvasImageFromFile } from "./addCanvasImageFile";
 import type { MoodboardAdapter, MoodboardPickedItem } from "../adapter";
 
-const stageCenter = (stage: Konva.Stage | null): Vec2 => {
+export const stageCenter = (stage: Konva.Stage | null): Vec2 => {
   if (!stage) return { x: 400, y: 400 };
   return {
     x: (stage.width() / 2 - stage.x()) / stage.scaleX(),
