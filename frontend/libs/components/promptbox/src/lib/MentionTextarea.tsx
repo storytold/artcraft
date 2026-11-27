@@ -1323,6 +1323,17 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
+        // IME confirmation keys belong to the composition session, not to
+        // mention selection, newline insertion or Enter-to-generate. Safari
+        // may clear isComposing on the final keydown but still reports 229.
+        if (
+          isComposing.current ||
+          e.nativeEvent.isComposing ||
+          e.nativeEvent.keyCode === 229
+        ) {
+          return;
+        }
+
         if (mentionState.isOpen && filteredItems.length > 0) {
           if (e.key === "ArrowDown") {
             e.preventDefault();
