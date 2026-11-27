@@ -42,6 +42,7 @@ import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 import { twMerge } from "tailwind-merge";
 import dayjs from "dayjs";
+import { CopyErrorButton } from "../CopyErrorButton";
 
 type InProgressTask = {
   id: string;
@@ -396,6 +397,10 @@ const FailedCard = ({
   onDismiss?: () => void;
 }) => {
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
+  // Copy source diagnostics, never a truncated visual excerpt or the prompt.
+  const failureDetails = [task.failureReason, task.failureMessage]
+    .filter((part, index, parts) => part && parts.indexOf(part) === index)
+    .join("\n\n");
   const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
   const thumbnailContent = hasRefImages ? (
@@ -487,6 +492,7 @@ const FailedCard = ({
           {task.prompt && <PromptLine prompt={task.prompt} />}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <CopyErrorButton text={failureDetails || statusLabel} compact />
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
@@ -808,10 +814,7 @@ export const TaskQueue = () => {
             const failureReason = fr
               ? FAILURE_REASON_LABEL[fr.failure_type] || undefined
               : undefined;
-            const failureMessage =
-              fr?.failure_message && fr.failure_type !== "unknown"
-                ? fr.failure_message
-                : undefined;
+            const failureMessage = fr?.failure_message;
             const meta = getMetaForTask(
               t.id,
               t.model_type ? String(t.model_type) : undefined,
