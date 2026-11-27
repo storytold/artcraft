@@ -16,4 +16,5 @@ permissions: {}
 jobs:
   notify:
     uses: storytold/craft-common-actions/.github/workflows/notify-services.yml@main
-    secrets: inherit
+    secrets:
+      ARTCRAFT_SERVICES_DISPATCH_TOKEN: ${{ secrets.ARTCRAFT_SERVICES_DISPATCH_TOKEN }}
