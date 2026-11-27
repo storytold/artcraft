@@ -20,6 +20,9 @@ const CHECK_SCHEDULE: { untilMs: number; everyMs: number }[] = [
 // Past the last window the thumbnail is treated as never coming.
 const GIVE_UP_AFTER_MS = CHECK_SCHEDULE[CHECK_SCHEDULE.length - 1].untilMs;
 
+// A request can stall without firing load or error; release it so retries continue.
+const PROBE_TIMEOUT_MS = 30_000;
+
 // ── Types ─────────────────────────────────────────────────────────────────
 
 export type VideoThumbnailState =
@@ -34,6 +37,7 @@ interface PendingEntry {
   markedAt: number;
   nextCheckAt: number;
   probing: boolean;
+  cancelProbe?: () => void;
 }
 
 // ── Registry state ────────────────────────────────────────────────────────
@@ -89,6 +93,7 @@ export function useVideoThumbnailState(
 
 /** Test-only: forget all tracked thumbnails and stop the checker. */
 export function resetVideoThumbnailsForTests() {
+  for (const entry of pending.values()) entry.cancelProbe?.();
   pending.clear();
   settled.clear();
   listeners.clear();
@@ -132,18 +137,47 @@ function probe(url: string, entry: PendingEntry) {
   entry.probing = true;
   const src = withCacheBust(url);
   const img = new Image();
+  let finished = false;
+  let probeTimer: ReturnType<typeof setTimeout>;
+  const cleanup = () => {
+    if (finished) return false;
+    finished = true;
+    clearTimeout(probeTimer);
+    img.onload = null;
+    img.onerror = null;
+    entry.cancelProbe = undefined;
+    return true;
+  };
   img.onload = () => {
-    if (pending.get(url) !== entry) return; // Reset while in flight.
+    if (!cleanup() || pending.get(url) !== entry) return;
     pending.delete(url);
     settled.set(url, { status: "ready", src });
     notify(url);
     scheduleNextTick();
   };
-  img.onerror = () => {
-    if (pending.get(url) !== entry) return;
+  const onFailure = () => {
+    if (!cleanup() || pending.get(url) !== entry) return;
     entry.probing = false;
-    entry.nextCheckAt = Date.now() + checkInterval(Date.now() - entry.markedAt);
+    const now = Date.now();
+    if (now - entry.markedAt >= GIVE_UP_AFTER_MS) {
+      pending.delete(url);
+      settled.set(url, GAVE_UP_STATE);
+      notify(url);
+    } else {
+      entry.nextCheckAt = Math.min(
+        now + checkInterval(now - entry.markedAt),
+        entry.markedAt + GIVE_UP_AFTER_MS,
+      );
+    }
     scheduleNextTick();
+  };
+  img.onerror = onFailure;
+  probeTimer = setTimeout(() => {
+    onFailure();
+    img.src = "";
+  }, Math.min(PROBE_TIMEOUT_MS, entry.markedAt + GIVE_UP_AFTER_MS - Date.now()));
+  entry.cancelProbe = () => {
+    if (cleanup()) img.src = "";
   };
   img.src = src;
 }
