@@ -11,6 +11,9 @@ static ACTIONS_REGEX : Lazy<Regex> = Lazy::new(|| {
 
 /// 2025-10-01: "(static/chunks/[^"]+\.js)"[^}]*?a\(880932\)"
 /// 2025-12-01: "(static/chunks/[^"]+\.js)"[^}]*?\(880932\)"
+/// 2026-03: public chunks no longer embed `880932` / `anonPrivateKey` markers in the
+/// same form; CDN script discovery was fixed separately. Update these markers when
+/// a new stable fingerprint is identified.
 static XSID_SCRIPT_REGEX : Lazy<Regex> = Lazy::new(|| {
   Regex::new(r#""(static/chunks/[^"]+\.js)"[^}]*?\(880932\)"#)
       .expect("Regex should parse")
