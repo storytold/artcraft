@@ -89,13 +89,14 @@ impl Page {
       "create-video" | "video" => Page::CreateVideo,
       "create-audio" | "audio" => Page::CreateAudio,
       "library" => Page::Library,
+      "frame-extractor" | "frame-extract" => Page::FrameExtractor,
       _ => return None,
     })
   }
 
   /// Pages the native app has; the rest open a "coming soon" page.
   pub fn is_ready(self) -> bool {
-    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library)
+    matches!(self, Page::Home | Page::CreateImage | Page::CreateVideo | Page::CreateAudio | Page::Library | Page::FrameExtractor)
   }
 
   /// The same tool in the web app.
@@ -417,5 +418,13 @@ mod tests {
     assert_eq!(group_thousands(5663), "5,663");
     assert_eq!(group_thousands(1_234_567), "1,234,567");
     assert_eq!(group_thousands(15), "15");
+  }
+
+  #[test]
+  fn frame_extract_slug_is_ready() {
+    assert_eq!(Page::from_slug("frame-extractor"), Some(Page::FrameExtractor));
+    assert_eq!(Page::from_slug("frame-extract"), Some(Page::FrameExtractor));
+    assert!(Page::FrameExtractor.is_ready());
+    assert!(!Page::RemoveBackground.is_ready());
   }
 }
