@@ -1,0 +1,3 @@
+# shellcheck config for the packaging scripts.
+source-path=SCRIPTDIR
+external-sources=true

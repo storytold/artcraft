@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Hardened-runtime entitlements for ArtCraft Native. Deliberately empty: the app is
+     pure Rust (WKWebView for Midjourney login runs in Apple's WebContent XPC helper),
+     needs no JIT or unsigned executable memory, and is not sandboxed. -->
+<plist version="1.0">
+<dict>
+</dict>
+</plist>

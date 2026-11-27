@@ -1,0 +1,19 @@
+Bundled egui default fonts (epaint_default_fonts 0.36.2):
+
+- NotoEmoji-Regular.ttf
+  Copyright 2013 Google Inc. All Rights Reserved.
+  Licensed under the SIL Open Font License, Version 1.1 (OFL.txt; http://scripts.sil.org/OFL).
+
+- Ubuntu-Light.ttf
+  Copyright 2011 Canonical Ltd.
+  Licensed under the Ubuntu Font Licence 1.0 (UFL.txt).
+
+- Hack-Regular.ttf
+  Copyright (c) 2018 Source Foundry Authors (MIT License);
+  DejaVu project (public domain);
+  Bitstream Vera Sans Mono Copyright (c) 2003 Bitstream, Inc. All Rights Reserved.
+  See Hack-Regular.txt.
+
+- emoji-icon-font.ttf
+  Copyright (c) 2014 John Slegers.
+  Licensed under the MIT License (emoji-icon-font-mit-license.txt).
