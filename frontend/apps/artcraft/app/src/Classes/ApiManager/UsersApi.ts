@@ -1,5 +1,5 @@
-import { ApiManager, ApiResponse } from "./ApiManager";
 import { UserInfo } from "~/models";
+import { ApiManager, ApiResponse } from "./ApiManager";
 
 interface SignupRequest {
   username: string;
@@ -33,7 +33,7 @@ export class UsersApi extends ApiManager {
       .catch((err) => {
         return {
           success: false,
-          errorMessage: err.mesasge,
+          errorMessage: err instanceof Error ? err.message : String(err),
         };
       });
   }
