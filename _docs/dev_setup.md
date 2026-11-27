@@ -72,11 +72,17 @@ without restarting the Rust process.
 
 **Windows Development**
 
-```powershell
-# Run the frontend dev server
-.\script\artcraft\windows_frontend_dev.ps1
+Open two PowerShell terminals at the repository root. In the first, start the frontend.
 
-# Run the Tauri Rust application
+```powershell
+.\script\artcraft\windows_frontend_dev.ps1
+```
+
+Wait for Vite to report port `5173`. Tauri uses `http://localhost:5173`, so if Vite
+starts on a different port, stop the frontend, free port `5173`, and restart the
+frontend. Once Vite reports port `5173`, start Tauri in the second terminal.
+
+```powershell
 .\script\artcraft\windows_rust_dev.ps1
 ```
 
