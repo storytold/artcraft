@@ -1,12 +1,19 @@
-import { render } from '@testing-library/react';
+import { render, screen } from "@testing-library/react";
 
-import Select from './select';
+import { Select } from "./select";
 
-describe('Select', () => {
-  
-  it('should render successfully', () => {
-    const { baseElement } = render(<Select />);
-    expect(baseElement).toBeTruthy();
+describe("Select", () => {
+  it("renders the selected option", () => {
+    render(
+      <Select
+        options={[
+          { label: "One", value: 1 },
+          { label: "Two", value: 2 },
+        ]}
+        value={2}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByText("Two")).toBeTruthy();
   });
-  
 });
