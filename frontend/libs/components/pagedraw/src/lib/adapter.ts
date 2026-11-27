@@ -31,12 +31,18 @@ export interface PageDrawInpaintRequest {
   frontendSubscriberId?: string;
 }
 
+/** `error_type` is set on failure (e.g. "server_error", "billing_issue"). */
+export interface PageDrawEnqueueResult {
+  status: string;
+  error_type?: string;
+}
+
 export interface PageDrawAdapter {
   /** Platform-specific edit-image enqueue (Tauri invoke or REST POST). */
-  enqueueEditImage(req: PageDrawEditRequest): Promise<{ status: string }>;
+  enqueueEditImage(req: PageDrawEditRequest): Promise<PageDrawEnqueueResult>;
 
   /** Platform-specific inpaint enqueue (Tauri invoke or REST POST). */
-  enqueueInpaint(req: PageDrawInpaintRequest): Promise<{ status: string }>;
+  enqueueInpaint(req: PageDrawInpaintRequest): Promise<PageDrawEnqueueResult>;
 
   /** Platform-specific background removal enqueue. */
   enqueueBgRemoval(base64Image: string, nodeId: string): Promise<void>;
