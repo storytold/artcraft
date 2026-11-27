@@ -221,7 +221,7 @@ impl CreateAudioPage {
       self.make_room_for_image(env);
       common::upload_path(env, &mut self.refs, path, RefKind::Image, ImageSlot::Reference);
     } else if !paths.is_empty() {
-      env.toasts.error(format!("Only {} files can be added here", accepted_kinds(m)));
+      env.toasts.error(crate::i18n::tf("Only {} files can be added here", &[crate::i18n::t(&accepted_kinds(m))]));
     }
   }
 
@@ -236,7 +236,7 @@ impl CreateAudioPage {
     }
     let free = m.audio_refs_max.saturating_sub(self.refs.audios.len());
     if paths.len() > free {
-      env.toasts.error(format!("Max {} audio track{}", m.audio_refs_max, if m.audio_refs_max == 1 { "" } else { "s" }));
+      env.toasts.error(crate::i18n::tf("Max {} audio track{}", &[m.audio_refs_max.to_string(), (if m.audio_refs_max == 1 || crate::i18n::is_arabic() { "" } else { "s" }).to_string()]));
     }
     if free == 0 {
       return;
@@ -307,7 +307,7 @@ impl CreateAudioPage {
       return;
     };
     if self.missing_required_ref(m) {
-      env.toasts.error(format!("{} needs an audio track to work from \u{2014} add one first", m.name));
+      env.toasts.error(crate::i18n::tf("{} needs an audio track to work from \u{2014} add one first", &[m.name.to_string()]));
       return;
     }
     if !env.signed_in {
@@ -394,7 +394,7 @@ impl CreateAudioPage {
 fn audio_toolbar(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   let toggles = [(caps.instrumental, &mut s.instrumental, "audio-instrumental", Icon::MicOff, "Instrumental"), (caps.keep_lyrics, &mut s.keep_lyrics, "audio-keep-lyrics", Icon::Mic, "Keep lyrics"), (caps.loopable, &mut s.loopable, "audio-loop", Icon::Repeat, "Loop")];
   for (supported, value, id, icon, label) in toggles {
-    if supported && pickers::toggle(ui, Id::new(id), icon, label, *value, &format!("{label}: {}", if *value { "ON" } else { "OFF" })) {
+    if supported && pickers::toggle(ui, Id::new(id), icon, label, *value, &crate::i18n::tf("{}: {}", &[crate::i18n::t(label), crate::i18n::t(if *value { "ON" } else { "OFF" })])) {
       *value = !*value;
     }
   }
@@ -410,7 +410,7 @@ fn audio_toolbar(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
 fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
   let mut parts = Vec::new();
   if caps.bpm {
-    parts.push(s.bpm.map_or_else(|| "Auto BPM".to_owned(), |b| format!("{b} BPM")));
+    parts.push(s.bpm.map_or_else(|| "Auto BPM".to_owned(), |b| crate::i18n::tf("{} BPM", &[b.to_string()])));
   }
   if caps.musical_key {
     parts.push(musical_key(&s.musical_key).2.to_owned());
@@ -425,7 +425,7 @@ fn beat_and_key(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
           setting_name(ui, "BPM");
           ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             setting_value(ui, &s.bpm.map_or_else(|| "Auto".to_owned(), |b| b.to_string()));
-            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new("Auto").size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
+            if s.bpm.is_some() && ui.add(egui::Button::new(egui::RichText::new(crate::i18n::t("Auto")).size(11.5).color(theme::ACCENT_INK)).frame(false)).on_hover_cursor(egui::CursorIcon::PointingHand).clicked() {
               s.bpm = None;
             }
           });
@@ -502,9 +502,9 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
     ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
     if m.audio_refs_max > 0 {
       icons::icon(ui, Icon::Music, 14.0, theme::MUTED);
-      ui.label(egui::RichText::new(format!("Audio Track ({}/{})", refs.audios.len(), m.audio_refs_max)).size(12.5).color(theme::MUTED));
+      ui.label(egui::RichText::new(crate::i18n::tf("Audio Track ({}/{})", &[refs.audios.len().to_string(), m.audio_refs_max.to_string()])).size(12.5).color(theme::MUTED));
       if m.audio.requires_audio_ref && refs.audios.is_empty() {
-        ui.label(egui::RichText::new("required").size(12.5).color(theme::BAD));
+        ui.label(egui::RichText::new(crate::i18n::t("required")).size(12.5).color(theme::BAD));
       }
       for (i, r) in refs.audios.iter().enumerate() {
         audio_tile(ui, i, r, playing == Some(r.id), actions);
@@ -521,7 +521,7 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
     }
     if m.image_refs_max > 0 {
       ui.add_space(8.0);
-      ui.label(egui::RichText::new("Image").size(12.5).color(theme::MUTED));
+      ui.label(egui::RichText::new(crate::i18n::t("Image")).size(12.5).color(theme::MUTED));
       match refs.images.first() {
         Some(r) => image_tile(ui, r, image, actions),
         None => {
@@ -540,7 +540,7 @@ fn reference_row(ui: &mut Ui, m: &ModelInfo, refs: &References, playing: Option<
 /// One audio reference (`AudioRefTile`): play / stop, "Audio 1 · 12s", remove.
 fn audio_tile(ui: &mut Ui, index: usize, r: &RefMedia, playing: bool, actions: &mut Vec<RowAction>) {
   let uploading = r.status == RefStatus::Uploading;
-  let text = if uploading { format!("Audio {}", index + 1) } else { format!("Audio {} \u{b7} {}s", index + 1, r.duration_secs.round() as i64) };
+  let text = if uploading { crate::i18n::tf("Audio {}", &[(index + 1).to_string()]) } else { crate::i18n::tf("Audio {} \u{b7} {}s", &[(index + 1).to_string(), (r.duration_secs.round() as i64).to_string()]) };
   let galley = ui.painter().layout_no_wrap(text, FontId::new(12.5, theme::medium()), theme::INK);
   let (rect, _) = ui.allocate_exact_size(vec2(6.0 + 24.0 + 8.0 + galley.size().x + 6.0 + 20.0 + 6.0, theme::CONTROL_H), Sense::hover());
   ui.painter().rect(rect, theme::RADIUS, theme::CONTROLS, Stroke::new(1.0, theme::LINE), egui::StrokeKind::Inside);
@@ -692,7 +692,7 @@ fn accepted_kinds(m: &ModelInfo) -> String {
 }
 
 fn duration_message() -> String {
-  format!("Total audio duration cannot exceed {}s", MAX_REF_SECS as u32)
+  crate::i18n::tf("Total audio duration cannot exceed {}s", &[(MAX_REF_SECS as u32).to_string()])
 }
 
 /// What a failed generate tells the user: out of credits, an outage, or the server's message.

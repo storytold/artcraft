@@ -155,7 +155,8 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
 
 fn editor_ui(ui: &mut Ui, prompt: &mut String, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, fixed_height: Option<f32>) -> editor::EditorOutput {
   let fullscreen = fixed_height.is_some();
-  let opts = EditorOptions { id: if fullscreen { props.id.with("focus-editor") } else { props.id.with("editor") }, placeholder: props.placeholder, enter_to_generate: props.enter_to_generate, mentions: props.mentions, max_length: if fullscreen { None } else { props.max_length }, fixed_height, fullscreen_button: !fullscreen, resizable: !fullscreen };
+  let placeholder = crate::i18n::t(props.placeholder);
+  let opts = EditorOptions { id: if fullscreen { props.id.with("focus-editor") } else { props.id.with("editor") }, placeholder: &placeholder, enter_to_generate: props.enter_to_generate, mentions: props.mentions, max_length: if fullscreen { None } else { props.max_length }, fixed_height, fullscreen_button: !fullscreen, resizable: !fullscreen };
   let ctx = ui.ctx().clone();
   editor::show(ui, prompt, &mut state.editor, &opts, &mut |_, key| match cache.get(&ctx, key) {
     crate::backend::media_cache::Lookup::Ready(t) => Some(t),
@@ -183,7 +184,7 @@ fn generate_cluster(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<P
     let (rect, resp) = ui.allocate_exact_size(vec2(galley.size().x + 22.0, 36.0), Sense::hover());
     icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.left() + 7.0, rect.center().y), vec2(14.0, 14.0)), Icon::Coins, ink);
     ui.painter().galley(pos2(rect.left() + 20.0, rect.center().y - galley.size().y / 2.0), galley, ink);
-    resp.on_hover_text(format!("{credits} credit{} cost", if credits == 1 { "" } else { "s" }));
+    resp.on_hover_text(crate::i18n::tf("{} credit{} cost", &[credits.to_string(), (if credits == 1 || crate::i18n::is_arabic() { "" } else { "s" }).to_string()]));
   }
 }
 
@@ -208,7 +209,7 @@ fn confirm_clear(ctx: &egui::Context, id: Id, state: &mut PromptBoxState, action
   let resp = widgets::modal(ctx, id.with("confirm-clear"), 420.0, |ui| {
     ui.label(widgets::heading("Clear all?", 20.0));
     ui.add_space(8.0);
-    ui.label(egui::RichText::new("This clears the prompt and also removes the attached references.").color(theme::MUTED));
+    ui.label(egui::RichText::new(crate::i18n::t("This clears the prompt and also removes the attached references.")).color(theme::MUTED));
     ui.add_space(16.0);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
       if widgets::button(ui, None, "Clear all", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
@@ -240,6 +241,7 @@ fn expand_toggle(ui: &mut Ui, id: Id, rect: Rect, state: &mut PromptBoxState) {
 }
 
 fn warning_label(ui: &mut Ui, text: &str) {
+  let text = crate::i18n::t(text);
   let pulse = (ui.input(|i| i.time) * 2.0).sin() as f32 * 0.25 + 0.75;
   ui.label(egui::RichText::new(text).size(12.0).color(theme::BAD));
   let (rect, _) = ui.allocate_exact_size(vec2(14.0, 14.0), Sense::hover());
@@ -248,6 +250,7 @@ fn warning_label(ui: &mut Ui, text: &str) {
 }
 
 fn info_banner(ui: &mut Ui, text: &str) {
+  let text = crate::i18n::t(text);
   egui::Frame::new().fill(theme::fade(theme::ACCENT, 0.12)).stroke(Stroke::new(1.0, theme::fade(theme::ACCENT, 0.35))).corner_radius(theme::RADIUS).inner_margin(egui::Margin::symmetric(10, 6)).show(ui, |ui| {
     ui.horizontal(|ui| {
       icons::icon(ui, Icon::Info, 14.0, theme::ACCENT_INK);

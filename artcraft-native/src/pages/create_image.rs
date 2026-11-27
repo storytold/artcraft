@@ -190,7 +190,7 @@ impl CreateImagePage {
         (true, false) => "Video",
         _ => "Audio",
       };
-      env.toasts.error(format!("{what} references aren't available here"));
+      env.toasts.error(crate::i18n::tf("{} references aren't available here", &[crate::i18n::t(what)]));
     } else if images.is_empty() {
       env.toasts.error("Only image files can be added here");
     }
@@ -220,7 +220,7 @@ impl CreateImagePage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(format!("Prompt exceeds the {} character limit for this model", limit.unwrap_or_default()));
+      env.toasts.error(crate::i18n::tf("Prompt exceeds the {} character limit for this model", &[limit.unwrap_or_default().to_string()]));
       return;
     }
     if self.refs.any_uploading() {
@@ -319,5 +319,5 @@ impl CreateImagePage {
 }
 
 fn max_images_message(max: usize) -> String {
-  format!("Max {max} image reference{}", if max == 1 { "" } else { "s" })
+  crate::i18n::tf("Max {} image reference{}", &[max.to_string(), (if max == 1 || crate::i18n::is_arabic() { "" } else { "s" }).to_string()])
 }

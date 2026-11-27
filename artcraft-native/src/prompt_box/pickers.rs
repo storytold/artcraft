@@ -50,6 +50,8 @@ pub enum Trigger<'a> {
 
 /// A picker whose popover lists `options`; returns the newly chosen value.
 pub fn option_picker<T: Clone + PartialEq>(ui: &mut Ui, id: Id, trigger: Trigger<'_>, title: &str, tooltip: &str, current: &T, options: &[PickOption<T>]) -> Option<T> {
+  let title = crate::i18n::t(title);
+  let tooltip = crate::i18n::t(tooltip);
   let selected = options.iter().find(|o| o.value == *current);
   let label = selected.map_or("", |o| o.label.as_str());
   // Scoped to the parent, so the same picker in the box and in focus mode stay separate.
@@ -102,7 +104,7 @@ pub fn popover_pill(ui: &mut Ui, id: Id, lead: Leading<'_>, label: &str, tooltip
 /// model's minimum and maximum. Returns the new value.
 pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) -> Option<u32> {
   let mut value = current;
-  popover_pill(ui, id, Leading::Icon(Icon::Clock), &format!("{current}s"), "Duration", |ui| {
+  popover_pill(ui, id, Leading::Icon(Icon::Clock), &crate::i18n::tf("{}s", &[current.to_string()]), "Duration", |ui| {
     ui.set_width(240.0);
     widgets::menu_header(ui, "Duration");
     ui.add_space(4.0);
@@ -113,12 +115,12 @@ pub fn duration_picker(ui: &mut Ui, id: Id, current: u32, min: u32, max: u32) ->
     });
     ui.horizontal(|ui| {
       ui.add_space(8.0);
-      ui.label(egui::RichText::new(format!("{min}s")).size(11.0).color(theme::FAINT));
+      ui.label(egui::RichText::new(crate::i18n::tf("{}s", &[min.to_string()])).size(11.0).color(theme::FAINT));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         ui.add_space(8.0);
-        ui.label(egui::RichText::new(format!("{max}s")).size(11.0).color(theme::FAINT));
+        ui.label(egui::RichText::new(crate::i18n::tf("{}s", &[max.to_string()])).size(11.0).color(theme::FAINT));
         ui.centered_and_justified(|ui| {
-          ui.label(egui::RichText::new(format!("{value}s")).size(13.0).family(theme::semibold()).color(theme::INK));
+          ui.label(egui::RichText::new(crate::i18n::tf("{}s", &[value.to_string()])).size(13.0).family(theme::semibold()).color(theme::INK));
         });
       });
     });
