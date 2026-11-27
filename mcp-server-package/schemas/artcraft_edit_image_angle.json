@@ -1,0 +1,33 @@
+{
+  "name": "artcraft_edit_image_angle",
+  "description": "Manipulate camera angle of an image using Flux 2 LoRA.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this paid edit.",
+        "type": "boolean"
+      },
+      "horizontal_angle": {
+        "type": "number"
+      },
+      "idempotency_token": {
+        "description": "Optional client idempotency token",
+        "type": "string"
+      },
+      "image_media_token": {
+        "type": "string"
+      },
+      "vertical_angle": {
+        "type": "number"
+      },
+      "zoom": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "image_media_token",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

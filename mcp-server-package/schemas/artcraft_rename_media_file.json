@@ -1,0 +1,19 @@
+{
+  "name": "artcraft_rename_media_file",
+  "description": "Rename a media file (max 200 chars).",
+  "inputSchema": {
+    "properties": {
+      "media_token": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "media_token",
+      "title"
+    ],
+    "type": "object"
+  }
+}

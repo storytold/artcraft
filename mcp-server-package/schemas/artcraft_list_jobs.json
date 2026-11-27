@@ -1,0 +1,23 @@
+{
+  "name": "artcraft_list_jobs",
+  "description": "List session jobs, optionally filtered by status (pending, started, completed, failed, cancelled).",
+  "inputSchema": {
+    "properties": {
+      "limit": {
+        "description": "Max jobs to display (1-100, client-side truncation)",
+        "type": "integer"
+      },
+      "status": {
+        "enum": [
+          "pending",
+          "started",
+          "completed",
+          "failed",
+          "cancelled"
+        ],
+        "type": "string"
+      }
+    },
+    "type": "object"
+  }
+}

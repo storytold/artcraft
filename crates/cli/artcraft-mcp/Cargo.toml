@@ -1,0 +1,53 @@
+[package]
+name = "artcraft-mcp"
+edition = "2021"
+version = "0.1.0"
+authors = ["ArtCraft MCP Team"]
+publish = false
+
+[[bin]]
+name = "artcraft-mcp"
+path = "src/main.rs"
+
+[dependencies]
+# Internal
+artcraft_api_defs.workspace = true
+artcraft_client.workspace = true
+enums.workspace = true
+errors.workspace = true
+tokens.workspace = true
+uuid_utils.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_derive.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "io-std", "io-util", "fs"] }
+
+# Logging
+env_logger.workspace = true
+
+# System dirs (aligned with crates/desktop/artcraft)
+dirs = "6.0"
+
+# Token generation
+uuid.workspace = true
+
+# URL encoding for query params
+urlencoding = "2.1"
+
+# HTTP client for raw requests (workspace-pinned client config)
+reqwest = { workspace = true, features = ["json", "multipart"] }
+
+# Desktop cookie store (.cookies) — same crate/format the Tauri plugin writes,
+# so domain/path/expiry matching behaves identically to the desktop app
+cookie_store = { version = "0.21", features = ["serde"] }
+url.workspace = true
+
+# MCP / JSON-RPC
+# Using manual JSON-RPC implementation over stdio for minimal dependencies
+
+[dev-dependencies]
+tempfile.workspace = true

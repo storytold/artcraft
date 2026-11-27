@@ -1,0 +1,8 @@
+{
+  "name": "artcraft_list_image_models",
+  "description": "List all available image generation models.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}

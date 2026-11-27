@@ -1,0 +1,21 @@
+{
+  "name": "artcraft_upload_video",
+  "description": "Upload a local video file for use as a generation reference. Reads a local file and sends it to ArtCraft; requires confirm: true. File must live inside the user's home directory (or ARTCRAFT_MCP_ALLOWED_DIRS), be a video type, and be <= 512 MB.",
+  "inputSchema": {
+    "properties": {
+      "confirm": {
+        "description": "Must be true to confirm this local file may be read and uploaded.",
+        "type": "boolean"
+      },
+      "file_path": {
+        "description": "Local path to a video (mp4/mov/webm/mkv/m4v) inside an allowed directory",
+        "type": "string"
+      }
+    },
+    "required": [
+      "file_path",
+      "confirm"
+    ],
+    "type": "object"
+  }
+}

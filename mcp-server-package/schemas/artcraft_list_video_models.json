@@ -1,0 +1,8 @@
+{
+  "name": "artcraft_list_video_models",
+  "description": "List all available video generation models.",
+  "inputSchema": {
+    "properties": {},
+    "type": "object"
+  }
+}
