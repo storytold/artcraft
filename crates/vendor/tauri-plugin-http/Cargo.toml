@@ -87,3 +87,6 @@ macos-system-configuration = ["reqwest/macos-system-configuration"]
 unsafe-headers = []
 tracing = ["dep:tracing"]
 dangerous-settings = []
+
+[dev-dependencies]
+tempfile = "3"
