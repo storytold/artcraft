@@ -21,7 +21,8 @@
     "typecheck": "tsc",
     "chromatic": "npx chromatic --project-token=chpt_0945f90d5d3626c",
     "prepare": "husky",
-    "test": "jest"
+    "test": "jest",
+    "test:themes": "vitest run --config vitest.config.ts app/src/themes"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.20",

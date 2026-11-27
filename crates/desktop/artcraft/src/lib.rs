@@ -7,6 +7,11 @@ pub mod core;
 pub mod services;
 pub mod version;
 pub mod updates;
+pub mod themes;
+
+use crate::core::commands::themes::subscription::ThemeSubscription;
+use crate::core::commands::themes::watch_custom_theme_command::watch_custom_theme_command;
+use crate::core::commands::themes::unwatch_custom_theme_command::unwatch_custom_theme_command;
 
 use std::sync::Arc;
 use crate::core::commands::updates::check_for_updates_command::check_for_updates_command;
@@ -161,7 +166,20 @@ pub fn run() {
 
   let builder = tauri::Builder::default()
     .manage(Arc::new(updates::Updates::default()))
+    .on_page_load(|webview, payload| {
+      // A reload/navigation can discard JS before its async cleanup reaches Rust.
+      if webview.label() == "main" && payload.event() == tauri::webview::PageLoadEvent::Started {
+        if let Some(state) = webview.try_state::<ThemeSubscription>() {
+          state.clear();
+        }
+      }
+    })
     .on_window_event(|window, event| {
+      if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+        if let Some(state) = window.try_state::<ThemeSubscription>() {
+          state.clear();
+        }
+      }
       if window.try_state::<Arc<updates::Updates>>().is_some_and(|updates| updates.prevents_exit()) {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
           api.prevent_close();
@@ -223,6 +241,7 @@ pub fn run() {
     .manage(app_data_root)
     .manage(app_env_configs)
     .manage(DesktopLoginBridgeState::default())
+    .manage(ThemeSubscription::default())
     .manage(app_preferences)
     .manage(artcraft_platform_info)
     .manage(artcraft_usage_tracker)
@@ -239,6 +258,8 @@ pub fn run() {
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
   //  My first attempt at naively doing this didn't work because the macros can't find their codegen'd targets.
   let builder = builder.invoke_handler(tauri::generate_handler![
+    watch_custom_theme_command,
+    unwatch_custom_theme_command,
     check_for_updates_command,
     install_update_command,
     check_sora_session_command,

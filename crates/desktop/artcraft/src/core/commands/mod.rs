@@ -14,3 +14,5 @@ pub mod response;
 pub mod task_queue;
 pub mod deprecated;
 pub mod updates;
+
+pub mod themes;

@@ -843,10 +843,10 @@ img {
   margin: -5px;
   pointer-events: none;
   background:
-    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
-      center / 1px 11px no-repeat,
-    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4))
-      center / 11px 1px no-repeat;
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4)) center /
+      1px 11px no-repeat,
+    linear-gradient(rgba(242, 241, 238, 0.4), rgba(242, 241, 238, 0.4)) center /
+      11px 1px no-repeat;
 }
 
 /* Contained section borders match the landing without decorative extensions. */
@@ -860,4 +860,36 @@ img {
   .create-empty-section {
     margin-inline: 32px;
   }
+}
+
+/* Custom-only hooks: built-in theme declarations remain unchanged. */
+.theme-custom ::selection {
+  background: var(--st-accent);
+  color: var(--st-accent-text);
+}
+
+.theme-custom :focus-visible {
+  outline-color: var(--st-accent);
+}
+
+.theme-custom-light .icon-auto-contrast {
+  filter: none;
+}
+
+.theme-custom {
+  scrollbar-color: var(--st-controls) var(--st-bg);
+}
+
+.theme-custom *::-webkit-scrollbar-track {
+  background: var(--st-bg);
+}
+
+.theme-custom *::-webkit-scrollbar-thumb {
+  background-color: var(--st-controls);
+  border-color: var(--st-bg);
+}
+
+.theme-custom .bg-primary,
+.theme-custom .bg-brand-primary {
+  color: var(--st-accent-text);
 }
