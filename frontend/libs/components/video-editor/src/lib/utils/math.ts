@@ -228,7 +228,7 @@ function tokenize(input: string): Token[] {
       continue;
     }
 
-    if (/\d/.test(char)) {
+    if (/\d/.test(char) || char === ".") {
       let numStr = "";
       while (i < str.length && (/\d/.test(str[i]) || str[i] === ".")) {
         numStr += str[i];
