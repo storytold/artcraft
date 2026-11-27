@@ -103,6 +103,12 @@ async fn polling_loop(
         None => continue,
       };
 
+      // Skip terminal local tasks before downloads or frontend notifications.
+      // SQLite also guards transitions if cancellation races this snapshot.
+      if !matches!(task.status, TaskStatus::Pending | TaskStatus::Started | TaskStatus::AttemptFailed) {
+        continue;
+      }
+
       match job.status.status {
         JobStatusPlus::CompleteSuccess => {
           match task.status {

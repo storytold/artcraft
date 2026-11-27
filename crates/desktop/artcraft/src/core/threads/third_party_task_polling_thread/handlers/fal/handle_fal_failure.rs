@@ -23,8 +23,13 @@ pub async fn handle_fal_failure(
     status: TaskStatus::CompleteFailure,
   }).await;
 
-  if let Err(err) = update_result {
-    error!("[FalPolling] Failed to update task status for {}: {:?}", task.id.as_str(), err);
+  match update_result {
+    Ok(true) => {},
+    Ok(false) => return,
+    Err(err) => {
+      error!("[FalPolling] Failed to update task status for {}: {:?}", task.id.as_str(), err);
+      return;
+    }
   }
 
   let action = task_type_to_generation_action(task.task_type);
