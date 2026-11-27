@@ -180,7 +180,7 @@ async fn handle_request(
         app_data_root,
         app_env_configs,
         grok_creds_manager,
-      ).await
+      ).await.map(|event| vec![event])
     }
     GenerationProvider::Sora => {
       handle_sora_sora2(
@@ -189,7 +189,7 @@ async fn handle_request(
         app_data_root,
         app_env_configs,
         sora_creds_manager,
-      ).await
+      ).await.map(|event| vec![event])
     }
     _ => {
       handle_video_artcraft(
@@ -201,27 +201,123 @@ async fn handle_request(
     }
   };
 
-  let success_event = match result {
-    Err(err) => return Err(err),
-    Ok(event) => event,
-  };
+  let (success_event, count) = persist_video_tasks(result?, task_database, &request).await?;
 
-  let result = success_event
-    .insert_into_task_database_with_frontend_payload(
-      task_database,
-      request.frontend_caller,
-      request.frontend_subscriber_id.as_deref(),
-      request.frontend_subscriber_payload.as_deref()
-    )
-    .await;
-
-  if let Err(err) = result {
-    error!("Failed to create task in database: {:?}", err);
-  }
-
-  if let Err(err) = artcraft_usage_tracker.record_video_generation(1, ArtcraftUsageType::ImageToResult, ArtcraftUsagePage::VideoPage) {
+  if let Err(err) = artcraft_usage_tracker.record_video_generation(count, ArtcraftUsageType::ImageToResult, ArtcraftUsagePage::VideoPage) {
     warn!("Failed to report usage: {:?}", err);
   }
 
   Ok(success_event)
+}
+
+async fn persist_video_tasks(events: Vec<TaskEnqueueSuccess>, task_database: &TaskDatabase, request: &TauriGenerateVideoRequest) -> Result<(TaskEnqueueSuccess, u16), GenerateError> {
+  let count = u16::try_from(events.len()).unwrap_or(u16::MAX);
+  for (index, event) in events.iter().enumerate() {
+    let result = event.insert_into_task_database_with_frontend_payload(task_database, request.frontend_caller, request.frontend_subscriber_id.as_deref(), request.frontend_subscriber_payload.as_deref()).await;
+
+    if let Err(err) = result {
+      // Generation is already accepted; returning an error could prompt duplicate submissions.
+      let role = if index == 0 { "primary" } else { "secondary" };
+      error!("Failed to persist accepted {} video job {:?}: {:?}", role, event.provider_job_id, err);
+    }
+  }
+
+  events.into_iter().next().map(|event| (event, count)).ok_or(GenerateError::ResponseHadNoJobTokens)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::core::events::generation_events::common::GenerationModel;
+  use enums::tauri::tasks::task_status::TaskStatus;
+  use enums::tauri::tasks::task_type::TaskType;
+  use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+  use serde_json::json;
+  use sqlite_tasks::queries::list_tasks_by_provider_and_tokens::{list_tasks_by_provider_and_tokens, ListTasksArgs};
+
+  const JOBS: [&str; 3] = ["job_primary", "job_second", "job_third"];
+
+  mod persistence {
+    use super::*;
+
+    #[tokio::test]
+    async fn persists_batch_and_single_video_jobs_with_subscriber_metadata() {
+      for jobs in [&JOBS[..], &JOBS[..1]] {
+        let directory = tempfile::tempdir().unwrap();
+        let root = AppDataRoot::create_existing(directory.path()).unwrap();
+        let database = TaskDatabase::connect(&root).await.unwrap();
+        let request: TauriGenerateVideoRequest = serde_json::from_value(json!({
+          "frontend_caller": "image_to_video",
+          "frontend_subscriber_id": "video-editor",
+          "frontend_subscriber_payload": "scene-123",
+        }))
+        .unwrap();
+        let events = jobs.iter().copied().map(video_event).collect();
+
+        let (event, count) = persist_video_tasks(events, &database, &request).await.unwrap();
+        assert_eq!(event.provider_job_id.as_deref(), Some(JOBS[0]));
+        assert_eq!(usize::from(count), jobs.len());
+        database.get_connection().get_pool().close().await;
+
+        let reopened = TaskDatabase::connect(&root).await.unwrap();
+        let mut tasks = list_tasks_by_provider_and_tokens(ListTasksArgs { db: reopened.get_connection(), provider: GenerationProvider::Artcraft, provider_job_ids: None }).await.unwrap().tasks;
+        tasks.sort_by(|left, right| left.provider_job_id.cmp(&right.provider_job_id));
+        assert_eq!(tasks.iter().map(|task| task.provider_job_id.as_deref().unwrap()).collect::<Vec<_>>(), jobs);
+        for task in tasks {
+          assert_eq!(task.status, TaskStatus::Pending);
+          assert_eq!(task.task_type, TaskType::VideoGeneration);
+          assert_eq!(task.frontend_caller, Some(TauriCommandCaller::ImageToVideo));
+          assert_eq!(task.frontend_subscriber_id.as_deref(), Some("video-editor"));
+          assert_eq!(task.frontend_subscriber_payload.as_deref(), Some("scene-123"));
+        }
+        reopened.get_connection().get_pool().close().await;
+      }
+    }
+
+    #[tokio::test]
+    async fn preserves_accepted_batch_when_primary_or_secondary_insert_fails() {
+      for failed_job in &JOBS[..2] {
+        let directory = tempfile::tempdir().unwrap();
+        let root = AppDataRoot::create_existing(directory.path()).unwrap();
+        let database = TaskDatabase::connect(&root).await.unwrap();
+        let existing_id = video_event(failed_job).insert_into_task_database_with_frontend_payload(&database, None, Some("existing-tracker"), None).await.unwrap();
+        let request = serde_json::from_value(json!({ "frontend_subscriber_id": "new-tracker" })).unwrap();
+        let events = JOBS.iter().copied().map(video_event).collect();
+
+        let (event, count) = persist_video_tasks(events, &database, &request).await.unwrap();
+        assert_eq!(event.provider_job_id.as_deref(), Some(JOBS[0]));
+        assert_eq!(usize::from(count), JOBS.len());
+        database.get_connection().get_pool().close().await;
+
+        let reopened = TaskDatabase::connect(&root).await.unwrap();
+        let mut tasks = list_tasks_by_provider_and_tokens(ListTasksArgs { db: reopened.get_connection(), provider: GenerationProvider::Artcraft, provider_job_ids: None }).await.unwrap().tasks;
+        tasks.sort_by(|left, right| left.provider_job_id.cmp(&right.provider_job_id));
+        assert_eq!(tasks.iter().map(|task| task.provider_job_id.as_deref().unwrap()).collect::<Vec<_>>(), JOBS);
+        for task in tasks {
+          if task.provider_job_id.as_deref() == Some(*failed_job) {
+            assert_eq!(task.id, existing_id);
+            assert_eq!(task.frontend_subscriber_id.as_deref(), Some("existing-tracker"));
+          } else {
+            assert_eq!(task.frontend_subscriber_id.as_deref(), Some("new-tracker"));
+          }
+        }
+        reopened.get_connection().get_pool().close().await;
+      }
+    }
+
+    #[tokio::test]
+    async fn rejects_an_empty_video_batch() {
+      let directory = tempfile::tempdir().unwrap();
+      let root = AppDataRoot::create_existing(directory.path()).unwrap();
+      let database = TaskDatabase::connect(&root).await.unwrap();
+      let request = serde_json::from_value(json!({})).unwrap();
+      let result = persist_video_tasks(Vec::new(), &database, &request).await;
+      assert!(matches!(result, Err(GenerateError::ResponseHadNoJobTokens)));
+      database.get_connection().get_pool().close().await;
+    }
+  }
+
+  fn video_event(job: &str) -> TaskEnqueueSuccess {
+    TaskEnqueueSuccess { task_type: TaskType::VideoGeneration, model: Some(GenerationModel::Seedance1p5Pro), provider: GenerationProvider::Artcraft, provider_job_id: Some(job.to_string()), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token: None }
+  }
 }
