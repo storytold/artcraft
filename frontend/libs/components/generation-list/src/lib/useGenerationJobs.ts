@@ -341,6 +341,9 @@ export function useGenerationJobs(options: {
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
   const prevFailedIdsRef = useRef<Set<string>>(new Set());
   const initialLoadDoneRef = useRef(false);
+  const requestSequenceRef = useRef(0);
+  const committedRequestSequenceRef = useRef(0);
+  const effectGenerationRef = useRef(0);
 
   const promptTokens = useMemo(() => {
     const tokens: string[] = [];
@@ -381,9 +384,13 @@ export function useGenerationJobs(options: {
   );
 
   const load = useCallback(async () => {
+    const requestSequence = ++requestSequenceRef.current;
+    const effectGeneration = effectGenerationRef.current;
+    const canCommit = () => effectGeneration === effectGenerationRef.current
+      && requestSequence > committedRequestSequenceRef.current;
     try {
       const response = await apiRef.current.ListRecentJobs();
-      if (!response.success || !response.data) return;
+      if (!canCommit() || !response.success || !response.data) return;
 
       const jobs: Job[] = response.data;
 
@@ -396,22 +403,6 @@ export function useGenerationJobs(options: {
       const newFailed = filtered.filter((j) =>
         FAILED_STATUSES.has(j.status.status),
       );
-
-      // A newly-observed failure may have triggered a server-side refund, so
-      // nudge the credits display — once now, and again after the refund has
-      // had a moment to settle in the database. (Skip on first load: those
-      // failures happened in a previous session.)
-      const failedIdSet = new Set(newFailed.map((j) => j.job_token));
-      if (
-        initialLoadDoneRef.current &&
-        newFailed.some((j) => !prevFailedIdsRef.current.has(j.job_token))
-      ) {
-        window.dispatchEvent(new Event("credits-change"));
-        setTimeout(() => {
-          window.dispatchEvent(new Event("credits-change"));
-        }, 2500);
-      }
-      prevFailedIdsRef.current = failedIdSet;
 
       // Completed
       const completedJobs = filtered.filter((j) =>
@@ -439,6 +430,28 @@ export function useGenerationJobs(options: {
           }
         }
       }
+      // A newer committed poll or a changed/disabled effect can supersede
+      // this response while its completed media is being expanded. Allow
+      // progress while newer requests are still pending on a slow connection.
+      if (!canCommit()) return;
+      committedRequestSequenceRef.current = requestSequence;
+
+      // A newly-observed failure may have triggered a server-side refund, so
+      // nudge the credits display — once now, and again after the refund has
+      // had a moment to settle in the database. (Skip on first load: those
+      // failures happened in a previous session.)
+      const failedIdSet = new Set(newFailed.map((j) => j.job_token));
+      if (
+        initialLoadDoneRef.current &&
+        newFailed.some((j) => !prevFailedIdsRef.current.has(j.job_token))
+      ) {
+        window.dispatchEvent(new Event("credits-change"));
+        setTimeout(() => {
+          window.dispatchEvent(new Event("credits-change"));
+        }, 2500);
+      }
+      prevFailedIdsRef.current = failedIdSet;
+
       initialLoadDoneRef.current = true;
       prevCompletedIdsRef.current = completedIdSet;
 
@@ -475,6 +488,7 @@ export function useGenerationJobs(options: {
     window.addEventListener("task-queue-update", handleTaskUpdate);
 
     return () => {
+      ++effectGenerationRef.current;
       clearInterval(intervalId);
       window.removeEventListener("task-queue-update", handleTaskUpdate);
     };
