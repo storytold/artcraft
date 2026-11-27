@@ -5,6 +5,7 @@ use crate::core::threads::third_party_task_polling_thread::events::notify_fronte
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::threads::third_party_task_polling_thread::handlers::fal::handle_fal_failure::handle_fal_failure;
 use crate::core::utils::auto_download::{auto_download_task_urls, clear_auto_download_checkpoint};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
@@ -50,7 +51,9 @@ pub async fn handle_fal_complete(
 ) {
   info!("[FalComplete] Handling completed task {}", task.id.as_str());
 
-  let result = handle_fal_complete_inner(
+  // Anything else is retried on the next polling pass; a result that's gone stays gone. (The
+  // error isn't `Send`, so it's turned into the reason, and dropped, before awaiting again.)
+  let gone = match handle_fal_complete_inner(
     app_handle,
     app_env_configs,
     app_data_root,
@@ -58,10 +61,15 @@ pub async fn handle_fal_complete(
     storyteller_creds_manager,
     task,
     job_response,
-  ).await;
-
-  if let Err(err) = result {
-    error!("[FalComplete] Failed to handle task {}: {:?}", task.id.as_str(), err);
+  ).await {
+    Ok(()) => None,
+    Err(err) => {
+      error!("[FalComplete] Failed to handle task {}: {:?}", task.id.as_str(), err);
+      err.downcast_ref::<ResultGone>().map(|gone| gone.to_string())
+    },
+  };
+  if let Some(reason) = gone {
+    handle_fal_failure(app_handle, task_database, task, &reason).await;
   }
 }
 
@@ -112,17 +120,21 @@ async fn handle_fal_complete_inner(
 
   let mut maybe_primary_media_file_token: Option<MediaFileToken> = None;
 
+  // Download every result before uploading any, so a failed download doesn't leave part of a
+  // batch uploaded, to be uploaded again on the next polling pass.
+  let mut download_paths = Vec::with_capacity(urls.len());
   for (i, url) in urls.iter().enumerate() {
     info!("[FalComplete] Downloading result {} from: {}", i, url);
+    download_paths.push(download_file(url, app_data_root, i).await?);
+  }
 
-    let download_path = download_file(url, app_data_root, i).await?;
-
+  for (i, download_path) in download_paths.iter().enumerate() {
     info!("[FalComplete] Uploading result {} to backend...", i);
 
     let media_token = upload_to_backend(
       &creds,
       app_env_configs,
-      &download_path,
+      download_path,
       maybe_prompt_token.as_ref(),
       maybe_batch_token.as_ref(),
       media_class,
@@ -243,6 +255,16 @@ async fn download_file(
   index: usize,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
   let response = reqwest::get(url).await?;
+  let status = response.status();
+  if !status.is_success() {
+    // Only 2xx carries the result: a 404 or a redirect without a Location is not a file. A 4xx other
+    // than a timeout or rate limit won't change on retry.
+    let err = format!("result download {url} answered {status}");
+    if status.is_client_error() && status != reqwest::StatusCode::REQUEST_TIMEOUT && status != reqwest::StatusCode::TOO_MANY_REQUESTS {
+      return Err(Box::new(ResultGone(err)));
+    }
+    return Err(err.into());
+  }
   let bytes = response.bytes().await?;
 
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
@@ -257,6 +279,19 @@ async fn download_file(
 
   Ok(download_path)
 }
+
+/// A result URL that answers with a permanent client error (404, 403, 410, ...): the task fails
+/// instead of being polled again forever.
+#[derive(Debug)]
+struct ResultGone(String);
+
+impl std::fmt::Display for ResultGone {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_str(&self.0)
+  }
+}
+
+impl std::error::Error for ResultGone {}
 
 const MAX_UPLOAD_RETRIES: u32 = 5;
 const INITIAL_RETRY_DELAY_SECS: u64 = 10;
@@ -343,4 +378,78 @@ async fn try_upload(
   };
 
   Ok(media_token)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::net::TcpListener;
+
+  /// A result URL that answers with an error (expired, or a CDN hiccup) is a failed download, not a
+  /// file: the error page used to be saved and then uploaded as the task's image or video.
+  #[tokio::test]
+  async fn error_responses_are_not_saved_as_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let (url, server) = serve_once("404 Not Found", b"<html>Not Found</html>").await;
+    let err = download_file(&url, &root, 0).await.unwrap_err();
+    assert!(err.downcast_ref::<ResultGone>().is_some(), "a 404 won't come back: the task fails");
+    server.await.unwrap();
+    assert_eq!(std::fs::read_dir(root.temp_dir().path()).unwrap().count(), 0, "no file is left to upload");
+  }
+
+  /// Only 2xx is a result: a redirect reqwest can't follow (no Location) isn't an error status.
+  #[tokio::test]
+  async fn non_success_responses_are_not_saved_as_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let (url, server) = serve_once("302 Found", b"moved").await;
+    assert!(download_file(&url, &root, 0).await.is_err());
+    server.await.unwrap();
+    assert_eq!(std::fs::read_dir(root.temp_dir().path()).unwrap().count(), 0, "no file is left to upload");
+  }
+
+  /// A server error or rate limit may pass: the task is polled again rather than failed.
+  #[tokio::test]
+  async fn transient_errors_are_retried() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    for status in ["503 Service Unavailable", "429 Too Many Requests"] {
+      let (url, server) = serve_once(status, b"later").await;
+      let err = download_file(&url, &root, 0).await.unwrap_err();
+      assert!(err.downcast_ref::<ResultGone>().is_none(), "{status} is retried");
+      server.await.unwrap();
+    }
+  }
+
+  #[tokio::test]
+  async fn successful_responses_are_saved_as_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let body = b"\x89PNG\r\n\x1a\n result bytes";
+    let (url, server) = serve_once("200 OK", body).await;
+    let path = download_file(&url, &root, 3).await.expect("a 200 is a download");
+    server.await.unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), body);
+    assert_eq!(path.parent().unwrap(), root.temp_dir().path());
+    let name = path.file_name().unwrap().to_str().unwrap();
+    assert!(name.starts_with("fal_") && name.ends_with("_3.png"), "got {name}");
+  }
+
+  /// Answers one request on a local port with `status` and `body`; returns the URL of a `.png`
+  /// result on it.
+  async fn serve_once(status: &'static str, body: &'static [u8]) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/result.png", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+      let (mut socket, _) = listener.accept().await.unwrap();
+      let mut request = [0; 4096];
+      socket.read(&mut request).await.unwrap();
+      let head = format!("HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+      socket.write_all(head.as_bytes()).await.unwrap();
+      socket.write_all(body).await.unwrap();
+    });
+    (url, server)
+  }
 }
