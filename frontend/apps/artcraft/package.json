@@ -21,7 +21,7 @@
     "typecheck": "tsc",
     "chromatic": "npx chromatic --project-token=chpt_0945f90d5d3626c",
     "prepare": "husky",
-    "test": "jest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.20",
@@ -70,7 +70,6 @@
   "devDependencies": {
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@types/deep-equal": "^1.0.4",
-    "@types/jest": "^29.5.12",
     "@types/react": "^19.0.0",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^19.0.0",
@@ -96,7 +95,6 @@
     "prettier-plugin-tailwindcss": "^0.5.12",
     "tailwindcss": "^3.4.1",
     "terser": "^5.30.3",
-    "ts-jest": "^29.1.4",
     "typescript": "^5.1.6",
     "vite": "^5.4.0",
     "vite-tsconfig-paths": "^4.2.1"
