@@ -5,6 +5,7 @@
 use egui::{Color32, FontId, Id, Popup, Rect, Sense, Stroke, Ui, pos2, vec2};
 
 use crate::backend::audio::{self, AudioPlayer, WaveformLookup};
+use crate::i18n;
 use crate::prompt_box::pickers;
 use crate::theme;
 use crate::ui::icons::{self, Icon};
@@ -44,7 +45,8 @@ pub fn player(ui: &mut Ui, id: Id, audio: &mut AudioPlayer, url: &str, duration_
   let button = Rect::from_center_size(pos2(rect.left() + button_d / 2.0, rect.center().y), vec2(button_d, button_d));
   let resp = ui.interact(button, id.with("play"), Sense::click()).on_hover_cursor(egui::CursorIcon::PointingHand);
   let label = if playing { "Pause" } else { "Play" };
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+  let accessible = i18n::tl(label).to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
   ui.painter().circle_filled(button.center(), button_d / 2.0, if resp.hovered() { theme::fade(Color32::WHITE, 0.88) } else { Color32::WHITE });
   let glyph = Rect::from_center_size(button.center(), vec2(button_d * 0.4, button_d * 0.4));
   match playback {
@@ -92,8 +94,9 @@ pub fn format_time(secs: f32) -> String {
 fn volume(ui: &mut Ui, id: Id, rect: Rect, audio: &mut AudioPlayer) {
   let popup_id = id.with("volume-popup");
   let open = Popup::is_id_open(ui.ctx(), popup_id);
-  let resp = ui.interact(rect, id.with("volume"), Sense::click()).on_hover_text("Volume").on_hover_cursor(egui::CursorIcon::PointingHand);
-  resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Volume"));
+  let resp = ui.interact(rect, id.with("volume"), Sense::click()).on_hover_text(i18n::t("Volume")).on_hover_cursor(egui::CursorIcon::PointingHand);
+  let accessible = i18n::tl("Volume").to_owned();
+  resp.widget_info(move || egui::WidgetInfo::labeled(egui::WidgetType::Button, true, accessible.clone()));
   if resp.hovered() || open {
     ui.painter().rect_filled(rect, theme::RADIUS, theme::WASH);
   }

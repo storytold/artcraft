@@ -1,0 +1,372 @@
+# ArtCraft Native Hebrew localization (logical RTL order; visual_rtl reorders for egui 0.36).
+# Shell & Navigation
+Home	בית
+Image	תמונה
+Video	וידאו
+Audio	שמע
+3D Object	אובייקט תלת-ממדי
+3D World	עולם תלת-ממדי
+Edit Image	עריכת תמונה
+3D Stage	במת תלת-ממד
+Edit Video	עריכת וידאו
+BG Remove	הסרת רקע
+Frame Extract	חילוץ פריימים
+Library	ספרייה
+Create	יצירה
+Studio	סטודיו
+Assets	נכסים
+Resources	משאבים
+Tutorials	מדריכים
+Toggle Sidebar	הצגה/הסתרה של סרגל הצד
+Sign in	התחברות
+Soon	בקרוב
+Account	חשבון
+{count} credits	{count} קרדיטים
+Settings	הגדרות
+Your credit balance · Buy credits	יתרת הקרדיטים · רכישת קרדיטים
+Log out	התנתקות
+Still thumbnails	תמונות ממוזערות סטטיות
+Play video previews	הפעלת תצוגות מקדימות לווידאו
+Exit selection	יציאה מבחירה
+Select items	בחירת פריטים
+List view	תצוגת רשימה
+Grid view	תצוגת רשת
+
+# Window & Audio Player
+Minimize	מזעור
+Maximize	הגדלה
+Restore	שחזור
+Close	סגירה
+Back	חזרה
+Play	ניגון
+Pause	השהיה
+Stop	עצירה
+Volume	עוצמת שמע
+
+# Landing, Library & Coming Soon
+Capable tools for artists.	כלים מתקדמים לאמנים.
+Generate images, videos and audio with the best models, steer them with references and keyframes, and keep everything in your library.	יצירת תמונות, סרטונים ושמע עם המודלים הטובים ביותר, הכוונה באמצעות קובצי ייחוס ופריימי מפתח, ושמירת הכול בספרייה.
+Create Image	יצירת תמונה
+Describe anything. See it in seconds.	תיאור של כל רעיון. תוצאה בתוך שניות.
+Create Video	יצירת וידאו
+Describe a scene. See it in motion.	תיאור סצנה. צפייה בה בתנועה.
+Create Audio	יצירת שמע
+Describe a song, a sound, or a sample.	תיאור שיר, צליל או דגימה.
+Sign in to start	יש להתחבר כדי להתחיל
+Sign in to create	יש להתחבר כדי ליצור
+Sign in to see everything you've generated.	יש להתחבר כדי לצפות בכל מה שנוצר.
+Your generations will appear here.	היצירות יופיעו כאן.
+This tool is coming to the native app. You can use it in the ArtCraft web app in the meantime.	כלי זה יגיע בקרוב לאפליקציית שולחן העבודה. בינתיים ניתן להשתמש בו באפליקציית האינטרנט של ArtCraft.
+Open in web app	פתיחה ביישום האינטרנט
+
+# Prompt Box & Reference Deck
+Prompt	הנחיה
+Generate	יצירה
+Generating…	יוצר…
+Focus mode	מצב מיקוד
+Expand	הרחבה
+Collapse	כיווץ
+MENTIONS	אזכורים
+Done	סיום
+Clear all	ניקוי הכול
+Clear all?	לנקות הכול?
+This clears the prompt and also removes the attached references.	פעולה זו תנקה את ההנחיה ותסיר גם את קובצי הייחוס המצורפים.
+Cancel	ביטול
+{credits} credit cost	עלות של {credits} קרדיט
+{credits} credits cost	עלות של {credits} קרדיטים
+First frame	פריים ראשון
+Last frame	פריים אחרון
+Swap frames	החלפת פריימים
+{n} reference	{n} קובץ ייחוס
+{n} references	{n} קובצי ייחוס
+Upload	העלאה
+From library	מהספרייה
+Pick from library	בחירה מהספרייה
+Remove	הסרה
+Drop to add references	שחרור להוספת קובצי ייחוס
+Drop to set your frames	שחרור להגדרת הפריימים
+That file type isn't supported	סוג קובץ זה אינו נתמך
+Accepts {kinds} files	תומך בקובצי {kinds}
+Images	תמונות
+Videos	סרטונים
+Frames	פריימים
+Starting frame required	נדרש פריים פתיחה
+Reference audio required	נדרש קובץ שמע לייחוס
+{noun} is required	נדרש {noun}
+Starting frame & audio required	נדרשים פריים פתיחה ושמע
+{n} files failed to upload	העלאת {n} קבצים נכשלה
+
+# Model Selector, Pickers & Parameters
+Model	מודל
+Select model	בחירת מודל
+Select Model	בחירת מודל
+Select Provider	בחירת ספק
+Audio Support	תמיכת שמע
+Start/End	התחלה/סיום
+Reference	ייחוס
+Aspect Ratio	יחס גובה-רוחב
+Resolution	רזולוציה
+Quality	איכות
+Number of generations	מספר יצירות
+No. of images	מספר תמונות
+No. of videos	מספר סרטונים
+Duration	משך
+Bitrate	קצב סיביות
+Output Format	פורמט פלט
+Output format	פורמט פלט
+Sound	צליל
+Sound: ON	צליל: פעיל
+Sound: OFF	צליל: כבוי
+Input Mode	מצב קלט
+Input mode	מצב קלט
+Keyframe	פריים מפתח
+First/Last frame	פריים ראשון/אחרון
+Omni Reference	ייחוס רב-ערוצי
+Multi-media ref	ייחוס מולטימדיה
+@Characters	@דמויות
+Characters	דמויות
+Auto	אוטומטי
+Square	ריבוע
+5:4 (Wide)	5:4 (רחב)
+4:3 (Wide)	4:3 (רחב)
+3:2 (Wide)	3:2 (רחב)
+16:9 (Wide)	16:9 (רחב)
+21:9 (Wide)	21:9 (רחב)
+4:5 (Tall)	4:5 (גבוה)
+3:4 (Tall)	3:4 (גבוה)
+2:3 (Tall)	2:3 (גבוה)
+9:16 (Tall)	9:16 (גבוה)
+9:21 (Tall)	9:21 (גבוה)
+Auto (2K)	אוטומטי (2K)
+Auto (3K)	אוטומטי (3K)
+Auto (4K)	אוטומטי (4K)
+Square (HD)	ריבוע (HD)
+Wide	רחב
+Tall	גבוה
+Max	מרבי
+Extra high	גבוהה במיוחד
+High	גבוהה
+Medium	בינונית
+Low	נמוכה
+Normal	רגיל
+
+# Create Image / Video / Audio Pages
+Add a prompt, then generate	יש להוסיף הנחיה וללחוץ על יצירה
+Describe what you want in the image...	תיאור של מה שיופיע בתמונה...
+Video or audio	וידאו או שמע
+Image generation enqueued!	יצירת התמונה נוספה לתור!
+Max {max} image reference	עד {max} קובץ ייחוס של תמונה
+Max {max} image references	עד {max} קובצי ייחוס של תמונות
+Choose an image, add a prompt, then generate	יש לבחור תמונה, להוסיף הנחיה וללחוץ על יצירה
+Describe what you want to happen in the video...	תיאור של מה שיתרחש בסרטון...
+Use @Image1, @Video1, @Audio1... to reference uploads in prompt...	ניתן להשתמש ב-@Image1, @Video1, @Audio1... כדי לאזכר קבצים בהנחיה...
+This model can't generate from text alone - add a starting frame to animate your prompt.	מודל זה אינו יכול ליצור מטקסט בלבד — יש להוסיף פריים פתיחה להנפשת ההנחיה.
+Video generation enqueued!	יצירת הווידאו נוספה לתור!
+First and last frames are already set	פריים הפתיחה והסיום כבר מוגדרים
+The first frame is already set	פריים הפתיחה כבר מוגדר
+image reference	תמונת ייחוס
+video	סרטון
+audio clip	קטע שמע
+Max {max} {noun}	עד {max} {noun}
+Max {max} {noun} / {secs}s total	עד {max} {noun} / {secs} שניות סה״כ
+Describe the music or sound you want...	תיאור המוזיקה או הצליל הרצויים...
+Style: e.g. dreamy synth-pop, female vocals	סגנון: למשל סינת׳-פופ חלומי, שירה נשית
+Couldn't start generation - the service is temporarily unavailable. Try again shortly.	לא ניתן להתחיל ביצירה — השירות אינו זמין זמנית. יש לנסות שוב בעוד זמן קצר.
+Audio generation enqueued!	יצירת השמע נוספה לתור!
+Instrumental	אינסטרומנטלי
+Keep lyrics	שמירה על מילים
+Loop	לולאה
+{label}: ON	{label}: פעיל
+{label}: OFF	{label}: כבוי
+Auto BPM	BPM אוטומטי
+{bpm} BPM	{bpm} BPM
+Beat	קצב
+Beat & Key	קצב וסולם
+BPM	BPM
+Musical Key	סולם מוזיקלי
+Tuning	כוונון
+Sample Rate	קצב דגימה
+Speed	מהירות
+Pitch	גובה צליל
+Audio Track ({count}/{max})	רצועת שמע ({count}/{max})
+required	חובה
+Uploading…	מעלה…
+Add audio	הוספת שמע
+Add image	הוספת תמונה
+Remove audio	הסרת שמע
+Remove image	הסרת תמונה
+Clear style	ניקוי סגנון
+Audio {index}	שמע {index}
+Audio {index} · {secs}s	שמע {index} · {secs} שניות
+Total audio duration cannot exceed {secs}s	משך השמע הכולל לא יכול לעלות על {secs} שניות
+Not enough credits for this generation	אין מספיק קרדיטים ליצירה זו
+Failed to start audio generation	התחלת יצירת השמע נכשלה
+reference	ייחוס
+{a} or {b}	{a} או {b}
+image	תמונה
+Audio track required	נדרשת רצועת שמע
+Musical key	סולם מוזיקלי
+Sample rate	קצב דגימה
+Failed to start image generation. Please try again.	התחלת יצירת התמונה נכשלה. יש לנסות שוב.
+Only image files can be added here	ניתן להוסיף כאן קובצי תמונה בלבד
+{what} references aren't available here	קובצי ייחוס מסוג {what} אינם זמינים כאן
+Prompt exceeds the {limit} character limit for this model	ההנחיה חורגת ממגבלת {limit} התווים עבור מודל זה
+Please wait for your references to finish uploading	יש להמתין לסיום העלאת קובצי הייחוס
+A reference image is missing its link. Please add it again.	חסר קישור לתמונת הייחוס. יש להוסיף אותה מחדש.
+Add a starting image before generating	יש להוסיף תמונת פתיחה לפני היצירה
+{file} isn't a supported file	{file} אינו קובץ נתמך
+Total {kind} duration cannot exceed {secs}s	משך ה{kind} הכולל לא יכול לעלות על {secs} שניות
+Please enter a prompt to generate video	יש להזין הנחיה ליצירת וידאו
+Please select a model to generate video	יש לבחור מודל ליצירת וידאו
+Please add a starting frame image to generate video	יש להוסיף תמונת פריים פתיחה ליצירת וידאו
+Failed to start video generation. Please try again.	התחלת יצירת הווידאו נכשלה. יש לנסות שוב.
+Image references aren't available here	קובצי ייחוס של תמונה אינם זמינים כאן
+Audio references aren't available here	קובצי ייחוס של שמע אינם זמינים כאן
+Only {kinds} files can be added here	ניתן להוסיף כאן קובצי {kinds} בלבד
+Max {max} audio track	עד {max} רצועת שמע
+Max {max} audio tracks	עד {max} רצועות שמע
+Removed image reference — it can't be combined with audio	תמונת הייחוס הוסרה — לא ניתן לשלב אותה עם שמע
+Removed audio reference — it can't be combined with an image	ייחוס השמע הוסר — לא ניתן לשלבו עם תמונה
+{model} needs an audio track to work from — add one first	המודל {model} דורש רצועת שמע — יש להוסיף אחת תחילה
+C Major	דו מז׳ור
+C Minor	דו מינור
+D Major	רה מז׳ור
+D Minor	רה מינור
+F Major	פה מז׳ור
+F Minor	פה מינור
+G Major	סול מז׳ור
+G Minor	סול מינור
+A Major	לה מז׳ור
+A Minor	לה מינור
+B Major	סי מז׳ור
+B Minor	סי מינור
+
+# Feed & Selection Bar
+{count} selected	{count} נבחרו
+Download	הורדה
+Videos (MP4)	סרטונים (MP4)
+Failed to upload video. Please upload an MP4 file.	העלאת הווידאו נכשלה. יש להעלות קובץ MP4.
+Couldn't read {file}: {err}	לא ניתן לקרוא את {file}: {err}
+Failed to upload {kind}: {message}	העלאת {kind} נכשלה: {message}
+Almost done...	כמעט מוכן…
+Generating {count} {kind} · Results may appear one at a time	יוצר {count} {kind} · התוצאות עשויות להופיע בזו אחר זו
+images	תמונות
+videos	סרטונים
+audio clips	קטעי שמע
+Dismiss	סגירה
+Last viewed	נצפה לאחרונה
+Copy prompt	העתקת הנחיה
+Recreate	יצירה מחדש
+Make Video	הפיכה לווידאו
+Share	שיתוף
+{kind} Generation	יצירת {kind}
+just now	ממש עכשיו
+1 minute ago	לפני דקה
+{n} minutes ago	לפני {n} דקות
+1 hour ago	לפני שעה
+{n} hours ago	לפני {n} שעות
+1 day ago	לפני יום
+{n} days ago	לפני {n} ימים
+1 month ago	לפני חודש
+{n} months ago	לפני {n} חודשים
+1 year ago	לפני שנה
+{n} years ago	לפני {n} שנים
+
+# Settings, Account & Providers Modals
+Sign in to ArtCraft	התחברות ל-ArtCraft
+Use your ArtCraft account to generate images and videos.	שימוש בחשבון ArtCraft ליצירת תמונות וסרטונים.
+Confirmation code	קוד אימות
+Approve the sign-in in your browser and check the code matches. This window updates by itself.	יש לאשר את ההתחברות בדפדפן ולוודא שהקוד תואם. חלון זה מתעדכן מעצמו.
+Open page again	פתיחת הדף שוב
+Sign in with browser	התחברות דרך הדפדפן
+or	או
+Username or email	שם משתמש או דוא"ל
+Password	סיסמה
+Signing in…	מתחבר…
+General	כללי
+Language	שפה
+Choose the interface language.	בחירת שפת הממשק.
+System default	ברירת מחדל של המערכת
+Hebrew (unavailable)	עברית (לא זמינה בגרסה זו)
+Create account	יצירת חשבון
+Forgot password	שכחתי סיסמה
+audio	שמע
+No {noun} in your library yet	אין עדיין {noun} בספרייה
+Image not available	התמונה אינה זמינה
+Previous item	הפריט הקודם
+Next item	הפריט הבא
+Enter to generate	Enter ליצירה
+When on, pressing Enter submits the prompt and Shift+Enter adds a new line. When off (default), both Enter and Shift+Enter add a new line - use only the button to submit.	כאשר פעיל, לחיצה על Enter שולחת את ההנחיה ו-Shift+Enter מוסיף שורה חדשה. כאשר כבוי (ברירת מחדל), גם Enter וגם Shift+Enter מוסיפים שורה חדשה — יש להשתמש בכפתור כדי לשלוח.
+Signed in as @{user}	מחובר בתור @{user}
+Buy credits	רכישת קרדיטים
+Provider accounts	חשבונות ספקים
+About	אודות
+ArtCraft native {version}	ArtCraft בגרסת שולחן עבודה {version}
+Open data folder	פתיחת תיקיית הנתונים
+Connect account	חיבור חשבון
+Set up {name}	הגדרת {name}
+Add your {name} account to ArtCraft!	הוספת חשבון {name} אל ArtCraft
+Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.	יש להדביק את מפתח ה-API של {name} כדי ליצור באמצעות החשבון ב-{name}. ניתן לחבר את כל חשבונות ה-AI אל ArtCraft במקום אחד לבניית כלי יצירה מאוחד.
+You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.	ניתן להוסיף את חשבון {name} אל ArtCraft בהתחברות פשוטה, ולהשתמש ישירות בקרדיטים ובחשבון מתוך ArtCraft במקום אחד.
+Midjourney account	חשבון Midjourney
+FAL API key	מפתח API של FAL
+Connected	מחובר
+Not logged in	לא מחובר
+Disconnect	ניתוק
+Connect	התחברות
+Not set	לא הוגדר
+Paste your FAL API key	יש להדביק את מפתח ה-API של FAL
+Save	שמירה
+Login to Midjourney	התחברות ל-Midjourney
+Couldn't open the sign-in window: {err}	לא ניתן לפתוח את חלון ההתחברות: {err}
+{selected}/{total} selected	{selected}/{total} נבחרו
+Use selected	שימוש בנבחרים
+Deselect all	ביטול בחירת הכול
+Attached	מצורף
+
+# Characters & Lightbox Modals
+Delete character?	למחוק דמות?
+“{name}” will be removed from your characters.	"{name}" תוסר מרשימת הדמויות.
+Delete	מחיקה
+Create New	יצירת חדש
+Creating...	יוצר…
+Edit character	עריכת דמות
+Delete character	מחיקת דמות
+Edit Character	עריכת דמות
+View full size	הצגה בגודל מלא
+Name cannot be empty	השם לא יכול להיות ריק
+New Character	דמות חדשה
+Upload reference image	העלאת תמונת ייחוס
+Failed to upload {file}: {err}	העלאת {file} נכשלה: {err}
+Please enter a character name	יש להזין שם לדמות
+Please upload a reference image	יש להעלות תמונת ייחוס
+Character name	שם הדמות
+Description	תיאור
+Description...	תיאור…
+Copy	העתקה
+Hide	הסתרה
+See all	הצגת הכול
+No prompt	אין הנחיה
+Information	מידע
+Created	נוצר
+Size	גודל
+Delete this media?	למחוק מדיה זו?
+This will permanently remove the media from your library. This action cannot be undone.	פעולה זו תסיר את המדיה לצמיתות מהספרייה. לא ניתן לבטל פעולה זו.
+Play in your video player	ניגון בנגן הווידאו
+Previous	הקודם
+Next	הבא
+
+# App Toasts & Requests
+Couldn't load models: {message}	לא ניתן לטעון מודלים: {message}
+Character “{name}” failed to create	יצירת הדמות "{name}" נכשלה
+{kind} generation complete!	יצירת ה{kind} הושלמה!
+Couldn't load your library: {message}	לא ניתן לטעון את הספרייה: {message}
+Character “{name}” is being created	הדמות "{name}" בתהליך יצירה
+Image generation complete!	יצירת התמונה הושלמה!
+Downloaded {file}	הקובץ {file} הורד
+Could not load the original prompt.	לא ניתן לטעון את ההנחיה המקורית.
+Share link copied	קישור השיתוף הועתק
+Prompt copied	ההנחיה הועתקה
+Couldn't open the file: {err}	לא ניתן לפתוח את הקובץ: {err}
+Midjourney connected	חשבון Midjourney חובר
+Loading...	טוען…

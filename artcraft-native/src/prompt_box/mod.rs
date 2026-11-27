@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use egui::{Align2, Color32, FontId, Id, Rect, Sense, Stroke, Ui, pos2, vec2};
 
 use crate::backend::media_cache::MediaCache;
-use crate::theme;
+use crate::{i18n, theme};
 use crate::ui::icons::{self, Icon};
 use crate::ui::widgets;
 use deck::{DeckAction, DeckLimits};
@@ -183,7 +183,7 @@ fn generate_cluster(ui: &mut Ui, props: &PromptBoxProps<'_>, actions: &mut Vec<P
     let (rect, resp) = ui.allocate_exact_size(vec2(galley.size().x + 22.0, 36.0), Sense::hover());
     icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.left() + 7.0, rect.center().y), vec2(14.0, 14.0)), Icon::Coins, ink);
     ui.painter().galley(pos2(rect.left() + 20.0, rect.center().y - galley.size().y / 2.0), galley, ink);
-    resp.on_hover_text(format!("{credits} credit{} cost", if credits == 1 { "" } else { "s" }));
+    resp.on_hover_text(i18n::fmt(if credits == 1 { "{credits} credit cost" } else { "{credits} credits cost" }, &[("credits", &credits.to_string())]));
   }
 }
 
@@ -192,7 +192,7 @@ fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: 
   let (rule, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
   ui.painter().rect_filled(rule, 0.0, theme::fade(theme::INK, 0.15));
   let clearable = !prompt.is_empty() || !refs.is_empty() || extra_input;
-  let resp = ui.add_enabled_ui(clearable, |ui| widgets::ghost(ui, Icon::Eraser, None, "Clear all", false)).inner;
+  let resp = ui.add_enabled_ui(clearable, |ui| widgets::ghost(ui, Icon::Eraser, None, i18n::t("Clear all"), false)).inner;
   if resp.clicked() {
     if refs.is_empty() {
       prompt.clear();
@@ -206,15 +206,15 @@ fn clear_all_button(ui: &mut Ui, prompt: &mut String, refs: &References, state: 
 fn confirm_clear(ctx: &egui::Context, id: Id, state: &mut PromptBoxState, actions: &mut Vec<PromptBoxAction>) {
   let mut choice = None;
   let resp = widgets::modal(ctx, id.with("confirm-clear"), 420.0, |ui| {
-    ui.label(widgets::heading("Clear all?", 20.0));
+    ui.label(widgets::heading(i18n::t("Clear all?"), 20.0));
     ui.add_space(8.0);
-    ui.label(egui::RichText::new("This clears the prompt and also removes the attached references.").color(theme::MUTED));
+    i18n::wrapped_label(ui, "This clears the prompt and also removes the attached references.", |r| r.color(theme::MUTED));
     ui.add_space(16.0);
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-      if widgets::button(ui, None, "Clear all", widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, None, i18n::t("Clear all"), widgets::Kind::Danger, 0.0, theme::CONTROL_H).clicked() {
         choice = Some(true);
       }
-      if widgets::button(ui, None, "Cancel", widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
+      if widgets::button(ui, None, i18n::t("Cancel"), widgets::Kind::Secondary, 0.0, theme::CONTROL_H).clicked() {
         choice = Some(false);
       }
     });
@@ -230,7 +230,7 @@ fn confirm_clear(ctx: &egui::Context, id: Id, state: &mut PromptBoxState, action
 /// The chevron centred on the box's bottom edge that toggles the tall editor.
 fn expand_toggle(ui: &mut Ui, id: Id, rect: Rect, state: &mut PromptBoxState) {
   let button = Rect::from_center_size(pos2(rect.center().x, rect.bottom() - 6.0), vec2(38.0, 16.0));
-  let resp = ui.interact(button, id.with("expand"), Sense::click()).on_hover_text(if state.editor.expanded { "Collapse" } else { "Expand" }).on_hover_cursor(egui::CursorIcon::PointingHand);
+  let resp = ui.interact(button, id.with("expand"), Sense::click()).on_hover_text(i18n::t(if state.editor.expanded { "Collapse" } else { "Expand" })).on_hover_cursor(egui::CursorIcon::PointingHand);
   let ink = theme::fade(Color32::WHITE, if resp.hovered() { 0.9 } else { 0.3 });
   icons::paint(ui.painter(), Rect::from_center_size(button.center(), vec2(12.0, 12.0)), if state.editor.expanded { Icon::ChevronUp } else { Icon::ChevronDown }, ink);
   if resp.clicked() {
@@ -291,11 +291,13 @@ fn drop_target(ui: &mut Ui, props: &PromptBoxProps<'_>, rect: Rect, actions: &mu
     })
     .collect();
   let (title, subtitle) = if !accepted {
-    ("That file type isn't supported".to_owned(), format!("Accepts {} files", names.join(", ").to_lowercase()))
+    let kinds_logical = names.iter().map(|n| i18n::tl(n)).collect::<Vec<_>>().join(", ");
+    (i18n::t("That file type isn't supported").to_owned(), i18n::fmt("Accepts {kinds} files", &[("kinds", &kinds_logical.to_lowercase())]))
   } else if keyframes {
-    ("Drop to set your frames".to_owned(), "Frames".to_owned())
+    (i18n::t("Drop to set your frames").to_owned(), i18n::t("Frames").to_owned())
   } else {
-    ("Drop to add references".to_owned(), names.join(", "))
+    let kinds_logical = names.iter().map(|n| i18n::tl(n)).collect::<Vec<_>>().join(", ");
+    (i18n::t("Drop to add references").to_owned(), if i18n::is_rtl() { i18n::visual_rtl(&kinds_logical) } else { kinds_logical })
   };
   p.text(rect.center() + vec2(0.0, 10.0), Align2::CENTER_CENTER, title, FontId::new(14.0, theme::semibold()), theme::INK);
   p.text(rect.center() + vec2(0.0, 28.0), Align2::CENTER_CENTER, subtitle, FontId::new(12.0, egui::FontFamily::Proportional), theme::MUTED);
@@ -333,7 +335,7 @@ fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state
   let mut done = false;
   let closed = widgets::modal(ctx, props.id.with("focus-mode"), 896.0, |ui| {
     ui.set_height(height);
-    ui.label(widgets::heading("Prompt", 22.0));
+    ui.label(widgets::heading(i18n::t("Prompt"), 22.0));
     ui.add_space(10.0);
     let editor_h = (height - 160.0 - if refs.is_empty() { 0.0 } else { 80.0 }).max(120.0);
     let out = editor_ui(ui, prompt, state, props, cache, Some(editor_h));
@@ -353,7 +355,7 @@ fn focus_mode(ctx: &egui::Context, prompt: &mut String, refs: &References, state
     ui.horizontal(|ui| {
       ui.push_id("focus-toolbar", |ui| ui.horizontal(|ui| slots(ui, Slot::ToolbarLeft)));
       ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        if widgets::button(ui, None, "Done", widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
+        if widgets::button(ui, None, i18n::t("Done"), widgets::Kind::Primary, 0.0, theme::CONTROL_H).clicked() {
           done = true;
         }
         ui.push_id("focus-clear", |ui| clear_all_button(ui, prompt, refs, state, props.extra_input, actions));

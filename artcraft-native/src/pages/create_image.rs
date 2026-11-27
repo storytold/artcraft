@@ -13,6 +13,7 @@ use crate::backend::wire::Prompt;
 use crate::backend::{EnqueueMeta, Modality};
 use crate::feed::store::FeedStore;
 use crate::feed::types::MediaKind;
+use crate::i18n;
 use crate::models::{DEFAULT_IMAGE_MODEL, DEFAULT_PROMPT_MAX, ModelInfo};
 use crate::pages::common::{self, AppRequest, CostState, Env};
 use crate::pages::toolbar;
@@ -87,7 +88,7 @@ impl CreateImagePage {
     let deck = if max_images > 0 { DeckMode::References(DeckLimits { max_images, max_videos: 0, max_video_secs: None, max_audios: 0, max_audio_secs: None, library: env.signed_in }) } else { DeckMode::None };
     let accepts: &[RefKind] = if max_images > 0 { &[RefKind::Image] } else { &[] };
     let prompt_max = model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max);
-    let props = PromptBoxProps { id: Id::new("image-prompt-box"), placeholder: PLACEHOLDER, enter_to_generate: env.enter_to_generate, mentions: &[], max_length: Some(prompt_max), deck, accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some(), generating: self.generating, generate_tooltip: "Generate", warning: None, banner: None, extra_input: false };
+    let props = PromptBoxProps { id: Id::new("image-prompt-box"), placeholder: i18n::t(PLACEHOLDER), enter_to_generate: env.enter_to_generate, mentions: &[], max_length: Some(prompt_max), deck, accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some(), generating: self.generating, generate_tooltip: i18n::t("Generate"), warning: None, banner: None, extra_input: false };
     let models = &env.catalog.image_page;
     let settings = &mut self.settings;
     let count = settings.count;
@@ -186,13 +187,13 @@ impl CreateImagePage {
     let has_audio = kinds.contains(&Some(RefKind::Audio));
     if has_video || has_audio {
       let what = match (has_video, has_audio) {
-        (true, true) => "Video or audio",
-        (true, false) => "Video",
-        _ => "Audio",
+        (true, true) => i18n::tl("Video or audio"),
+        (true, false) => i18n::tl("Video"),
+        _ => i18n::tl("Audio"),
       };
-      env.toasts.error(format!("{what} references aren't available here"));
+      env.toasts.error(i18n::fmt_logical("{what} references aren't available here", &[("what", what)]));
     } else if images.is_empty() {
-      env.toasts.error("Only image files can be added here");
+      env.toasts.error(i18n::tl("Only image files can be added here"));
     }
     if images.is_empty() {
       return;
@@ -220,11 +221,11 @@ impl CreateImagePage {
     }
     let limit = model.prompt_max;
     if editor::is_over_limit(&self.settings.prompt, limit) {
-      env.toasts.error(format!("Prompt exceeds the {} character limit for this model", limit.unwrap_or_default()));
+      env.toasts.error(i18n::fmt_logical("Prompt exceeds the {limit} character limit for this model", &[("limit", &limit.unwrap_or_default().to_string())]));
       return;
     }
     if self.refs.any_uploading() {
-      env.toasts.error("Please wait for your references to finish uploading");
+      env.toasts.error(i18n::tl("Please wait for your references to finish uploading"));
       return;
     }
     // Other providers take the references as links (when the model takes references there).
@@ -234,7 +235,7 @@ impl CreateImagePage {
       match self.refs.images.iter().map(|r| r.full_url.clone()).collect::<Option<Vec<String>>>() {
         Some(urls) => urls,
         None => {
-          env.toasts.error("A reference image is missing its link. Please add it again.");
+          env.toasts.error(i18n::tl("A reference image is missing its link. Please add it again."));
           return;
         },
       }
@@ -290,12 +291,12 @@ impl CreateImagePage {
   pub fn on_enqueued(&mut self, env: &mut Env<'_>, job_tokens: &[String], meta: &EnqueueMeta) {
     self.generating = false;
     self.feed.add_enqueued(MediaKind::Image, job_tokens, meta, env.catalog);
-    env.toasts.success("Image generation enqueued!");
+    env.toasts.success(i18n::tl("Image generation enqueued!"));
   }
 
   pub fn on_enqueue_failed(&mut self, env: &mut Env<'_>, message: &str) {
     self.generating = false;
-    env.toasts.error(if message.is_empty() { "Failed to start image generation. Please try again." } else { message });
+    env.toasts.error(if message.is_empty() { i18n::tl("Failed to start image generation. Please try again.") } else { message });
   }
 
   /// Recreate: the original prompt, model, settings and reference images.
@@ -319,5 +320,6 @@ impl CreateImagePage {
 }
 
 fn max_images_message(max: usize) -> String {
-  format!("Max {max} image reference{}", if max == 1 { "" } else { "s" })
+  let key = if max == 1 { "Max {max} image reference" } else { "Max {max} image references" };
+  i18n::fmt_logical(key, &[("max", &max.to_string())])
 }
