@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
@@ -47,6 +48,14 @@ impl ProviderCredentialLoadingCache {
     &self,
     key: ProviderCredentialKey,
   ) -> Result<Option<ProviderCredentialPayload>, ProviderCredentialLoadingCacheError> {
+    self.get_with_loader(key, load_payload)
+  }
+
+  fn get_with_loader(
+    &self,
+    key: ProviderCredentialKey,
+    load: impl FnOnce(&Path, ProviderCredentialType) -> Result<ProviderCredentialPayload, ProviderCredentialLoadingCacheError>,
+  ) -> Result<Option<ProviderCredentialPayload>, ProviderCredentialLoadingCacheError> {
     // Check cache first.
     {
       let cache = self.inner.read()
@@ -59,38 +68,21 @@ impl ProviderCredentialLoadingCache {
       }
     }
 
-    // Cache miss or expired — load from disk.
+    // Serialize the complete disk-read/cache-insert transaction with writes
+    // and deletes. Recheck because another reader may have populated it.
+    let mut cache = self.inner.write().map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
+    if let Some(entry) = cache.get(&key) {
+      if entry.loaded_at.elapsed() < self.ttl { return Ok(Some(entry.payload.clone())); }
+    }
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
-
     if !file_path.exists() {
+      cache.remove(&key);
       return Ok(None);
     }
-
     info!("Loading credential from disk: {:?}", file_path);
+    let payload = load(&file_path, key.get_type())?;
 
-    let payload = match key.get_type() {
-      ProviderCredentialType::ApiKey => {
-        let data = ApiKeyData::load_from_file(&file_path)
-          .map_err(ProviderCredentialLoadingCacheError::ApiKeyError)?;
-        ProviderCredentialPayload::ApiKey(data)
-      }
-      ProviderCredentialType::WebLogin => {
-        let data = WebLoginData::load_from_file(&file_path)
-          .map_err(ProviderCredentialLoadingCacheError::WebLoginError)?;
-        ProviderCredentialPayload::WebLogin(data)
-      }
-    };
-
-    // Store in cache.
-    {
-      let mut cache = self.inner.write()
-        .map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
-
-      cache.insert(key, CacheEntry {
-        payload: payload.clone(),
-        loaded_at: Instant::now(),
-      });
-    }
+    cache.insert(key, CacheEntry { payload: payload.clone(), loaded_at: Instant::now() });
 
     Ok(Some(payload))
   }
@@ -100,6 +92,7 @@ impl ProviderCredentialLoadingCache {
     key: ProviderCredentialKey,
     payload: ProviderCredentialPayload,
   ) -> Result<(), ProviderCredentialLoadingCacheError> {
+    let mut cache = self.inner.write().map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
 
     info!("Saving credential to disk: {:?}", file_path);
@@ -119,16 +112,7 @@ impl ProviderCredentialLoadingCache {
       }
     }
 
-    // Update cache.
-    {
-      let mut cache = self.inner.write()
-        .map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
-
-      cache.insert(key, CacheEntry {
-        payload,
-        loaded_at: Instant::now(),
-      });
-    }
+    cache.insert(key, CacheEntry { payload, loaded_at: Instant::now() });
 
     Ok(())
   }
@@ -141,6 +125,7 @@ impl ProviderCredentialLoadingCache {
   }
   
   pub fn delete_credentials(&self, key: ProviderCredentialKey) -> Result<(), ProviderCredentialLoadingCacheError> {
+    let mut cache = self.inner.write().map_err(|_| ProviderCredentialLoadingCacheError::LockPoisoned)?;
     let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
     
     if file_path.exists() {
@@ -148,7 +133,7 @@ impl ProviderCredentialLoadingCache {
           .map_err(|e| ProviderCredentialLoadingCacheError::IoError(e))?;
     }
     
-    self.invalidate(key);
+    cache.remove(&key);
     
     Ok(())
   }
@@ -182,6 +167,61 @@ impl Display for ProviderCredentialLoadingCacheError {
       Self::WebLoginError(e) => write!(f, "Web login error: {}", e),
       Self::TypeMismatch => write!(f, "Credential type does not match key type"),
       Self::LockPoisoned => write!(f, "Internal lock poisoned"),
+    }
+  }
+}
+
+fn load_payload(path: &Path, kind: ProviderCredentialType) -> Result<ProviderCredentialPayload, ProviderCredentialLoadingCacheError> {
+  match kind {
+    ProviderCredentialType::ApiKey => ApiKeyData::load_from_file(path).map(ProviderCredentialPayload::ApiKey).map_err(ProviderCredentialLoadingCacheError::ApiKeyError),
+    ProviderCredentialType::WebLogin => WebLoginData::load_from_file(path).map(ProviderCredentialPayload::WebLogin).map_err(ProviderCredentialLoadingCacheError::WebLoginError),
+  }
+}
+
+#[cfg(test)]
+mod credential_cache_tests {
+  use super::*;
+  use std::sync::mpsc::channel;
+
+  #[test]
+  fn delete_waits_for_inflight_load_and_cannot_be_undone_by_it() { interleave(false); }
+
+  #[test]
+  fn replacement_waits_for_inflight_load_and_remains_current() { interleave(true); }
+
+  fn interleave(replace: bool) {
+    let dir = tempfile::tempdir().unwrap();
+    let root = AppDataRoot::create_existing(dir.path()).unwrap();
+    let cache = ProviderCredentialLoadingCache::new(root.clone());
+    let key = ProviderCredentialKey::FalApiKey;
+    let path = root.credentials_dir().path().join(key.get_filename());
+    ApiKeyData::from_str("old-test-key").save_to_file(&path).unwrap();
+    let (loaded_tx, loaded_rx) = channel();
+    let (resume_tx, resume_rx) = channel();
+    let reader_cache = cache.clone();
+    let reader = std::thread::spawn(move || reader_cache.get_with_loader(key, |path, kind| {
+      let payload = load_payload(path, kind)?;
+      loaded_tx.send(()).unwrap();
+      resume_rx.recv().unwrap();
+      Ok(payload)
+    }).unwrap());
+    loaded_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    let writer_cache = cache.clone();
+    let (done_tx, done_rx) = channel();
+    let writer = std::thread::spawn(move || {
+      if replace { writer_cache.save_credentials(key, ProviderCredentialPayload::ApiKey(ApiKeyData::from_str("new-test-key"))).unwrap(); }
+      else { writer_cache.delete_credentials(key).unwrap(); }
+      done_tx.send(()).unwrap();
+    });
+    let waiting = done_rx.recv_timeout(Duration::from_millis(50)).is_err();
+    resume_tx.send(()).unwrap();
+    reader.join().unwrap();
+    writer.join().unwrap();
+    assert!(waiting, "mutation must serialize with the disk read, not just the cache insertion");
+    match cache.get_credentials(key).unwrap() {
+      Some(ProviderCredentialPayload::ApiKey(value)) if replace => assert_eq!(value.as_str(), "new-test-key"),
+      None if !replace => assert!(!path.exists()),
+      _ => panic!("stale credentials survived the mutation"),
     }
   }
 }
