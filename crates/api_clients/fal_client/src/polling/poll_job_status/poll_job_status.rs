@@ -3,6 +3,7 @@ use crate::error::api_generic_error::FalGenericApiError;
 use crate::error::client_error::FalClientError;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::polling::poll_job_status::raw_response::RawPollJobStatusResponse;
+use crate::polling::polling_http_client::POLLING_HTTP_CLIENT;
 use log::info;
 use url::Url;
 
@@ -65,7 +66,7 @@ pub async fn poll_job_status(args: PollJobStatusArgs<'_>) -> Result<PollJobStatu
 
   info!("Polling FAL job status: {}", args.status_url);
 
-  let response = reqwest::Client::new()
+  let response = POLLING_HTTP_CLIENT
     .get(args.status_url)
     .header("Authorization", format!("Key {}", args.api_key.0))
     .send()
