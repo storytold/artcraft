@@ -378,7 +378,7 @@ fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
   let bytes = text.as_bytes();
   let (mut start, mut i) = (0, 0);
   while i < text.len() {
-    let hit = (bytes[i] == b'@').then(|| sorted.iter().find(|m| text.get(i..i + m.label.len()).is_some_and(|s| s.eq_ignore_ascii_case(&m.label)))).flatten();
+    let hit = (bytes[i] == b'@').then(|| sorted.iter().find(|m| matches_mention(text, i, m))).flatten();
     match hit {
       Some(m) => {
         job.append(&text[start..i], 0.0, plain.clone());
@@ -392,6 +392,12 @@ fn highlight(text: &str, mentions: &[MentionItem]) -> LayoutJob {
   }
   job.append(&text[start..], 0.0, plain);
   job
+}
+
+fn matches_mention(text: &str, start: usize, mention: &MentionItem) -> bool {
+  let end = start + mention.label.len();
+  let label_matches = text.get(start..end).is_some_and(|part| part.eq_ignore_ascii_case(&mention.label));
+  label_matches && (mention.kind == MentionKind::Character || !text.as_bytes().get(end).is_some_and(u8::is_ascii_digit))
 }
 
 /// `@Name` mentions for characters (newest first), coloured by position.
@@ -417,7 +423,7 @@ mod tests {
   #[test]
   fn colours_known_mentions_case_insensitively() {
     let mentions = mention_items(MentionKind::Image, [None, None].into_iter());
-    let job = highlight("put @image2 next to @Image1, not @Image3", &mentions);
+    let job = highlight("put @image2 next to @Image1, not @Image3, @Image10 or @IMAGE20", &mentions);
     let coloured: Vec<&str> = job.sections.iter().filter(|s| s.format.color != theme::INK).map(|s| &job.text[s.byte_range.start.0..s.byte_range.end.0]).collect();
     assert_eq!(coloured, ["@image2", "@Image1"]);
     assert_eq!(mentions[1].color(), IMAGE_COLORS[1]);
