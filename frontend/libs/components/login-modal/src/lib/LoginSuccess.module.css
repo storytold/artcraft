@@ -39,7 +39,7 @@
   margin-top: 10px;
   overflow-wrap: anywhere;
   color: #ffffff;
-  font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--st-ui-font, "Archivo"), ui-sans-serif, system-ui, sans-serif;
   font-size: 30px;
   font-weight: 500;
   letter-spacing: -0.025em;

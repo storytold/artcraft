@@ -13,6 +13,7 @@ import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
 import { useModelsStore } from "@storyteller/tauri-api";
+import { applyStoredUiFont } from "@storyteller/ui-settings-modal";
 
 // TODO(bt,2025-04-19): Make these configurable
 const ENV = {
@@ -95,6 +96,9 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
 
   return null;
 };
+
+// Before the first render, so text doesn't reflow from the default font.
+applyStoredUiFont();
 
 // TODO: Replace environment variables from `root.tsx`
 createRoot(document.getElementById("root")!).render(

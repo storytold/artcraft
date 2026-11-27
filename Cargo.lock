@@ -407,6 +407,7 @@ dependencies = [
  "errors",
  "fal_client",
  "filesys",
+ "fontdb",
  "futures",
  "grok_consumer_client",
  "image",

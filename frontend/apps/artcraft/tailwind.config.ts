@@ -21,27 +21,9 @@ export default {
           "Consolas",
           "monospace",
         ],
-        display: [
-          "Archivo",
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica Neue",
-          "Arial",
-          "sans-serif",
-        ],
-        sans: [
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica Neue",
-          "Arial",
-          "sans-serif",
-        ],
+        // Defined once in base.css; they follow the interface font setting.
+        display: ["var(--st-font-display)"],
+        sans: ["var(--st-font-sans)"],
       },
       keyframes: {
         fadeIn: {
