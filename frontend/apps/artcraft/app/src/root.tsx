@@ -1,6 +1,4 @@
 import { LinksFunction } from "@remix-run/deno";
-import { posthog } from "posthog-js";
-import { PostHogProvider } from "posthog-js/react";
 import {
   Links,
   Meta,
@@ -55,9 +53,7 @@ export default function App() {
         <div className="topbar-spacer" 
          data-tauri-drag-region={true}
         />
-        <PostHogProvider client={posthog}>
-          <Outlet />
-        </PostHogProvider>
+        <Outlet />
         <ScrollRestoration />
         <Scripts />
       </body>

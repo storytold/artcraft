@@ -7,12 +7,25 @@
   },
   "app": {
     "withGlobalTauri": true,
-    "windows": [
-    ],
+    "windows": [],
     "security": {
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": {
+          "allow": [
+            "$HOME/Artcraft/**",
+            "$DESKTOP/**",
+            "$DOCUMENT/**",
+            "$DOWNLOAD/**",
+            "$PICTURE/**",
+            "$VIDEO/**",
+            "$AUDIO/**"
+          ],
+          "deny": [
+            "$HOME/Artcraft/credentials",
+            "$HOME/Artcraft/credentials/**"
+          ]
+        }
       },
       "csp": {
         "default-src": [
@@ -23,8 +36,6 @@
           "data:",
           "https://*.fakeyou.com",
           "https://*.storyteller.ai",
-          "https://www.google-analytics.com",
-          "https://www.googletagmanager.com",
           "ipc://localhost",
           "tauri://localhost"
         ],
@@ -36,13 +47,10 @@
           "blob:",
           "data:",
           "http://ipc.localhost",
-          "https://*.clarity.ms",
           "https://*.fakeyou.com",
           "https://*.storyteller.ai",
           "https://asset.localhost",
           "https://unpkg.com/detect-gpu@5.0.70/",
-          "https://www.google-analytics.com",
-          "https://www.googletagmanager.com",
           "ipc://localhost",
           "tauri://localhost"
         ],
@@ -67,12 +75,8 @@
           "asset:",
           "blob:",
           "data:",
-          "https://*.clarity.ms",
           "https://*.fakeyou.com",
           "https://*.storyteller.ai",
-          "https://*.unpkg.com",
-          "https://clarity.ms",
-          "https://unpkg.com",
           "ipc://localhost",
           "tauri:",
           "tauri://localhost"
