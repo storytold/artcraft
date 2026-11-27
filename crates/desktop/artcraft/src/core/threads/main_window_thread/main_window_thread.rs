@@ -64,16 +64,16 @@ pub async fn handle_main_window(
   app_startup_time: &AppStartupTime,
 ) -> AnyhowResult<()> {
   loop {
-    log_errors(persist_window_resize_task(window, app_data_root, window_size_slot).await);
-    log_errors(persist_window_position_task(window, app_data_root, window_pos_slot).await);
-    log_errors(persist_storyteller_cookies_task(app, storyteller_creds_manager, app_startup_time).await);
+    log_errors("Error persisting window size", persist_window_resize_task(window, app_data_root, window_size_slot).await);
+    log_errors("Error persisting window position", persist_window_position_task(window, app_data_root, window_pos_slot).await);
+    log_errors("Error persisting storyteller cookies", persist_storyteller_cookies_task(app, storyteller_creds_manager, app_startup_time).await);
     tokio::time::sleep(std::time::Duration::from_millis(1_000)).await;
   }
 }
 
-pub fn log_errors<T>(result: AnyhowResult<T>) {
+pub fn log_errors<T>(context: &str, result: AnyhowResult<T>) {
   if let Err(err) = result {
-    error!("Error persisting window size: {:?}", err);
+    error!("{}: {:?}", context, err);
   }
 }
 
