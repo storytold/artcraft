@@ -8,6 +8,7 @@ import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import { SceneManager, SceneObject } from "./scene_manager_api";
 import { isPointerLockSupported } from "./browserChecks";
 import type { FreeCamControlState } from "./cameraMath";
+import { applyNdcToVector2 } from "./pointer";
 import { FKHelper } from "./KinHelpers/FKHelper";
 import { Euler } from "three";
 import type { EngineEventBus } from "./events/EngineEventBus";
@@ -230,18 +231,44 @@ export class MouseControls {
     this.updateSelectedUI();
   }
 
-  onMouseDown(event: any) {
+  onMouseDown(event: MouseEvent) {
     if (
-      (event.button === 0 || event.button === 1) &&
-      this.isMovable() &&
-      !this.isBoneDragged
+      (event.button !== 0 && event.button !== 1) ||
+      !this.isMovable() ||
+      this.isBoneDragged
     ) {
-      this.isMouseClicked = true;
-      // Pointer lock is requested from `handleMousePointerLock()` once
-      // we see a real mousemove with the button held — locking eagerly
-      // on mousedown intercepts the browser's click-event pipeline and
-      // suppresses static-click selection.
+      return;
     }
+
+    // The previous press can end without a native click, such as on release
+    // outside the canvas. Suppression applies only to the original press.
+    this.ignoreNextClick = false;
+    if (
+      event.button === 0 &&
+      this.kinMode === KinMode.FK &&
+      this.canvReference &&
+      this.mouse
+    ) {
+      applyNdcToVector2(
+        this.mouse,
+        this.canvReference.getBoundingClientRect(),
+        event.clientX,
+        event.clientY,
+      );
+      if (this.fkHelper.trySelectJoint(this.mouse)) {
+        // The release click is suppressed, so refresh the click baseline here.
+        if (this.camera) {
+          this.camera_last_pos.copy(roundedCameraPosition(this.camera));
+        }
+        // Keep the joint picked at press time even if the release misses it.
+        this.ignoreNextClick = true;
+        return;
+      }
+    }
+
+    // Wait for movement before locking the pointer, so static clicks can
+    // still select scene objects.
+    this.isMouseClicked = true;
   }
 
   onMouseUp(event: any) {
@@ -258,11 +285,7 @@ export class MouseControls {
     }
 
     if (event.button !== 0 && this.camera) {
-      const camera_pos = new THREE.Vector3(
-        Number.parseFloat(this.camera.position.x.toFixed(2)),
-        Number.parseFloat(this.camera.position.y.toFixed(2)),
-        Number.parseFloat(this.camera.position.z.toFixed(2)),
-      );
+      const camera_pos = roundedCameraPosition(this.camera);
       this.camera_last_pos.copy(camera_pos);
     }
   }
@@ -407,11 +430,7 @@ export class MouseControls {
       return;
     }
 
-    const camera_pos = new THREE.Vector3(
-      Number.parseFloat(this.camera.position.x.toFixed(2)),
-      Number.parseFloat(this.camera.position.y.toFixed(2)),
-      Number.parseFloat(this.camera.position.z.toFixed(2)),
-    );
+    const camera_pos = roundedCameraPosition(this.camera);
     if (this.camera_last_pos.equals(new THREE.Vector3(0, 0, 0))) {
       this.camera_last_pos.copy(camera_pos);
     }
@@ -480,4 +499,13 @@ export class MouseControls {
       this.deps.bus.emit(new OutlinerSelectedItemChangedEvent(selected));
     }
   }
+}
+
+function roundedCameraPosition(camera: THREE.PerspectiveCamera): THREE.Vector3 {
+  const { x, y, z } = camera.position;
+  return new THREE.Vector3(
+    Number.parseFloat(x.toFixed(2)),
+    Number.parseFloat(y.toFixed(2)),
+    Number.parseFloat(z.toFixed(2)),
+  );
 }
