@@ -47,7 +47,7 @@
     "isbot": "^4.1.0",
     "konva": "^9.3.20",
     "lodash.debounce": "^4.0.8",
-    "nx": "^21.1.1",
+    "nx": "^23.3.0",
     "posthog-js": "^1.141.0",
     "react": "^18.2.0",
     "react-colorful": "^5.6.1",
