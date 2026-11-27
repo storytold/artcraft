@@ -17,4 +17,6 @@ export enum GenerationProvider {
   Picsart = "picsart",
   Pixverse = "pixverse",
   Runway = "runway",
+  // The user's own generation service (desktop only, never sent to the API).
+  Local = "local",
 }

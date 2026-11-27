@@ -19,6 +19,7 @@ use crate::core::events::generation_events::generation_enqueue_success_event::Ge
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::task_database::TaskDatabase;
+use crate::services::local_comfy::commands::{generate_local_image, is_local_request};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
 use log::{error, info};
@@ -26,6 +27,9 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn generate_image_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if is_local_request(&request) {
+    return generate_local_image(request, &app).await;
+  }
   if request.uses_artcraft() && !request.uses_legacy_image_endpoint() {
     return omni::generate(request, Modality::Image, &app).await;
   }

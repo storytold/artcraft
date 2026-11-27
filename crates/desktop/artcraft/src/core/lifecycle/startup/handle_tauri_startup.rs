@@ -14,6 +14,7 @@ use crate::services::grok::state::grok_credential_manager::GrokCredentialManager
 use crate::services::grok::state::grok_image_prompt_queue::GrokImagePromptQueue;
 use crate::services::grok::threads::grok_image_websocket_thread::grok_image_websocket_thread::grok_image_websocket_thread;
 use crate::services::grok::threads::grok_video_task_polling::grok_video_task_polling_thread::grok_video_task_polling_thread;
+use crate::services::local_comfy::worker::local_comfy_thread;
 use crate::services::midjourney::state::midjourney_credential_manager::MidjourneyCredentialManager;
 use crate::services::midjourney::threads::midjourney_long_polling_thread::midjourney_long_polling_thread;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
@@ -98,6 +99,14 @@ pub async fn handle_tauri_startup(
     task_database.clone(),
     grok_creds_manager.clone(),
     grok_image_prompt_queue.clone(),
+    storyteller_creds_manager.clone(),
+  ));
+
+  tauri::async_runtime::spawn(local_comfy_thread(
+    app.clone(),
+    app_env_configs.clone(),
+    root.clone(),
+    task_database.clone(),
     storyteller_creds_manager.clone(),
   ));
 

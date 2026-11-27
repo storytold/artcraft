@@ -7,6 +7,7 @@ use crate::core::commands::response::failure_response_wrapper::{CommandErrorResp
 use crate::core::commands::response::shorthand::ResponseOrError;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::services::local_comfy::commands::{free_estimate, is_local_request};
 use artcraft_api_defs::generate::cost_estimate::estimate_image_cost::{
   EstimateImageCostError, EstimateImageCostErrorType, EstimateImageCostRequest,
   EstimateImageCostResponse,
@@ -19,6 +20,9 @@ impl SerializeMarker for EstimateImageCostResponse {}
 
 #[tauri::command]
 pub async fn estimate_image_cost_command(request: OmniRequest, app: AppHandle) -> OmniResult {
+  if is_local_request(&request) {
+    return free_estimate();
+  }
   if matches!(request.provider, Some(GenerationProvider::Midjourney)) {
     if !matches!(request.model(), Some("midjourney" | "midjourney_7" | "midjourney_7_niji" | "midjourney_8")) {
       return Err(CommandErrorResponseWrapper {
