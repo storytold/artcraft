@@ -1,5 +1,5 @@
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
+use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::events::functional_events::canvas_background_removal_complete_event::CanvasBackgroundRemovalCompleteEvent;
 use crate::core::events::functional_events::gaussian_generation_complete_event::{GaussianGenerationCompleteEvent, GeneratedGaussian};
@@ -7,12 +7,13 @@ use crate::core::events::functional_events::image_edit_complete_event::{EditedIm
 use crate::core::events::functional_events::object_generation_complete_event::{GeneratedObject, ObjectGenerationCompleteEvent};
 use crate::core::events::functional_events::text_to_image_generation_complete_event::{GeneratedImage, TextToImageGenerationCompleteEvent};
 use crate::core::events::functional_events::video_generation_complete_event::{GeneratedVideo, VideoGenerationCompleteEvent};
+use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
+use crate::core::utils::enum_conversion::task_type::to_generation_action;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::utils::api_host::ApiHost;
-use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_type::TaskType;
@@ -54,9 +55,9 @@ pub async fn notify_frontend_of_completion(
   completion: &CompletionData,
 ) {
   // Fire the generic generation-complete event (for the task queue UI).
-  let generation_action = task_type_to_generation_action(task.task_type);
+  let generation_action = to_generation_action(task.task_type);
   let generation_model = task.model_type.clone().and_then(task_model_type_to_generation_model);
-  let generation_service = provider_to_generation_service(task.provider);
+  let generation_service = to_generation_service_provider(task.provider);
 
   let complete_event = GenerationCompleteEvent {
     action: Some(generation_action),
@@ -255,37 +256,6 @@ async fn collect_generated_images(
     cdn_url: completion.maybe_cdn_url.clone().unwrap_or_else(|| Url::parse("https://cdn.artcraft.ai/placeholder").unwrap()),
     maybe_thumbnail_template: completion.maybe_thumbnail_url_template.clone(),
   }]
-}
-
-fn task_type_to_generation_action(task_type: TaskType) -> GenerationAction {
-  match task_type {
-    TaskType::ImageGeneration => GenerationAction::GenerateImage,
-    TaskType::VideoGeneration => GenerationAction::GenerateVideo,
-    TaskType::AudioGeneration => GenerationAction::GenerateAudio,
-    TaskType::BackgroundRemoval => GenerationAction::RemoveBackground,
-    TaskType::ObjectGeneration => GenerationAction::ImageTo3d,
-    TaskType::GaussianGeneration => GenerationAction::GenerateGaussian,
-    TaskType::ImageInpaintEdit => GenerationAction::ImageInpaintEdit,
-  }
-}
-
-fn provider_to_generation_service(provider: GenerationProvider) -> GenerationServiceProvider {
-  match provider {
-    GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
-    GenerationProvider::Fal => GenerationServiceProvider::Fal,
-    GenerationProvider::Grok => GenerationServiceProvider::Grok,
-    GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
-    GenerationProvider::Sora => GenerationServiceProvider::Sora,
-    GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
-    GenerationProvider::Higgsfield => GenerationServiceProvider::Higgsfield,
-    GenerationProvider::Krea => GenerationServiceProvider::Krea,
-    GenerationProvider::Leonardo => GenerationServiceProvider::Leonardo,
-    GenerationProvider::Magnific => GenerationServiceProvider::Magnific,
-    GenerationProvider::Openart => GenerationServiceProvider::Openart,
-    GenerationProvider::Picsart => GenerationServiceProvider::Picsart,
-    GenerationProvider::Pixverse => GenerationServiceProvider::Pixverse,
-    GenerationProvider::Runway => GenerationServiceProvider::Runway,
-  }
 }
 
 fn task_model_type_to_generation_model(model: TaskModelType) -> Option<GenerationModel> {
